@@ -6,6 +6,7 @@
 
 import streamlit as st
 import time
+import os
 
 from db import (
     init_db, log_event, create_agent_group, list_agent_groups,
@@ -15,6 +16,11 @@ from filters import run_quality_gate, sha256_of
 from sandbox import run_code_in_sandbox
 from robots_check import check_allowed
 from gemini_supervisor import get_plan
+from collector import collect_batch
+from generator import generate_batch
+from db import approve_sample
+from auto_trainer import check_and_run_auto_training, TRAINING_THRESHOLD
+from se_collector import collect_batch as se_collect_batch
 
 st.set_page_config(page_title="مرصد — Marsad", page_icon="app/logo.svg", layout="wide")
 init_db()
@@ -40,8 +46,8 @@ seed_default_groups_if_empty()
 st.title("🛰️ مرصد — مركز قيادة وكلاء الذكاء الاصطناعي")
 st.caption("Marsad Command Center — سابقاً Delfin OS")
 
-tab_map, tab_mission, tab_quality, tab_events = st.tabs(
-    ["🗺️ خريطة الوكلاء", "🎯 Mission Control", "🧪 بوابة الجودة", "📜 سجل الأحداث"]
+tab_map, tab_mission, tab_collect, tab_quality, tab_events = st.tabs(
+    ["🗺️ خريطة الوكلاء", "🎯 Mission Control", "📥 الجمع (Collector)", "🧪 بوابة الجودة", "📜 سجل الأحداث"]
 )
 
 # ------------------------------------------------------------------
@@ -131,6 +137,69 @@ with tab_mission:
     if st.button("فحص") and check_url:
         result = check_allowed(check_url)
         st.json(result)
+
+# ------------------------------------------------------------------
+# تبويب 2.5: الجمع الفعلي من GitHub
+# ------------------------------------------------------------------
+with tab_collect:
+    st.subheader("📥 جمع دفعة من GitHub (مصدر بشري حقيقي، لا مخرجات نماذج AI)")
+    if not os.environ.get("GITHUB_TOKEN"):
+        st.warning(
+            "GITHUB_TOKEN غير مضبوط — الحد بدونه 60 طلباً/ساعة فقط لكل IP "
+            "ويُستهلك خلال دقائق. أضِفه من الإعدادات لجمع فعلي مستمر."
+        )
+    c1, c2, c3 = st.columns(3)
+    language = c1.selectbox("اللغة", ["python", "javascript", "go", "rust"])
+    license_key = c2.selectbox("الترخيص", ["mit", "apache-2.0", "bsd-3-clause", "cc0-1.0"])
+    max_repos = c3.number_input("عدد المستودعات هذه الدفعة", min_value=1, max_value=20, value=3)
+
+    if st.button("ابدأ دفعة جمع الآن", type="primary"):
+        with st.spinner("جمع + فحص جودة + تحقق sandbox..."):
+            report = collect_batch(language=language, license_key=license_key, max_repos=max_repos)
+        st.json(report)
+        if report["stored"] == 0 and report["repos_scanned"] > 0:
+            st.info("لم تُقبل أي عينة هذه الدفعة — راجع تبويب سجل الأحداث (collector_rejections) للسبب الحقيقي.")
+
+    st.divider()
+    st.subheader("🤖 دورة كاملة تلقائية (جمع → فلترة → sandbox → نقد آلي → اعتماد)")
+    st.caption(
+        "الناقد الآلي (Gemini) يحل محل موافقتك اليدوية — كل عينة تُقبل أو تُرفض "
+        "تلقائياً بناءً على حكمه. لا مراجعة بشرية في هذا المسار."
+    )
+    if st.button("شغّل دفعة جمع كاملة تلقائياً (بدون توقف عندي)", type="primary"):
+        with st.spinner("جمع + فحص + sandbox + نقد آلي..."):
+            full_report = collect_batch(language=language, license_key=license_key, max_repos=max_repos)
+        st.json(full_report)
+
+    st.divider()
+    st.subheader(f"🎓 حد التدريب التلقائي (كل {TRAINING_THRESHOLD} عينة معتمدة)")
+    if st.button("تحقق الآن وشغّل التدريب/الرفع إذا استُوفي الحد"):
+        with st.spinner("تحقق من الحد ورفع لـ Hugging Face إذا وصل..."):
+            auto_result = check_and_run_auto_training()
+        st.json(auto_result)
+    st.caption("فقط العينات المُعتمَدة هنا يمكن استخدامها كبذور من وكيل التوليد — لا اعتماد تلقائي.")
+    pending = [s for s in list_recent_samples(30) if s["status"] == "pending_review"]
+    if pending:
+        options = {f"#{s['id']} — {s['source_url']} ({s['content'][:40]}...)": s["id"] for s in pending}
+        choice = st.selectbox("اختر عينة لاعتمادها", list(options.keys()))
+        if st.button("اعتمد هذه العينة كبذرة موثوقة"):
+            approve_sample(options[choice])
+            st.success("تم الاعتماد.")
+            st.rerun()
+    else:
+        st.info("لا توجد عينات pending_review حالياً لاعتمادها.")
+
+    st.divider()
+    st.subheader("🧬 وكيل توليد البيانات (يبني فقط من عينات معتمدة)")
+    if not os.environ.get("GOOGLE_API_KEY"):
+        st.warning("GOOGLE_API_KEY غير مضبوط — التوليد الفعلي عبر Gemini لن يعمل.")
+    max_seeds = st.number_input("عدد البذور المستخدمة هذه الدفعة", min_value=1, max_value=20, value=3)
+    if st.button("ابدأ دفعة توليد", type="primary"):
+        with st.spinner("توليد + إعادة فحص جودة + إعادة تحقق sandbox..."):
+            gen_report = generate_batch(max_seeds=max_seeds)
+        st.json(gen_report)
+        if gen_report["seeds_available"] == 0:
+            st.info("لا توجد بذور معتمدة بعد — اعتمد عينة واحدة على الأقل أعلاه أولاً.")
 
 # ------------------------------------------------------------------
 # تبويب 3: بوابة الجودة — اختبار عينة يدوياً

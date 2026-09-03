@@ -138,6 +138,82 @@ def list_recent_samples(limit=50):
         )]
 
 
+def list_approved_samples(limit=100):
+    """بذور مسموح للـ Data Generator أن يبني منها فقط — عينات اجتازت
+    مراجعة بشرية صريحة، لا مجرد اجتياز sandbox آلي."""
+    with get_conn() as conn:
+        return [dict(r) for r in conn.execute(
+            "SELECT * FROM samples WHERE status = 'approved_for_training' ORDER BY created_at DESC LIMIT ?",
+            (limit,)
+        )]
+
+
+def approve_sample(sample_id: int):
+    with get_conn() as conn:
+        conn.execute("UPDATE samples SET status = 'approved_for_training' WHERE id = ?", (sample_id,))
+        conn.commit()
+
+
+def count_approved_not_in_job():
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) c FROM samples WHERE status = 'approved_for_training'"
+        ).fetchone()
+        return row["c"]
+
+
+def create_training_job_and_mark(sample_ids: list[int]):
+    with get_conn() as conn:
+        cur = conn.execute(
+            "INSERT INTO training_jobs (sample_count, created_at, status) VALUES (?, ?, 'queued')",
+            (len(sample_ids), time.time()),
+        )
+        job_id = cur.lastrowid
+        conn.executemany(
+            "UPDATE samples SET status = 'in_training_job' WHERE id = ?",
+            [(sid,) for sid in sample_ids],
+        )
+        conn.commit()
+        return job_id
+
+
+def get_samples_by_status(status: str, limit=1000):
+    with get_conn() as conn:
+        return [dict(r) for r in conn.execute(
+            "SELECT * FROM samples WHERE status = ? ORDER BY created_at ASC LIMIT ?", (status, limit)
+        )]
+
+
+def count_approved_not_yet_trained():
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) c FROM samples WHERE status = 'approved_for_training'"
+        ).fetchone()
+        return row["c"]
+
+
+def create_training_job(sample_count: int, status="queued"):
+    with get_conn() as conn:
+        cur = conn.execute(
+            "INSERT INTO training_jobs (sample_count, created_at, status) VALUES (?, ?, ?)",
+            (sample_count, time.time(), status),
+        )
+        conn.commit()
+        return cur.lastrowid
+
+
+def mark_samples_trained(sample_ids: list[int]):
+    if not sample_ids:
+        return
+    with get_conn() as conn:
+        placeholders = ",".join("?" * len(sample_ids))
+        conn.execute(
+            f"UPDATE samples SET status = 'uploaded_to_training' WHERE id IN ({placeholders})",
+            sample_ids,
+        )
+        conn.commit()
+
+
 def sample_counts_by_status():
     with get_conn() as conn:
         rows = conn.execute("SELECT status, COUNT(*) c FROM samples GROUP BY status").fetchall()
