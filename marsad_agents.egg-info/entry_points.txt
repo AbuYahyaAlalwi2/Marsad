@@ -1,0 +1,2 @@
+[console_scripts]
+marsad = marsad.cli:main

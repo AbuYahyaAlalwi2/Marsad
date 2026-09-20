@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>مرصد Marsad</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#070b14;color:#edf4ff;font-family:Tahoma,Arial,sans-serif}
+.app{display:flex;min-height:100vh}.side{width:230px;background:#090f1b;border-left:1px solid #1d2940;padding:18px;position:fixed;right:0;top:0;bottom:0}
+.logo{padding:10px 4px 25px;font-size:20px;font-weight:bold}.logo small{display:block;color:#8798b2;font-size:11px;margin-top:5px}
+nav button{width:100%;border:0;background:none;color:#aebbd0;text-align:right;padding:12px;border-radius:10px;margin:2px 0;cursor:pointer}
+nav button:hover,nav .active{background:#191442;color:#c7a7ff;outline:1px solid #7049c8}
+.status{border:1px solid #1d2940;border-radius:14px;padding:13px;margin-top:20px;font-size:12px}.ok{color:#22c55e}
+.main{margin-right:230px;padding:22px;max-width:1700px;width:calc(100% - 230px)}
+header{display:flex;gap:12px;align-items:center;margin-bottom:16px}header h1{margin:0;font-size:24px}header p{margin:5px 0;color:#8798b2;font-size:11px}
+.search{margin-right:auto;width:340px;background:#0d1524;border:1px solid #1d2940;border-radius:11px;padding:11px;color:white}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:11px}.card{background:#0d1523;border:1px solid #1c2a40;border-radius:16px;padding:16px}
+.kpi{min-height:105px}.label{color:#8999b2;font-size:11px}.num{font-size:25px;font-weight:bold;margin:9px 0}.green{color:#4ade80}.cyan{color:#22d3ee}.purple{color:#b58cff}.orange{color:#fbbf24}
+.grid{display:grid;grid-template-columns:1.2fr 1fr .75fr;gap:11px;margin-top:11px}.head{display:flex;justify-content:space-between;margin-bottom:12px}.head b{font-size:14px}.head span{color:#8798b2;font-size:11px}
+
+/* ═══════════════════════════════════════════════════════════════
+   الكرة المضيئة — شبكة العنكبوت مع نجوم وجسيمات
+   ═══════════════════════════════════════════════════════════════ */
+.globe{height:400px;display:grid;place-items:center;position:relative;overflow:hidden;background:radial-gradient(ellipse at center,#0a1525 0%,#070b14 70%)}
+
+/* النجوم المضيئة */
+.star{position:absolute;width:3px;height:3px;background:#fff;border-radius:50%;box-shadow:0 0 10px #fff,0 0 20px #22d3ee;animation:twinkle 3s infinite}
+@keyframes twinkle{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+
+/* العقد الرئيسية المضيئة */
+.node{position:absolute;border-radius:50%;filter:blur(1px);animation:nodeGlow 4s ease-in-out infinite}
+.node-1{width:80px;height:80px;background:radial-gradient(circle,#22d3ee,#0e7490);top:20%;left:30%;box-shadow:0 0 40px #22d3ee,0 0 80px #22d3ee66;animation-delay:0s}
+.node-2{width:60px;height:60px;background:radial-gradient(circle,#a855f7,#7c3aed);top:50%;left:60%;box-shadow:0 0 30px #a855f7,0 0 60px #a855f766;animation-delay:1s}
+.node-3{width:50px;height:50px;background:radial-gradient(circle,#4ade80,#22c55e);top:70%;left:20%;box-shadow:0 0 25px #4ade80,0 0 50px #4ade8066;animation-delay:2s}
+.node-4{width:40px;height:40px;background:radial-gradient(circle,#fbbf24,#f59e0b);top:30%;right:25%;box-shadow:0 0 20px #fbbf24,0 0 40px #fbbf2466;animation-delay:.5s}
+@keyframes nodeGlow{0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.1);opacity:1}}
+
+/* خطوط الاتصال المضيئة */
+.connection-line{position:absolute;height:1px;background:linear-gradient(90deg,transparent,#22d3ee,transparent);opacity:.6;animation:flow 3s linear infinite;transform-origin:left center}
+.conn-1{top:30%;left:35%;width:150px;transform:rotate(15deg)}
+.conn-2{top:55%;left:45%;width:120px;transform:rotate(-20deg);animation-delay:.5s}
+.conn-3{top:65%;left:25%;width:100px;transform:rotate(45deg);animation-delay:1s}
+.conn-4{top:35%;right:30%;width:130px;transform:rotate(-30deg);animation-delay:1.5s}
+.conn-5{top:60%;left:35%;width:140px;transform:rotate(10deg);animation-delay:2s}
+@keyframes flow{0%{opacity:0;transform:scaleX(0)}50%{opacity:.8;transform:scaleX(1)}100%{opacity:0;transform:scaleX(0)}}
+
+/* الجسيمات الصغيرة */
+.particle{position:absolute;width:2px;height:2px;background:#22d3ee;border-radius:50%;box-shadow:0 0 5px #22d3ee;animation:float 10s infinite linear}
+@keyframes float{0%{transform:translateY(0) translateX(0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(-100px) translateX(50px);opacity:0}}
+
+.stat{position:absolute;font-size:11px;color:#8fa0ba;background:rgba(13,21,36,.9);padding:6px 12px;border-radius:10px;border:1px solid #1d2940;backdrop-filter:blur(5px)}
+.s1{right:15px;top:60px}.s2{left:15px;top:75px}.s3{right:20px;bottom:55px}.s4{left:20px;bottom:50px}
+
+.task{padding:11px 0;border-bottom:1px solid #18243a;font-size:11px}.task:last-child{border:0}.tasktop{display:flex;justify-content:space-between}.track{height:6px;background:#172338;border-radius:9px;margin-top:7px}.fill{height:100%;border-radius:9px;background:linear-gradient(90deg,#7c3aed,#22d3ee)}
+.ringbox{text-align:center;padding:20px}.ring{margin:auto;width:150px;height:150px;border-radius:50%;background:conic-gradient(#22d3ee 0 35%,#8b5cf6 35% 84%,#f59e0b 84% 92%,#253149 92%);display:grid;place-items:center}.ring:after{content:"";width:105px;height:105px;background:#0d1523;border-radius:50%;position:absolute}.ringtext{position:relative;z-index:2}.ringtext b{font-size:27px;display:block}
+.bottom{display:grid;grid-template-columns:.9fr 1.2fr 1fr;gap:11px;margin-top:11px}.item{padding:10px 0;border-bottom:1px solid #18243a;font-size:11px}.item:last-child{border:0}.item small{float:left;color:#74849d}
+.chart{height:170px;display:flex;align-items:end;gap:7px;padding:10px}.bar{flex:1;min-height:15px;border-radius:5px 5px 0 0;background:linear-gradient(#8b5cf6,#22d3ee22)}
+.quick{margin-top:11px}.buttons{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.buttons button{padding:12px 5px;background:#0a1220;color:#dce8fb;border:1px solid #1d2a40;border-radius:10px;cursor:pointer}.buttons button:hover{border-color:#8b5cf6}
+.toast{position:fixed;bottom:20px;left:20px;background:#121d2e;border:1px solid #35435c;padding:12px 16px;border-radius:10px;display:none}
+
+.command-section{margin-top:11px;background:linear-gradient(135deg,#0d1523,#0a1220);border:1px solid #1d2940;border-radius:16px;padding:20px;position:relative;overflow:hidden}
+.command-section::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#22d3ee,transparent)}
+.command-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+.command-title{font-size:14px;font-weight:bold;color:#22d3ee;display:flex;align-items:center;gap:8px}
+.command-title::before{content:"⚡";font-size:16px}
+.command-hint{font-size:11px;color:#74849d}
+.command-input-wrap{display:flex;gap:12px;align-items:end}
+.command-input{flex:1;background:#070b14;border:1px solid #1d2940;border-radius:12px;padding:16px;color:#edf4ff;font-family:Tahoma;font-size:14px;resize:vertical;min-height:80px;outline:none;transition:border .2s}
+.command-input:focus{border-color:#22d3ee;box-shadow:0 0 20px #22d3ee22}
+.command-actions{display:flex;flex-direction:column;gap:8px}
+.btn-send{background:linear-gradient(135deg,#0e7490,#22d3ee);color:#fff;border:none;padding:14px 28px;border-radius:12px;cursor:pointer;font-weight:bold;font-size:14px;transition:all .2s;box-shadow:0 4px 15px #22d3ee33}
+.btn-send:hover{transform:translateY(-2px);box-shadow:0 6px 25px #22d3ee55}
+.btn-clear{background:#1d2940;color:#8798b2;border:none;padding:10px 20px;border-radius:10px;cursor:pointer;font-size:12px}
+.btn-clear:hover{background:#253149}
+.command-examples{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.example-chip{background:#0a1220;border:1px solid #1d2940;padding:6px 14px;border-radius:20px;font-size:11px;color:#8798b2;cursor:pointer;transition:all .2s}
+.example-chip:hover{border-color:#22d3ee;color:#22d3ee}
+
+.terminal-section{margin-top:11px;background:#050810;border:1px solid #1d2940;border-radius:16px;overflow:hidden}
+.terminal-header{background:#0d1524;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1d2940}
+.terminal-title{font-size:13px;font-weight:bold;color:#4ade80;display:flex;align-items:center;gap:8px}
+.terminal-title::before{content:"●";color:#4ade80;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.terminal-actions{display:flex;gap:8px}
+.terminal-btn{background:#1d2940;color:#8798b2;border:none;padding:6px 14px;border-radius:8px;font-size:11px;cursor:pointer}
+.terminal-btn:hover{background:#253149;color:#edf4ff}
+.terminal-body{padding:16px;height:200px;overflow-y:auto;font-family:'Courier New',monospace;font-size:12px;line-height:1.8}
+.terminal-body::-webkit-scrollbar{width:8px}
+.terminal-body::-webkit-scrollbar-track{background:#0a1220}
+.terminal-body::-webkit-scrollbar-thumb{background:#1d2940;border-radius:4px}
+.log-line{padding:4px 0;border-bottom:1px solid #0d1524;display:flex;gap:12px}
+.log-time{color:#4a5568;font-size:11px;min-width:70px}
+.log-msg{color:#a0aec0}
+.log-msg.success{color:#4ade80}
+.log-msg.error{color:#f87171}
+.log-msg.info{color:#22d3ee}
+.log-msg.warning{color:#fbbf24}
+
+@media(max-width:1200px){.kpis{grid-template-columns:repeat(3,1fr)}.grid,.bottom{grid-template-columns:1fr 1fr}.grid>:last-child,.bottom>:last-child{grid-column:1/-1}.buttons{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:800px){.side{width:210px;right:-220px;transition:.2s}.side.open{right:0}.main{margin:0;width:100%;padding:12px}.menu{display:block!important}.kpis,.grid,.bottom{grid-template-columns:1fr}.grid>:last-child,.bottom>:last-child{grid-column:auto}.buttons{grid-template-columns:1fr 1fr}.search{width:100%;order:3;margin:0}header{flex-wrap:wrap}.command-input-wrap{flex-direction:column}.command-actions{flex-direction:row}}
+.menu{display:none;border:1px solid #1d2940;background:#0d1523;color:white;border-radius:9px;padding:9px}
+</style></head>
+<body>
+<aside class="side" id="side">
+<div class="logo">◈ مرصد Marsad<small>نظام المراقبة الذكي</small></div>
+<nav>
+<button class="active" onclick="go(this)">⌂　لوحة التحكم</button><button onclick="go(this)">◉　المحادثة</button>
+<button onclick="go(this)">🧠　الذاكرة</button><button onclick="go(this)">🤖　الوكلاء</button>
+<button onclick="go(this)">⚙　Workers / الحوسبة</button><button onclick="go(this)">🧩　النماذج</button>
+<button onclick="go(this)">▣　البيانات</button><button onclick="go(this)">🔗　المزودون</button>
+<button onclick="go(this)">☷　المهام والسجلات</button><button onclick="go(this)">⚙　الإعدادات</button>
+</nav>
+<div class="status"><b>حالة النظام</b><p class="ok">● يعمل بكفاءة</p>CPU 72%<div class="track"><div class="fill" style="width:72%"></div></div><br>GPU 68%<div class="track"><div class="fill" style="width:68%"></div></div><br>الشبكة 91%<div class="track"><div class="fill" style="width:91%"></div></div></div>
+</aside>
+<main class="main">
+<header><button class="menu" onclick="document.getElementById('side').classList.toggle('open')">☰</button><div><h1>مرحباً، Marsad 👋</h1><p>مركز قيادة النموذج والذاكرة وموارد الحوسبة</p></div><input class="search" placeholder="ابحث في النظام..."></header>
+<section class="kpis">
+<div class="card kpi"><div class="label">الوكلاء النشطون</div><div class="num">1,000,000</div><div class="green">↑ 12,540 اليوم</div></div>
+<div class="card kpi"><div class="label">المهام المنجزة</div><div class="num">24,851</div><div class="green">↑ 2,351 اليوم</div></div>
+<div class="card kpi"><div class="label">مصادر البيانات</div><div class="num">18</div><div class="cyan">نشطة الآن</div></div>
+<div class="card kpi"><div class="label">الذاكرة</div><div class="num">6.7 / 10 GB</div><div class="purple">67% مستخدم</div></div>
+<div class="card kpi"><div class="label">Workers</div><div class="num">22</div><div class="green">متصلة · Failover جاهز</div></div>
+</section>
+<section class="grid">
+<div class="card globe">
+  <div class="head" style="position:absolute;top:16px;right:16px;left:16px"><b>النشاط المباشر</b><span class="ok">● مباشر</span></div>
+  
+  <!-- النجوم -->
+  <div class="star" style="top:10%;left:20%"></div>
+  <div class="star" style="top:30%;right:30%;animation-delay:.5s"></div>
+  <div class="star" style="top:60%;left:40%;animation-delay:1s"></div>
+  <div class="star" style="top:80%;right:20%;animation-delay:1.5s"></div>
+  <div class="star" style="top:40%;left:60%;animation-delay:2s"></div>
+  
+  <!-- العقد المضيئة -->
+  <div class="node node-1"></div>
+  <div class="node node-2"></div>
+  <div class="node node-3"></div>
+  <div class="node node-4"></div>
+  
+  <!-- خطوط الاتصال -->
+  <div class="connection-line conn-1"></div>
+  <div class="connection-line conn-2"></div>
+  <div class="connection-line conn-3"></div>
+  <div class="connection-line conn-4"></div>
+  <div class="connection-line conn-5"></div>
+  
+  <!-- الجسيمات -->
+  <div class="particle" style="top:50%;left:30%;animation-delay:0s"></div>
+  <div class="particle" style="top:60%;left:50%;animation-delay:2s"></div>
+  <div class="particle" style="top:40%;left:70%;animation-delay:4s"></div>
+  <div class="particle" style="top:70%;left:40%;animation-delay:6s"></div>
+  
+  <div class="stat s1">نجاح <b class="green">97.3%</b></div>
+  <div class="stat s2">طلبات <b>1.2K/min</b></div>
+  <div class="stat s3">استجابة <b class="cyan">&lt;120ms</b></div>
+  <div class="stat s4">دول نشطة <b>118</b></div>
+</div>
+<div class="card"><div class="head"><b>تنفيذ المهام</b><span>عرض الكل</span></div>
+<div class="task"><div class="tasktop"><span>تحليل الكود</span><b class="green">87%</b></div><div class="track"><div class="fill" style="width:87%"></div></div></div>
+<div class="task"><div class="tasktop"><span>جمع البيانات</span><b class="green">65%</b></div><div class="track"><div class="fill" style="width:65%"></div></div></div>
+<div class="task"><div class="tasktop"><span>تنظيف البيانات</span><b class="green">92%</b></div><div class="track"><div class="fill" style="width:92%"></div></div></div>
+<div class="task"><div class="tasktop"><span>صهر النماذج</span><b class="orange">45%</b></div><div class="track"><div class="fill" style="width:45%"></div></div></div>
+<div class="task"><div class="tasktop"><span>تدريب النموذج</span><b class="orange">12%</b></div><div class="track"><div class="fill" style="width:12%"></div></div></div></div>
+<div class="card"><div class="head"><b>توزيع الوكلاء</b><span>حسب المستوى</span></div><div class="ringbox"><div class="ring"><div class="ringtext"><b>1.0M</b><small>إجمالي الوكلاء</small></div></div></div><div class="item">المستوى 1 <small>12,540</small></div><div class="item">المستوى 2 <small>156,320</small></div><div class="item">المستوى 3 <small>831,140</small></div></div>
+</section>
+
+<section class="command-section">
+  <div class="command-header">
+    <div class="command-title">محرر الأوامر الذكي</div>
+    <div class="command-hint">اكتب أمرك بالعربية أو الإنجليزية — النظام سيفهم وينفذ</div>
+  </div>
+  <div class="command-input-wrap">
+    <textarea class="command-input" id="commandInput" placeholder="مثال: اجمع بيانات أمنية من StackOverflow وسجلها في HuggingFace..."></textarea>
+    <div class="command-actions">
+      <button class="btn-send" onclick="sendCommand()">⚡ تنفيذ</button>
+      <button class="btn-clear" onclick="clearCommand()">مسح</button>
+    </div>
+  </div>
+  <div class="command-examples">
+    <span class="example-chip" onclick="setCommand('اجمع بيانات أمنية')">🔒 اجمع بيانات أمنية</span>
+    <span class="example-chip" onclick="setCommand('أنشئ 50 إيميل جديد')">📧 أنشئ 50 إيميل</span>
+    <span class="example-chip" onclick="setCommand('سجل في HuggingFace')">🤗 سجل في HuggingFace</span>
+    <span class="example-chip" onclick="setCommand('شغل الوكلاء')">🤖 شغل الوكلاء</span>
+    <span class="example-chip" onclick="setCommand('اكتمل التقرير اليومي')">📊 التقرير اليومي</span>
+  </div>
+</section>
+
+<section class="terminal-section">
+  <div class="terminal-header">
+    <div class="terminal-title">طرفية النظام — System Terminal</div>
+    <div class="terminal-actions">
+      <button class="terminal-btn" onclick="clearTerminal()">مسح</button>
+      <button class="terminal-btn" onclick="refreshTerminal()">تحديث</button>
+      <button class="terminal-btn" onclick="downloadLogs()">تصدير</button>
+    </div>
+  </div>
+  <div class="terminal-body" id="terminalBody">
+    <div class="log-line"><span class="log-time">[10:30:45]</span><span class="log-msg success">✓ System initialized successfully</span></div>
+    <div class="log-line"><span class="log-time">[10:30:46]</span><span class="log-msg info">→ Loading agents configuration...</span></div>
+    <div class="log-line"><span class="log-time">[10:30:47]</span><span class="log-msg success">✓ 1,000,000 agents loaded</span></div>
+    <div class="log-line"><span class="log-time">[10:30:48]</span><span class="log-msg info">→ Connecting to cloud providers...</span></div>
+    <div class="log-line"><span class="log-time">[10:30:50]</span><span class="log-msg success">✓ Connected to 25 cloud providers</span></div>
+    <div class="log-line"><span class="log-time">[10:30:52]</span><span class="log-msg warning">⚠ Memory usage at 67%</span></div>
+    <div class="log-line"><span class="log-time">[10:30:55]</span><span class="log-msg info">→ Starting data collection...</span></div>
+    <div class="log-line"><span class="log-time">[10:31:10]</span><span class="log-msg success">✓ Collected 1,200 items from StackOverflow</span></div>
+    <div class="log-line"><span class="log-time">[10:31:15]</span><span class="log-msg success">✓ Collected 800 items from GitHub</span></div>
+    <div class="log-line"><span class="log-time">[10:31:20]</span><span class="log-msg error">✗ Failed to connect to AWS — retrying...</span></div>
+    <div class="log-line"><span class="log-time">[10:31:25]</span><span class="log-msg success">✓ AWS connected on retry</span></div>
+  </div>
+</section>
+
+<section class="bottom">
+<div class="card"><div class="head"><b>Workers المتصلة</b><span class="ok">22 متصل</span></div><div class="item">Worker-01 <small>GPU · 98ms</small></div><div class="item">Worker-02 <small>GPU · 110ms</small></div><div class="item">Worker-03 <small>CPU · 120ms</small></div><div class="item">Worker-04 <small>GPU · 115ms</small></div><div class="item">Worker-05 <small>GPU · 105ms</small></div></div>
+<div class="card"><div class="head"><b>استخدام الموارد</b><span>24 ساعة</span></div><div class="chart"><i class="bar" style="height:45%"></i><i class="bar" style="height:62%"></i><i class="bar" style="height:52%"></i><i class="bar" style="height:74%"></i><i class="bar" style="height:57%"></i><i class="bar" style="height:82%"></i><i class="bar" style="height:65%"></i><i class="bar" style="height:77%"></i><i class="bar" style="height:51%"></i><i class="bar" style="height:88%"></i><i class="bar" style="height:70%"></i><i class="bar" style="height:84%"></i><i class="bar" style="height:61%"></i><i class="bar" style="height:79%"></i><i class="bar" style="height:68%"></i><i class="bar" style="height:91%"></i></div><span class="purple">● GPU 72%</span>　<span class="cyan">● RAM 68%</span>　<span class="green">● Network 91%</span></div>
+<div class="card"><div class="head"><b>أحدث الأحداث</b><span>عرض الكل</span></div><div class="item">10:30:45　تم جمع البيانات <small class="green">●</small></div><div class="item">10:30:12　اكتمل التنظيف <small class="green">●</small></div><div class="item">10:29:48　تم تحديث الذاكرة <small class="green">●</small></div><div class="item">10:29:15　بدأ التدريب <small class="cyan">●</small></div><div class="item">10:28:33　<span style="color:#f87171">تم تبديل Worker تلقائياً</span><small>●</small></div></div>
+</section>
+<section class="card quick"><div class="head"><b>أوامر سريعة</b><span>تنفيذ مباشر</span></div><div class="buttons"><button onclick="toast('بدء جمع البيانات')">🗂️ جمع بيانات</button><button onclick="toast('بدء التنظيف')">🧹 تنظيف شامل</button><button onclick="toast('بدء التدريب')">🧠 تدريب نموذج</button><button onclick="toast('بدء الصهر')">⚛️ صهر النماذج</button><button onclick="toast('إنشاء Worker')">⚡ إنشاء Worker</button><button onclick="toast('فتح المحادثة')">💬 محادثة جديدة</button></div></section>
+</main><div class="toast" id="toast"></div>
+<script>
+function toast(x){let t=document.getElementById('toast');t.textContent=x;t.style.display='block';clearTimeout(window.x);window.x=setTimeout(()=>t.style.display='none',1800)}
+function go(e){document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));e.classList.add('active');toast(e.textContent.trim())}
+function setCommand(cmd){document.getElementById('commandInput').value=cmd;document.getElementById('commandInput').focus();}
+function clearCommand(){document.getElementById('commandInput').value='';}
+function sendCommand(){const input=document.getElementById('commandInput');const cmd=input.value.trim();if(!cmd){toast('⚠️ اكتب أمراً أولاً');return;}addTerminalLog('info','→ Executing: '+cmd);fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:cmd})}).then(r=>r.json()).then(data=>{addTerminalLog('success','✓ Completed: '+cmd.substring(0,40)+'...');toast('✓ تم التنفيذ');input.value='';}).catch(e=>{addTerminalLog('error','✗ Error: '+e.message);toast('❌ خطأ');});}
+document.getElementById('commandInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendCommand();}});
+function addTerminalLog(type,msg){const terminal=document.getElementById('terminalBody');const time=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});const line=document.createElement('div');line.className='log-line';line.innerHTML='<span class="log-time">['+time+']</span><span class="log-msg '+type+'">'+msg+'</span>';terminal.appendChild(line);terminal.scrollTop=terminal.scrollHeight;}
+function clearTerminal(){document.getElementById('terminalBody').innerHTML='';addTerminalLog('info','→ Terminal cleared');}
+function refreshTerminal(){fetch('/api/logs').then(r=>r.json()).then(data=>{const terminal=document.getElementById('terminalBody');terminal.innerHTML='';data.logs.forEach(log=>{addTerminalLog('info',log.msg);});});}
+function downloadLogs(){fetch('/api/logs').then(r=>r.json()).then(data=>{const text=data.logs.map(l=>'['+l.time+'] '+l.msg).join('\n');const blob=new Blob([text],{type:'text/plain'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='marsad-logs-'+Date.now()+'.txt';a.click();});}
+setInterval(()=>{fetch('/api/logs?limit=5').then(r=>r.json()).then(data=>{data.logs.forEach(log=>{if(!document.querySelector('[data-log="'+log.time+'-'+log.msg+'"]')){addTerminalLog('info',log.msg);}});});},5000);
+</script></body></html>

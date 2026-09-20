@@ -1,0 +1,15 @@
+Metadata-Version: 2.4
+Name: marsad-agents
+Version: 1.0.0
+Summary: Million-agent swarm with dashboard and cloud management
+Author: AbuYahyaAlalwi2
+Requires-Dist: flask
+Requires-Dist: flask-cors
+Requires-Dist: requests
+Requires-Dist: psutil
+Requires-Dist: sqlalchemy
+Requires-Dist: psycopg2-binary
+Requires-Dist: gunicorn
+Dynamic: author
+Dynamic: requires-dist
+Dynamic: summary

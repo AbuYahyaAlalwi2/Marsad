@@ -1,0 +1,310 @@
+"""
+خادم API — CYBERGUARD OS مع التشغيل التلقائي على Render
+"""
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
+import os
+import time
+import threading
+from datetime import datetime
+
+from db import init_db, get_recent_events, log_event
+from autorun import autorun
+from agents.email_agent import email_agent
+from agents.cloud_agent import cloud_agent
+from agents.api_agent import api_agent
+from agents.collector_agent import collector_agent
+from agents.merger_agent import merger_agent
+from agents.swarm_agent import swarm_agent
+from agents.smart_key_manager import smart_keys
+from chat.interface import chat
+
+app = Flask(__name__, static_folder='static')
+CORS(app)
+
+# تهيئة
+init_db()
+
+# ═══════════════════════════════════════════════════════════════
+# التشغيل التلقائي عند بدء الخادم
+# ═══════════════════════════════════════════════════════════════
+
+def auto_start():
+    """تشغيل تلقائي عند بدء الخادم"""
+    if os.environ.get('CG_AUTO_START', 'false').lower() == 'true':
+        log_event("auto_start", {"status": "triggered"})
+
+        # انتظار قصير للاستقرار
+        time.sleep(5)
+
+        # بدء الأتمتة الكاملة
+        autorun.start_full_automation()
+
+# بدء التشغيل التلقائي في خيط منفصل
+if os.environ.get('CG_AUTO_START', 'false').lower() == 'true':
+    threading.Thread(target=auto_start, daemon=True).start()
+
+
+# ═══════════════════════════════════════════════════════════════
+# الصفحات الثابتة
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/')
+def index():
+    """الصفحة الرئيسية"""
+    return send_from_directory('static', 'index.html')
+
+
+# ═══════════════════════════════════════════════════════════════
+# Dashboard API
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/status', methods=['GET'])
+def get_status():
+    """حالة النظام الكاملة"""
+    return jsonify({
+        "status": "online",
+        "timestamp": datetime.now().isoformat(),
+        "version": "3.0.0",
+        "automation": autorun.get_status(),
+        "keys": smart_keys.get_all_stats(),
+        "emails": len(email_agent.created_emails)
+    })
+
+
+# ═══════════════════════════════════════════════════════════════
+# Automation API
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/automation/start', methods=['POST'])
+def start_automation():
+    """بدء الأتمتة الكاملة"""
+    threading.Thread(target=autorun.start_full_automation, daemon=True).start()
+    return jsonify({"status": "started"})
+
+
+@app.route('/api/automation/stop', methods=['POST'])
+def stop_automation():
+    """إيقاف الأتمتة"""
+    autorun.stop()
+    return jsonify({"status": "stopped"})
+
+
+@app.route('/api/automation/status', methods=['GET'])
+def automation_status():
+    """حالة الأتمتة"""
+    return jsonify(autorun.get_status())
+
+
+# ═══════════════════════════════════════════════════════════════
+# Smart Keys API
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/keys/get', methods=['POST'])
+def get_key():
+    """الحصول على مفتاح متاح"""
+    platform = request.json.get('platform')
+    category = request.json.get('category')
+
+    result = smart_keys.get_key(platform=platform, category=category)
+    return jsonify(result)
+
+
+@app.route('/api/keys/stats', methods=['GET'])
+def keys_stats():
+    """إحصائيات المفاتيح"""
+    return jsonify(smart_keys.get_all_stats())
+
+
+@app.route('/api/keys/auto-create', methods=['POST'])
+def auto_create_keys():
+    """إنشاء حسابات تلقائياً"""
+    target = request.json.get('target_per_platform', 3)
+
+    threading.Thread(
+        target=smart_keys.auto_create_accounts,
+        args=(target,),
+        daemon=True
+    ).start()
+
+    return jsonify({"status": "started", "target": target})
+
+
+# ═══════════════════════════════════════════════════════════════
+# Quick Actions API
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/action', methods=['POST'])
+def quick_action():
+    """إجراء سريع"""
+    action = request.json.get('action')
+
+    handlers = {
+        'generate_emails': lambda: email_agent.generate_batch(50),
+        'register_clouds': lambda: cloud_agent.register_all(),
+        'register_apis': lambda: api_agent.register_all(),
+        'collect_data': lambda: collector_agent.collect("security"),
+        'merge_models': lambda: merger_agent.merge_all(),
+        'deploy_swarm': lambda: swarm_agent.deploy(10000),
+        'auto_create_keys': lambda: smart_keys.auto_create_accounts(3)
+    }
+
+    if action in handlers:
+        result = handlers[action]()
+        return jsonify({"status": "success", "action": action, "result": str(result)})
+
+    return jsonify({"status": "error", "message": "Unknown action"})
+
+
+# ═══════════════════════════════════════════════════════════════
+# Email Agent API
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/emails/generate', methods=['POST'])
+def generate_emails():
+    """إنشاء إيميلات"""
+    count = request.json.get('count', 50)
+    emails = email_agent.generate_batch(count)
+
+    return jsonify({
+        "status": "success",
+        "created": len(emails),
+        "emails": emails[:20]
+    })
+
+
+# ═══════════════════════════════════════════════════════════════
+# Cloud Agent API
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/clouds/register', methods=['POST'])
+def register_cloud():
+    """التسجيل في سحابة"""
+    cloud = request.json.get('cloud')
+    result = cloud_agent.register(cloud)
+    return jsonify(result)
+
+
+@app.route('/api/clouds/register-all', methods=['POST'])
+def register_all_clouds():
+    """التسجيل في كل السحابات"""
+    results = cloud_agent.register_all()
+    return jsonify({"status": "success", "results": results})
+
+
+# ═══════════════════════════════════════════════════════════════
+# API Agent API
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/apis/register-all', methods=['POST'])
+def register_all_apis():
+    """التسجيل في كل APIs"""
+    results = api_agent.register_all()
+    keys = api_agent.get_all_keys()
+    return jsonify({"status": "success", "results": results, "keys": keys})
+
+
+# ═══════════════════════════════════════════════════════════════
+# Collector API
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/collect', methods=['POST'])
+def collect_data():
+    """جمع البيانات"""
+    query = request.json.get('query', 'security')
+    limit = request.json.get('limit', 100)
+
+    result = collector_agent.collect(query)
+    return jsonify(result)
+
+
+@app.route('/api/collect/<collect_type>', methods=['POST'])
+def collect_by_type(collect_type):
+    """جمع حسب النوع"""
+    if collect_type == 'security':
+        result = collector_agent.collect_security()
+    elif collect_type == 'code':
+        result = collector_agent.collect_code('python')
+    else:
+        result = collector_agent.collect(collect_type)
+
+    return jsonify(result)
+
+
+# ═══════════════════════════════════════════════════════════════
+# Merger API
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/merge', methods=['POST'])
+def merge_models():
+    """صهر النماذج"""
+    result = merger_agent.merge_all()
+    return jsonify(result)
+
+
+# ═══════════════════════════════════════════════════════════════
+# Agents API
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/agents/deploy', methods=['POST'])
+def deploy_agents():
+    """نشر وكلاء"""
+    count = request.json.get('count', 1000)
+    agent_type = request.json.get('type', 'collector')
+
+    result = swarm_agent.deploy(count)
+    return jsonify(result)
+
+
+# ═══════════════════════════════════════════════════════════════
+# Terminal API
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/terminal', methods=['POST'])
+def terminal_command():
+    """تنفيذ أمر طرفية"""
+    command = request.json.get('command', '')
+
+    result = chat.handle(command)
+
+    return jsonify({
+        "status": "success",
+        "command": command,
+        "response": result.get('result', {}).get('final_output', 'Command executed'),
+        "full_result": result
+    })
+
+
+# ═══════════════════════════════════════════════════════════════
+# Logs API
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/logs', methods=['GET'])
+def get_logs():
+    """الحصول على السجلات"""
+    filter_type = request.args.get('filter', 'all')
+    limit = int(request.args.get('limit', 100))
+
+    events = get_recent_events(limit)
+
+    if filter_type != 'all':
+        events = [e for e in events if filter_type.lower() in e.get('channel', '').lower()]
+
+    logs = []
+    for e in events:
+        logs.append({
+            "timestamp": datetime.fromtimestamp(e.get('created_at', 0)).strftime('%Y-%m-%d %H:%M:%S'),
+            "channel": e.get('channel', 'unknown'),
+            "payload": e.get('payload', '{}')[:200]
+        })
+
+    return jsonify({"logs": logs})
+
+
+# ═══════════════════════════════════════════════════════════════
+# تشغيل الخادم
+# ═══════════════════════════════════════════════════════════════
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)

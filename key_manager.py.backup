@@ -1,0 +1,475 @@
+"""
+Key Manager - نظام إدارة المفاتيح
+- حفظ المفاتيح في متغيرات بيئة (مفضل)
+- حفظ المفاتيح في ملف .env
+- حفظ المفاتيح في قاعدة البيانات (مشفرة)
+"""
+import os
+import json
+import hashlib
+import sqlite3
+from pathlib import Path
+from typing import Dict, Optional, Any
+from cryptography.fernet import Fernet
+import base64
+import logging
+
+# إعداد تسجيل الأحداث
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+class KeyManager:
+    """
+    نظام إدارة المفاتيح الآمنة
+    يدعم: متغيرات بيئة، ملف .env، قاعدة بيانات مشفرة
+    """
+    
+    def __init__(self, storage_method: str = "env", db_path: str = None, encryption_key: str = None):
+        """
+        تهيئة KeyManager
+        
+        Args:
+            storage_method: طريقة حفظ المفاتيح (env, file, db)
+            db_path: مسار قاعدة البيانات (إذا كانت الطريقة db)
+            encryption_key: مفتاح التشفير (إذا كانت الطريقة db)
+        """
+        self.storage_method = storage_method
+        self.db_path = db_path
+        self.encryption_key = encryption_key or os.environ.get("CG_ENCRYPTION_KEY")
+        
+        # إذا لم يتم تحديد طريقة، استخدم متغيرات بيئة
+        if not storage_method:
+            self.storage_method = os.environ.get("CG_KEY_STORAGE", "env")
+        
+        # إذا كانت الطريقة db، تأكد من وجود مفتاح التشفير
+        if self.storage_method == "db" and not self.encryption_key:
+            raise ValueError("Encryption key required for database storage method")
+        
+        # إنشاء مفتاح تشفير افتراضي إذا لم يتم تحديد
+        if self.storage_method == "db" and len(self.encryption_key) < 32:
+            self.encryption_key = self._generate_encryption_key()
+            logger.warning("Generated new encryption key. Please save it in CG_ENCRYPTION_KEY environment variable")
+        
+        # إنشاء ملف .env إذا لم يوجد
+        if self.storage_method == "file":
+            self._ensure_env_file()
+    
+    def _generate_encryption_key(self) -> str:
+        """إنشاء مفتاح تشفير عشوائي"""
+        return Fernet.generate_key().decode()
+    
+    def _ensure_env_file(self):
+        """تأكد من وجود ملف .env"""
+        env_path = Path(".env")
+        if not env_path.exists():
+            env_path.touch()
+            logger.info("Created .env file")
+    
+    def _get_fernet(self) -> Fernet:
+        """الحصول على كائن Fernet للتشفير"""
+        if not self.encryption_key:
+            raise ValueError("Encryption key not set")
+        return Fernet(self.encryption_key.encode())
+    
+    # ==================== طرق الحصول على المفاتيح ====================
+    
+    def get_key(self, key_name: str, default: Optional[str] = None) -> Optional[str]:
+        """
+        الحصول على مفتاح من طريقة الحفظ المحددة
+        
+        Args:
+            key_name: اسم المفتاح
+            default: قيمة افتراضية إذا لم يوجد
+            
+        Returns:
+            قيمة المفتاح أو None
+        """
+        if self.storage_method == "env":
+            return self._get_key_from_env(key_name, default)
+        elif self.storage_method == "file":
+            return self._get_key_from_file(key_name, default)
+        elif self.storage_method == "db":
+            return self._get_key_from_db(key_name, default)
+        else:
+            raise ValueError(f"Unknown storage method: {self.storage_method}")
+    
+    def _get_key_from_env(self, key_name: str, default: Optional[str] = None) -> Optional[str]:
+        """الحصول على المفتاح من متغيرات البيئه"""
+        return os.environ.get(key_name, default)
+    
+    def _get_key_from_file(self, key_name: str, default: Optional[str] = None) -> Optional[str]:
+        """الحصول على المفتاح من ملف .env"""
+        try:
+            from dotenv import dotenv_values
+            env_vars = dotenv_values(".env")
+            return env_vars.get(key_name, default)
+        except ImportError:
+            logger.error("python-dotenv not installed. Install with: pip install python-dotenv")
+            return default
+    
+    def _get_key_from_db(self, key_name: str, default: Optional[str] = None) -> Optional[str]:
+        """الحصول على المفتاح من قاعدة البيانات (مشفرة)"""
+        if not self.db_path:
+            logger.error("Database path not set")
+            return default
+        
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # إنشاء جدول المفاتيح إذا لم يوجد
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS api_keys (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    key_name TEXT UNIQUE NOT NULL,
+                    encrypted_value TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            # الحصول على المفتاح المشفر
+            cursor.execute("SELECT encrypted_value FROM api_keys WHERE key_name = ?", (key_name,))
+            result = cursor.fetchone()
+            
+            if result:
+                encrypted_value = result[0]
+                fernet = self._get_fernet()
+                decrypted_value = fernet.decrypt(encrypted_value.encode()).decode()
+                return decrypted_value
+            
+            return default
+            
+        except Exception as e:
+            logger.error(f"Error getting key from database: {e}")
+            return default
+        finally:
+            if conn:
+                conn.close()
+    
+    # ==================== طرق حفظ المفاتيح ====================
+    
+    def set_key(self, key_name: str, key_value: str) -> bool:
+        """
+        حفظ مفتاح باستخدام طريقة الحفظ المحددة
+        
+        Args:
+            key_name: اسم المفتاح
+            key_value: قيمة المفتاح
+            
+        Returns:
+            True إذا نجح، False إذا فشل
+        """
+        if self.storage_method == "env":
+            logger.warning("Cannot set environment variable at runtime. Use export or .env file")
+            return False
+        elif self.storage_method == "file":
+            return self._set_key_in_file(key_name, key_value)
+        elif self.storage_method == "db":
+            return self._set_key_in_db(key_name, key_value)
+        else:
+            raise ValueError(f"Unknown storage method: {self.storage_method}")
+    
+    def _set_key_in_file(self, key_name: str, key_value: str) -> bool:
+        """حفظ المفتاح في ملف .env"""
+        try:
+            env_path = Path(".env")
+            
+            # قراءة الملف الحالي
+            env_lines = []
+            if env_path.exists():
+                with open(env_path, 'r') as f:
+                    env_lines = f.readlines()
+            
+            # تحديث أو إضافة المفتاح
+            found = False
+            new_lines = []
+            for line in env_lines:
+                if line.startswith(f"{key_name}="):
+                    new_lines.append(f"{key_name}={key_value}\n")
+                    found = True
+                else:
+                    new_lines.append(line)
+            
+            if not found:
+                new_lines.append(f"{key_name}={key_value}\n")
+            
+            # كتابة الملف
+            with open(env_path, 'w') as f:
+                f.writelines(new_lines)
+            
+            logger.info(f"Saved key {key_name} to .env file")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error saving key to .env file: {e}")
+            return False
+    
+    def _set_key_in_db(self, key_name: str, key_value: str) -> bool:
+        """حفظ المفتاح في قاعدة البيانات (مشفرة)"""
+        if not self.db_path:
+            logger.error("Database path not set")
+            return False
+        
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # إنشاء جدول المفاتيح إذا لم يوجد
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS api_keys (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    key_name TEXT UNIQUE NOT NULL,
+                    encrypted_value TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            # تشفير قيمة المفتاح
+            fernet = self._get_fernet()
+            encrypted_value = fernet.encrypt(key_value.encode()).decode()
+            
+            # تحديث أو إضافة المفتاح
+            cursor.execute("""
+                INSERT OR REPLACE INTO api_keys (key_name, encrypted_value, updated_at)
+                VALUES (?, ?, CURRENT_TIMESTAMP)
+            """, (key_name, encrypted_value))
+            
+            conn.commit()
+            logger.info(f"Saved key {key_name} to database (encrypted)")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error saving key to database: {e}")
+            conn.rollback()
+            return False
+        finally:
+            if conn:
+                conn.close()
+    
+    # ==================== طرق حذف المفاتيح ====================
+    
+    def delete_key(self, key_name: str) -> bool:
+        """
+        حذف مفتاح من طريقة الحفظ المحددة
+        
+        Args:
+            key_name: اسم المفتاح
+            
+        Returns:
+            True إذا نجح، False إذا فشل
+        """
+        if self.storage_method == "env":
+            logger.warning("Cannot delete environment variable at runtime")
+            return False
+        elif self.storage_method == "file":
+            return self._delete_key_from_file(key_name)
+        elif self.storage_method == "db":
+            return self._delete_key_from_db(key_name)
+        else:
+            raise ValueError(f"Unknown storage method: {self.storage_method}")
+    
+    def _delete_key_from_file(self, key_name: str) -> bool:
+        """حذف المفتاح من ملف .env"""
+        try:
+            env_path = Path(".env")
+            
+            if not env_path.exists():
+                return False
+            
+            with open(env_path, 'r') as f:
+                lines = f.readlines()
+            
+            new_lines = [line for line in lines if not line.startswith(f"{key_name}=")]
+            
+            with open(env_path, 'w') as f:
+                f.writelines(new_lines)
+            
+            logger.info(f"Deleted key {key_name} from .env file")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error deleting key from .env file: {e}")
+            return False
+    
+    def _delete_key_from_db(self, key_name: str) -> bool:
+        """حذف المفتاح من قاعدة البيانات"""
+        if not self.db_path:
+            logger.error("Database path not set")
+            return False
+        
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute("DELETE FROM api_keys WHERE key_name = ?", (key_name,))
+            conn.commit()
+            
+            if cursor.rowcount > 0:
+                logger.info(f"Deleted key {key_name} from database")
+                return True
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error deleting key from database: {e}")
+            conn.rollback()
+            return False
+        finally:
+            if conn:
+                conn.close()
+    
+    # ==================== طرق قائمة المفاتيح ====================
+    
+    def list_keys(self) -> Dict[str, str]:
+        """
+        قائمة بجميع المفاتيح المحفوظة
+        
+        Returns:
+            قاموس باسم المفتاح وقيمته (إذا كانت الطريقة file أو db)
+        """
+        if self.storage_method == "env":
+            # لا يمكن قائمة جميع متغيرات البيئة
+            return {}
+        elif self.storage_method == "file":
+            return self._list_keys_from_file()
+        elif self.storage_method == "db":
+            return self._list_keys_from_db()
+        else:
+            raise ValueError(f"Unknown storage method: {self.storage_method}")
+    
+    def _list_keys_from_file(self) -> Dict[str, str]:
+        """قائمة المفاتيح من ملف .env"""
+        try:
+            from dotenv import dotenv_values
+            return dotenv_values(".env")
+        except ImportError:
+            logger.error("python-dotenv not installed")
+            return {}
+    
+    def _list_keys_from_db(self) -> Dict[str, str]:
+        """قائمة المفاتيح من قاعدة البيانات"""
+        if not self.db_path:
+            logger.error("Database path not set")
+            return {}
+        
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute("SELECT key_name FROM api_keys")
+            results = cursor.fetchall()
+            
+            keys = {row[0]: "***ENCRYPTED***" for row in results}
+            return keys
+            
+        except Exception as e:
+            logger.error(f"Error listing keys from database: {e}")
+            return {}
+        finally:
+            if conn:
+                conn.close()
+    
+    # ==================== طرق فحص المفاتيح ====================
+    
+    def validate_key(self, key_name: str, key_value: str) -> bool:
+        """
+        فحص صحة المفتاح
+        
+        Args:
+            key_name: اسم المفتاح
+            key_value: قيمة المفتاح
+            
+        Returns:
+            True إذا كان المفتاح صالحًا
+        """
+        # قائمة مزودي API الذين يمكن فحص مفاتيحهم
+        validators = {
+            "GOOGLE_API_KEY": self._validate_google_key,
+            "GITHUB_TOKEN": self._validate_github_token,
+            "HF_TOKEN": self._validate_hf_token,
+            "MISTRAL_API_KEY": self._validate_mistral_key,
+            "GROQ_API_KEY": self._validate_groq_key,
+        }
+        
+        validator = validators.get(key_name)
+        if validator:
+            return validator(key_value)
+        
+        # إذا لم يوجد فاحص معين، افترض أنه صالح
+        return True
+    
+    def _validate_google_key(self, api_key: str) -> bool:
+        """فحص مفتاح Google API"""
+        try:
+            import requests
+            url = "https://generativelanguage.googleapis.com/v1beta/models"
+            params = {"key": api_key}
+            response = requests.get(url, params=params, timeout=5)
+            return response.status_code == 200
+        except:
+            return False
+    
+    def _validate_github_token(self, token: str) -> bool:
+        """فحص token GitHub"""
+        try:
+            import requests
+            url = "https://api.github.com/user"
+            headers = {"Authorization": f"token {token}"}
+            response = requests.get(url, headers=headers, timeout=5)
+            return response.status_code == 200
+        except:
+            return False
+    
+    def _validate_hf_token(self, token: str) -> bool:
+        """فحص token Hugging Face"""
+        try:
+            import requests
+            url = "https://api-inference.huggingface.co/models"
+            headers = {"Authorization": f"Bearer {token}"}
+            response = requests.get(url, headers=headers, timeout=5)
+            return response.status_code == 200
+        except:
+            return False
+    
+    def _validate_mistral_key(self, api_key: str) -> bool:
+        """فحص مفتاح Mistral API"""
+        try:
+            import requests
+            url = "https://api.mistral.ai/v1/models"
+            headers = {"Authorization": f"Bearer {api_key}"}
+            response = requests.get(url, headers=headers, timeout=5)
+            return response.status_code == 200
+        except:
+            return False
+    
+    def _validate_groq_key(self, api_key: str) -> bool:
+        """فحص مفتاح Groq API"""
+        try:
+            import requests
+            url = "https://api.groq.com/openai/v1/models"
+            headers = {"Authorization": f"Bearer {api_key}"}
+            response = requests.get(url, headers=headers, timeout=5)
+            return response.status_code == 200
+        except:
+            return False
+
+
+# كائن عالمي
+key_manager = KeyManager()
+
+
+def get_key(key_name: str, default: Optional[str] = None) -> Optional[str]:
+    """دالة مختصرة للحصول على مفتاح"""
+    return key_manager.get_key(key_name, default)
+
+
+def set_key(key_name: str, key_value: str) -> bool:
+    """دالة مختصرة لحفظ مفتاح"""
+    return key_manager.set_key(key_name, key_value)
+
+
+def validate_key(key_name: str, key_value: str) -> bool:
+    """دالة مختصرة لفحص مفتاح"""
+    return key_manager.validate_key(key_name, key_value)

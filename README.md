@@ -1,66 +1,94 @@
-# مرصد (Marsad) — مركز قيادة وكلاء الذكاء الاصطناعي
+# 🛡️ CYBERGUARD OS
 
-الاسم الجديد بدل Delfin / Dolphin OS. **مرصد** لأن وظيفة النظام الأساسية
-هي المراقبة والتنسيق بين وكلاء متعددين — والشعار (نبضة رادار بعقد ملوّنة
-حولها) يعبّر عن هذا مباشرة: مركز يراقب مجموعات وكلاء متفرّقة.
+نظام سيبراني ذاتي — جمع، تنظيف، توليد، صهر، تنفيذ
 
-## ما الذي يحتويه هذا المستودع
+## الميزات
 
-هيكل أساسي فعلي (مو تصميم نظري فقط) يطبّق أهم ما اتُّفق عليه في مراحل
-التخطيط السابقة:
+- **النواة الذاتية**: بدون Gemini، لا رفض، لا تغيير مسار
+- **الذاكرة المتطايرة**: تدريب ورفع تلقائي عند الحد
+- **مليون وكيل**: تسلسل هرمي + سحابات متعددة
+- **الصهر البرمجي**: Qwen Coder + DeepSeek + CodeLlama + Kimi K3
+- **مزودو API**: 18+ مزود LLM و Code و Embeddings
+- **Datasets**: 15+ منصة بيانات جاهزة
+- **واجهة مرنة**: أوامر معقدة، اختصارات، سياق محادثة
 
-- **`app/db.py`** — تخزين دائم SQLite (بدل `st.session_state` المؤقت).
-  الـ dedup الحرفي مطبَّق تلقائياً عبر `UNIQUE` على عمود `sha256`.
-- **`app/filters.py`** — بوابة الجودة: كشف أسرار (regex + إنتروبيا)،
-  كشف PII، تحقق ترخيص (allowlist، الافتراضي رفض)، تشابه شبه مطابق،
-  فلتر جودة بسيط.
-- **`app/sandbox.py`** — تنفيذ الكود داخل Docker معزول تماماً:
-  `--network=none`, `--memory=256m`, `--cpus=0.5`, `--pids-limit=64`,
-  `--cap-drop=ALL`, `--security-opt no-new-privileges`, `--read-only`,
-  مهلة 10 ثوانٍ صارمة بدون grace period.
-- **`app/robots_check.py`** — فحص `robots.txt` قبل أي جمع.
-- **`app/gemini_supervisor.py`** — يحوّل أوامر Supervisor Chat إلى خطة
-  JSON فقط، لا ينفّذ شيئاً تلقائياً — يحتاج موافقة من الداشبورد.
-- **`app/main.py`** — الداشبورد: خريطة الوكلاء كعقد (Graphviz) بدل
-  قوائم نصية، Mission Control لإنشاء مجموعات، بوابة اختبار عينات يدوية،
-  وسجل أحداث.
+## البنية
 
-## ما هو **غير** مبني بعد (يحتاج عملاً إضافياً)
-
-- وكلاء الجمع/التصفح الفعليين (Data Scraper, Code Harvester) — الملفات
-  الحالية توفر البنية التحتية (تخزين، فلترة، sandbox) التي يستدعيها
-  هؤلاء الوكلاء، لا الزحف الفعلي نفسه.
-- الرفع التلقائي إلى Hugging Face — يُضاف كوحدة منفصلة تماماً عن
-  sandbox التنفيذ (لا تفتح شبكة على نفس الحاوية المعزولة).
-- Redis Event Bus — الأحداث حالياً تُسجَّل في SQLite مباشرة (`events`
-  table)، وهذا كافٍ لحجم صغير؛ Redis يُضاف لاحقاً عند الحاجة فعلياً
-  للتزامن بين عدة عمليات متوازية.
-
-## التشغيل محلياً
-
-```bash
-cp .env.example .env    # واملأ GOOGLE_API_KEY
-pip install -r requirements.txt
-streamlit run app/main.py
+```
+cyberguard-os/
+├── core/                 # النواة الذاتية
+│   ├── brain.py          # العقل
+│   ├── memory.py         # الذاكرة المتطايرة
+│   ├── learner.py        # التعلم الآلي
+│   └── executor.py       # المنفذ (لا رفض)
+├── merge/                # الصهر
+│   ├── omni_merger.py    # الصهر الشامل
+│   ├── lora_delta.py     # LoRA deltas
+│   └── conditional_merge.py
+├── agents/               # الوكلاء
+│   ├── hierarchy.py      # مليون وكيل
+│   └── parasite.py       # الوكلاء المتطفلون
+├── collect/              # الجمع
+│   ├── multi_platform.py # جمع الأكواد
+│   ├── datasets.py       # جمع datasets
+│   ├── cleaner.py        # التنظيف
+│   └── regenerator.py    # إعادة التوليد
+├── providers/            # مزودو API
+│   ├── llm_providers.py  # LLM APIs
+│   ├── code_providers.py # Code APIs
+│   └── embedding_providers.py
+├── plugins/              # الإضافات
+│   ├── hooks.py          # نظام الخطافات
+│   └── loader.py         # محمل الإضافات
+└── chat/                 # الشات
+    ├── interface.py      # الواجهة الرئيسية
+    ├── advanced_parser.py # المحلل المتقدم
+    ├── context.py        # سياق المحادثة
+    └── commands.py       # سجل الأوامر
 ```
 
-يحتاج Docker مثبّتاً ومتاحاً محلياً حتى تعمل ميزة الـ sandbox فعلياً
-(بدون Docker، الميزة ترفض بأمان بدل ادّعاء نجاح — انظر `sandbox.py`).
+## النشر على Google Cloud
 
-## النشر على Render / Railway
+### 1. إنشاء مشروع
 
-1. ارفع هذا المستودع إلى GitHub.
-2. من Render/Railway: New → Web Service → اختر المستودع.
-3. اختر **Docker** كطريقة البناء (يقرأ `Dockerfile` تلقائياً).
-4. أضف متغير البيئة `GOOGLE_API_KEY` من لوحة الإعدادات (Secrets)، لا
-   داخل الكود أبداً.
-5. **مهم لميزة الـ sandbox:** تأكد أن خطة الاستضافة تسمح بتشغيل Docker
-   داخل الحاوية نفسها (docker-in-docker) أو أن socket الخاص بـ Docker
-   مرفق — بعض الخطط المجانية لا تدعم هذا؛ تحقق من توثيق المنصة قبل
-   الاعتماد الكامل على هذه الميزة في الإنتاج.
+```bash
+gcloud projects create cyberguard-os
+gcloud config set project cyberguard-os
+```
 
-## الأمان — لا تنسَ
+### 2. تفعيل الخدمات
 
-- لا ترفع ملف `.env` إلى GitHub (موجود في `.gitignore` مسبقاً).
-- أي عينة تجتاز sandbox تبقى بحالة `pending_review` ولا تدخل التدريب
-  إلا بعد موافقة بشرية صريحة — هذا مقصود، لا تُزل هذا القيد.
+```bash
+gcloud services enable appengine.googleapis.com
+gcloud services enable cloudbuild.googleapis.com
+```
+
+### 3. إعداد GitHub Actions
+
+في GitHub → Settings → Secrets → Actions، أضف:
+- `GCP_SA_KEY`: مفتاح حساب الخدمة (Service Account Key)
+
+### 4. النشر التلقائي
+
+كل push إلى `main` ينشر تلقائياً على Google Cloud.
+
+## التشغيل المحلي
+
+```bash
+pip install -r requirements.txt
+streamlit run main.py
+```
+
+## متغيرات البيئة
+
+| المتغير | الوصف |
+|---------|-------|
+| `GOOGLE_API_KEY` | مفتاح Gemini (اختياري) |
+| `GROQ_API_KEY` | مفتاح Groq |
+| `HF_TOKEN` | مفتاح HuggingFace |
+| `CG_MEMORY_MAX_GB` | حد الذاكرة (افتراضي: 10) |
+| `CG_MAX_AGENTS` | عدد الوكلاء (افتراضي: 1000000) |
+
+## الرخصة
+
+Apache-2.0 — استخدم بمسؤولية.

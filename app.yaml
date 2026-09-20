@@ -1,0 +1,17 @@
+runtime: python311
+
+instance_class: F1
+
+automatic_scaling:
+  min_instances: 1
+  max_instances: 10
+
+env_variables:
+  CG_PLATFORM: "gcp"
+  CG_DB_PATH: "/tmp/cyberguard.db"
+
+handlers:
+- url: /.*
+  script: auto
+
+entrypoint: streamlit run main.py --server.port=$PORT --server.address=0.0.0.0
