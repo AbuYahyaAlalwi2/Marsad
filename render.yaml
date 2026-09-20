@@ -2,40 +2,25 @@ services:
   - type: web
     name: marsad-dashboard
     env: python
+    plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: streamlit run dashboard.py --server.port=$PORT --server.address=0.0.0.0 --server.enableXsrfProtection=false --server.enableCORS=false --server.headless=true
+    startCommand: python3 dashboard_api.py
     envVars:
       - key: CG_DB_PATH
         value: /tmp/cyberguard.db
       - key: CG_PLATFORM
         value: render
-      - key: CG_ENABLE_KEEP_ALIVE
+      - key: CG_NO_BROWSER
+        value: "true"
+      - key: CG_NO_AUTOSTART
         value: "false"
       - key: CG_ENABLE_VPN
         value: "false"
-      - key: CG_ENABLE_PROXY
+      - key: CG_CLOUD_AUTO_PROVISION
         value: "false"
-      - key: CG_ENABLE_EXPLOIT_GEN
-        value: "false"
-      - key: CG_ENABLE_DARKWEB
-        value: "false"
-      - key: CG_KEY_STORAGE
-        value: env
-      - key: CG_MAX_AGENTS
-        value: "100"
-      - key: CG_HIERARCHY_LEVELS
-        value: "4"
-      - key: CG_AGENTS_PER_SUPERVISOR
-        value: "10"
-      - key: CG_WORKERS_PER_SUPERVISOR
-        value: "2"
-      - key: CG_AGENTS_PER_WORKER
-        value: "10"
-      - key: CG_DUPLICATE_CHECK
-        value: "true"
+      - key: PORT
+        value: "10000"
       - key: PYTHONUNBUFFERED
         value: "1"
-      - key: STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION
-        value: "false"
-      - key: STREAMLIT_SERVER_ENABLE_CORS
-        value: "false"
+      - key: PYTHON_VERSION
+        value: "3.11.0"
