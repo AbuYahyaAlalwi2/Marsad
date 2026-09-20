@@ -1,0 +1,27 @@
+# Fly.io Worker Node
+app = "marsad-worker"
+primary_region = "iad"
+
+[build]
+  image = "python:3.11-slim"
+
+[env]
+  CG_CONTROL_PLANE_URL = "https://marsad-dashboard.onrender.com"
+  CG_CLOUD_PROVIDER = "fly"
+  CG_WORKER_CAPACITY = "10000"
+  CG_REGION = "auto"
+
+[[services]]
+  internal_port = 8080
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+[experimental]
+  auto_rollback = true

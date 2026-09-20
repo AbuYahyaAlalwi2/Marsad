@@ -439,6 +439,82 @@ def api_email_pool_expand():
         return jsonify({"error": str(e)}), 500
 
 
+
+
+# ============================================================
+# Distributed Workers API
+# ============================================================
+
+@app.route("/api/worker/register", methods=["POST"])
+def api_worker_register():
+    try:
+        from distributed_manager import distributed_manager
+        data = request.json or {}
+        return jsonify(distributed_manager.register_worker(
+            node_id=data.get("node_id", "unknown"),
+            provider=data.get("provider", "unknown"),
+            region=data.get("region", "auto"),
+            endpoint=data.get("endpoint", ""),
+            capacity=data.get("capacity", 10000),
+        ))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/worker/heartbeat", methods=["POST"])
+def api_worker_heartbeat():
+    try:
+        from distributed_manager import distributed_manager
+        data = request.json or {}
+        return jsonify(distributed_manager.heartbeat(
+            node_id=data.get("node_id", "unknown"),
+            cpu=data.get("cpu", 0),
+            ram=data.get("ram", 0),
+            active_agents=data.get("active_agents", 0),
+            queue_size=data.get("queue_size", 0),
+        ))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/distributed/status")
+def api_distributed_status():
+    try:
+        from distributed_manager import distributed_manager
+        return jsonify(distributed_manager.status())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/distributed/workers")
+def api_distributed_workers():
+    try:
+        from distributed_manager import distributed_manager
+        return jsonify({"workers": distributed_manager.list_workers()})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
+
+@app.route("/api/master/plan")
+def api_master_plan():
+    try:
+        from master_deploy import master_deployer
+        return jsonify(master_deployer.plan())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/master/status")
+def api_master_status():
+    try:
+        from master_deploy import master_deployer
+        return jsonify(master_deployer.status())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "service": "marsad-dashboard"})

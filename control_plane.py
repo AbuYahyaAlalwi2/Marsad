@@ -70,6 +70,13 @@ class ControlPlane:
             logger.info("[Control] Email Pool started")
         except Exception as e:
             logger.warning(f"[Control] Email Pool failed: {e}")
+        # Distributed Manager: workers across clouds
+        try:
+            from distributed_manager import distributed_manager
+            distributed_manager.start_watchdog()
+            logger.info("[Control] Distributed Manager started")
+        except Exception as e:
+            logger.warning(f"[Control] Distributed Manager failed: {e}")
 
         t = threading.Thread(target=self._main_loop, daemon=True)
         t.start()
@@ -99,6 +106,11 @@ class ControlPlane:
         try:
             from email_pool import email_pool
             email_pool.stop()
+        except Exception:
+            pass
+        try:
+            from distributed_manager import distributed_manager
+            distributed_manager.stop_watchdog()
         except Exception:
             pass
         for t in self._threads:
@@ -144,6 +156,8 @@ class ControlPlane:
             "cloud_unifier": (lambda: __import__("cloud_unifier").cloud_unifier.status())(),
             "auto_scaler": (lambda: __import__("auto_scaler").auto_scaler.status())(),
             "email_pool": (lambda: __import__("email_pool").email_pool.stats())(),
+            "distributed": (lambda: __import__("distributed_manager").distributed_manager.status())(),
+            "master_deploy": (lambda: __import__("master_deploy").master_deployer.status())(),
             "cloud_health": {
                 "weak": len(cloud_health.list_weak()),
                 "healthy": len(cloud_health.list_healthy()),

@@ -280,6 +280,25 @@ async function loadEmailPool() {
     } catch (e) { console.error(e); }
 }
 
+
+// ----------------------------------------------------------
+// Distributed Workers
+// ----------------------------------------------------------
+async function loadDistributed() {
+    try {
+        const r = await fetch(`${API}/distributed/status`);
+        const data = await r.json();
+        setText("dw-online", fmt(data.online_workers || 0));
+        setText("dw-capacity", fmt(data.total_capacity || 0));
+        setText("dw-active", fmt(data.active_agents || 0));
+    } catch (e) { console.error(e); }
+    try {
+        const r = await fetch(`${API}/master/plan`);
+        const data = await r.json();
+        setText("dw-target", fmt(data.target_agents || 1000000));
+    } catch (e) { console.error(e); }
+}
+
 // ----------------------------------------------------------
 // Charts
 // ----------------------------------------------------------
@@ -371,6 +390,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loadTodayMetrics();
     loadScaler();
     loadEmailPool();
+    loadDistributed();
 
     setInterval(loadStatus, 5000);
     setInterval(loadTasks, 10000);
@@ -379,6 +399,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setInterval(loadTodayMetrics, 15000);
     setInterval(loadScaler, 30000);
     setInterval(loadEmailPool, 20000);
+    setInterval(loadDistributed, 30000);
     setInterval(tickActivity, 2000);
 
     document.querySelectorAll(".nav-item").forEach(el => {
