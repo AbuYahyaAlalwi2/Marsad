@@ -92,6 +92,13 @@ class ControlPlane:
             logger.info(f"[Control] Cloud Unifier registered: {r} | Total: {c}")
         except Exception as e:
             logger.warning(f"[Control] Cloud Unifier registration failed: {e}")
+        # Auto-Deployer: scales workers across clouds automatically
+        try:
+            from auto_deployer import auto_deployer
+            auto_deployer.start()
+            logger.info("[Control] Auto-Deployer started")
+        except Exception as e:
+            logger.warning(f"[Control] Auto-Deployer failed: {e}")
 
         t = threading.Thread(target=self._main_loop, daemon=True)
         t.start()
@@ -131,6 +138,11 @@ class ControlPlane:
         try:
             from million_runtime import million_runtime
             million_runtime.stop()
+        except Exception:
+            pass
+        try:
+            from auto_deployer import auto_deployer
+            auto_deployer.stop()
         except Exception:
             pass
         for t in self._threads:

@@ -317,6 +317,22 @@ async function loadMillion() {
     } catch (e) { console.error(e); }
 }
 
+
+// ----------------------------------------------------------
+// Auto-Deployer
+// ----------------------------------------------------------
+async function loadDeployer() {
+    try {
+        const r = await fetch(`${API}/deployer/status`);
+        const data = await r.json();
+        setText("dp-mode", data.dry_run ? "تجربة (Dry Run)" : "نشط");
+        setText("dp-workers", fmt(data.total_workers || 0));
+        setText("dp-capacity", fmt(data.total_capacity_agents || 0));
+        const maxW = Object.values(data.providers_max || {}).reduce((a, b) => a + b, 0);
+        setText("dp-max", fmt(maxW * 10000));
+    } catch (e) { console.error(e); }
+}
+
 // ----------------------------------------------------------
 // Charts
 // ----------------------------------------------------------
@@ -410,6 +426,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loadEmailPool();
     loadDistributed();
     loadMillion();
+    loadDeployer();
 
     setInterval(loadStatus, 5000);
     setInterval(loadTasks, 10000);
@@ -420,6 +437,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setInterval(loadEmailPool, 20000);
     setInterval(loadDistributed, 30000);
     setInterval(loadMillion, 5000);
+    setInterval(loadDeployer, 30000);
     setInterval(tickActivity, 2000);
 
     document.querySelectorAll(".nav-item").forEach(el => {

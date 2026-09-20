@@ -534,6 +534,39 @@ def api_million_status():
         return jsonify({"error": str(e)}), 500
 
 
+
+
+@app.route("/api/deployer/status")
+def api_deployer_status():
+    try:
+        from auto_deployer import auto_deployer
+        return jsonify(auto_deployer.status())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/deployer/history")
+def api_deployer_history():
+    try:
+        from auto_deployer import auto_deployer
+        return jsonify({"history": auto_deployer.history(20)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/deployer/force", methods=["POST"])
+def api_deployer_force():
+    try:
+        from auto_deployer import auto_deployer
+        data = request.json or {}
+        return jsonify(auto_deployer.force_scale(
+            provider=data.get("provider", "fly"),
+            count=data.get("count", 10),
+        ))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "service": "marsad-dashboard"})
