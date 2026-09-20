@@ -209,6 +209,7 @@ def safe_status():
         "sources_count": sources_count,
         "auto_scaler": (lambda: __import__("auto_scaler").auto_scaler.status())(),
         "email_pool": (lambda: __import__("email_pool").email_pool.stats())(),
+        "million_runtime": (lambda: __import__("million_runtime").million_runtime.status())(),
         "storage_bytes": storage_bytes,
         "today": today_metrics,
     }
@@ -511,6 +512,17 @@ def api_master_status():
     try:
         from master_deploy import master_deployer
         return jsonify(master_deployer.status())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
+
+@app.route("/api/million/status")
+def api_million_status():
+    try:
+        from million_runtime import million_runtime
+        return jsonify(million_runtime.status())
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

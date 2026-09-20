@@ -79,7 +79,9 @@ function applyStatus(data) {
     }
 
     // KPI
-    setText("kpi-agents", fmt(data.agents?.total || 0));
+    const mrTotal = data.million_runtime?.total_agents || 0;
+    const dbTotal = data.agents?.total || 0;
+    setText("kpi-agents", fmt(Math.max(mrTotal, dbTotal)));
     setText("kpi-cloud", fmt(data.cloud_stats?.total || 0));
     setText("kpi-sources", fmt(data.sources_count || 0));
     setText("kpi-tasks", fmt(data.tasks?.total || 0));
@@ -299,6 +301,22 @@ async function loadDistributed() {
     } catch (e) { console.error(e); }
 }
 
+
+// ----------------------------------------------------------
+// Million Runtime (1M agents)
+// ----------------------------------------------------------
+async function loadMillion() {
+    try {
+        const r = await fetch(`${API}/million/status`);
+        const data = await r.json();
+        setText("mr-total", fmt(data.total_agents || 0));
+        setText("mr-working", fmt(data.states_sampled?.working || 0));
+        setText("mr-learning", fmt(data.states_sampled?.learning || 0));
+        setText("mr-memory", (data.memory_mb || 0).toFixed(2) + " MB");
+        setText("mr-ticks", fmt(data.ticks || 0));
+    } catch (e) { console.error(e); }
+}
+
 // ----------------------------------------------------------
 // Charts
 // ----------------------------------------------------------
@@ -391,6 +409,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loadScaler();
     loadEmailPool();
     loadDistributed();
+    loadMillion();
 
     setInterval(loadStatus, 5000);
     setInterval(loadTasks, 10000);
@@ -400,6 +419,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setInterval(loadScaler, 30000);
     setInterval(loadEmailPool, 20000);
     setInterval(loadDistributed, 30000);
+    setInterval(loadMillion, 5000);
     setInterval(tickActivity, 2000);
 
     document.querySelectorAll(".nav-item").forEach(el => {

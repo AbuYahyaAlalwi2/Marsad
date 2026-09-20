@@ -77,6 +77,13 @@ class ControlPlane:
             logger.info("[Control] Distributed Manager started")
         except Exception as e:
             logger.warning(f"[Control] Distributed Manager failed: {e}")
+        # Million Runtime: 1M logical agents in memory
+        try:
+            from million_runtime import million_runtime
+            million_runtime.start()
+            logger.info("[Control] Million Runtime started")
+        except Exception as e:
+            logger.warning(f"[Control] Million Runtime failed: {e}")
 
         t = threading.Thread(target=self._main_loop, daemon=True)
         t.start()
@@ -111,6 +118,11 @@ class ControlPlane:
         try:
             from distributed_manager import distributed_manager
             distributed_manager.stop_watchdog()
+        except Exception:
+            pass
+        try:
+            from million_runtime import million_runtime
+            million_runtime.stop()
         except Exception:
             pass
         for t in self._threads:
