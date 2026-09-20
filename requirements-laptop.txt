@@ -1,0 +1,62 @@
+# ============================================================
+# CYBERGUARD OS - Requirements for LAPTOP/DESKTOP
+# (كل المكتبات اللي تشتغل على ويندوز/ماك/لينكس)
+# ============================================================
+
+# --- Core Framework ---
+streamlit>=1.38.0
+flask>=3.0.0
+flask-cors>=4.0.0
+gunicorn>=21.0.0
+
+# --- HTTP & APIs ---
+requests>=2.32.0
+huggingface_hub>=0.24.0
+
+# --- System Monitoring ---
+psutil>=5.9.0
+
+# --- Data ---
+plotly>=5.18.0
+pandas>=2.0.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+pyyaml>=6.0.0
+
+# --- Task Queue ---
+huey>=2.6.0
+flashq>=0.2.2
+
+# --- Cloud Abstraction ---
+apache-libcloud>=3.9.1
+
+# --- Security ---
+cryptography>=42.0.0
+python-dotenv>=1.0.0
+
+# --- Model Merging (LAPTOP ONLY) ---
+mergekit>=0.1.4
+torch>=2.0.0
+transformers>=4.40.0
+
+# --- Sandbox (LAPTOP) ---
+daytona-sdk>=0.11.2
+
+# --- Critic ---
+pydantic-ai>=1.0.0
+
+# --- VPN ---
+proxy2vpn>=0.17.0
+
+# --- Auto-Scaling ---
+vimana>=0.2.0
+
+# --- Browser Automation ---
+playwright>=1.40.0
+selenium>=4.15.0
+fake-useragent>=1.4.0
+
+# --- Code Quality ---
+pylint>=3.0.0
+black>=24.0.0
+isort>=5.13.0

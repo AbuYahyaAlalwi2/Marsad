@@ -354,6 +354,29 @@ def api_metrics_today():
         return jsonify({"error": str(e)}), 500
 
 
+
+
+@app.route("/api/cloud/unified")
+def api_cloud_unified():
+    try:
+        from cloud_unifier import cloud_unifier
+        return jsonify({
+            "counts": cloud_unifier.count(),
+            "status": cloud_unifier.status(),
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/orchestrator/status")
+def api_orch_status():
+    try:
+        from orchestrator import orchestrator
+        return jsonify(orchestrator.status())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "service": "marsad-dashboard"})

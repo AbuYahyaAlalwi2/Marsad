@@ -37,6 +37,24 @@ class ControlPlane:
         cloud_health.start_background()
         clinic.start_watchdog()
 
+        # Keep-alive: prevents idle shutdown
+        try:
+            from keep_alive import keep_alive_manager
+            import os as _os
+            url = _os.environ.get("CG_KEEP_ALIVE_URL", "")
+            keep_alive_manager.start(keep_alive_url=url or None)
+            logger.info("[Control] Keep-alive started")
+        except Exception as e:
+            logger.warning(f"[Control] Keep-alive failed: {e}")
+
+        # Autonomous Orchestrator: runs the full loop
+        try:
+            from orchestrator import orchestrator
+            orchestrator.start()
+            logger.info("[Control] Orchestrator started")
+        except Exception as e:
+            logger.warning(f"[Control] Orchestrator failed: {e}")
+
         t = threading.Thread(target=self._main_loop, daemon=True)
         t.start()
         self._threads.append(t)
@@ -47,6 +65,16 @@ class ControlPlane:
         self._running = False
         cloud_health.stop_background()
         clinic.stop_watchdog()
+        try:
+            from keep_alive import keep_alive_manager
+            keep_alive_manager.stop()
+        except Exception:
+            pass
+        try:
+            from orchestrator import orchestrator
+            orchestrator.stop()
+        except Exception:
+            pass
         for t in self._threads:
             t.join(timeout=5)
         try:
@@ -86,6 +114,8 @@ class ControlPlane:
             "running": self._running,
             "uptime_seconds": int(time.time() - self.start_time),
             "queue_backend": get_backend(),
+            "orchestrator": (lambda: __import__("orchestrator").orchestrator.status())(),
+            "cloud_unifier": (lambda: __import__("cloud_unifier").cloud_unifier.status())(),
             "cloud_health": {
                 "weak": len(cloud_health.list_weak()),
                 "healthy": len(cloud_health.list_healthy()),

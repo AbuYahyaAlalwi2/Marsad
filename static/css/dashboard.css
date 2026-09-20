@@ -225,15 +225,68 @@ tr:last-child td { border-bottom: none; }
 }
 
 /* Responsive */
+/* ============================================================
+   Responsive - Laptop / Desktop / Tablet / Phone
+   ============================================================ */
+
+/* Large desktop (>1600px): bigger sidebar + KPI in 6 columns */
+@media (min-width: 1600px) {
+    .sidebar { width: 260px; }
+    .main { margin-right: 260px; width: calc(100% - 260px); }
+    .kpi-row { grid-template-columns: repeat(6, 1fr); }
+}
+
+/* Standard laptop (1280-1600px): KPI in 6, sidebar 240 */
+@media (min-width: 1281px) and (max-width: 1599px) {
+    .kpi-row { grid-template-columns: repeat(6, 1fr); }
+}
+
+/* Small laptop / tablet landscape (1024-1280px): KPI in 3 */
 @media (max-width: 1280px) {
     .kpi-row { grid-template-columns: repeat(3, 1fr); }
-    .row-2-1-1, .row-2-1-5-1, .row-1-3-1 { grid-template-columns: 1fr; }
+    .row-2-1-1 { grid-template-columns: 1fr 1fr; }
+    .row-2-1-5-1 { grid-template-columns: 1fr 1fr; }
+    .row-1-3-1 { grid-template-columns: 1fr; }
+    .row-2-1-1 > :last-child { grid-column: 1 / -1; }
+    .row-2-1-5-1 > :last-child { grid-column: 1 / -1; }
 }
-@media (max-width: 768px) {
-    .sidebar { transform: translateX(100%); transition: .3s; }
+
+/* Tablet portrait (768-1024px): KPI in 2, sidebar hidden */
+@media (max-width: 1024px) {
+    .sidebar { transform: translateX(100%); transition: transform .3s; }
     .sidebar.open { transform: translateX(0); }
-    .main { margin-right: 0; width: 100%; padding: 12px; }
-    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .main { margin-right: 0; width: 100%; padding: 16px; }
+    .kpi-row { grid-template-columns: repeat(3, 1fr); }
+    .row-2-1-1, .row-2-1-5-1, .row-1-3-1 { grid-template-columns: 1fr; }
+    .header { flex-wrap: wrap; gap: 8px; }
+}
+
+/* Phone (max-width 768px): everything stacked */
+@media (max-width: 768px) {
+    .main { padding: 12px; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .kpi-card { padding: 12px; }
+    .kpi-value { font-size: 20px; }
+    .kpi-icon svg { width: 22px; height: 22px; }
+    .row { gap: 8px; }
+    .card { padding: 12px; }
+    .card-title { font-size: 12px; }
+    .header { flex-direction: column; align-items: flex-start; }
+    .header-time, .header-clock, .header-status { font-size: 11px; }
+    .chart-container { height: 220px; }
+    .chart-container.sm { height: 160px; }
+    .reports-grid { grid-template-columns: 1fr 1fr; }
+    .health-ring { width: 80px; height: 80px; font-size: 20px; }
+    table { font-size: 10px; }
+    th, td { padding: 6px 3px; }
+}
+
+/* Small phone (max-width 480px): KPI single column */
+@media (max-width: 480px) {
+    .kpi-row { grid-template-columns: 1fr; }
+    .reports-grid { grid-template-columns: 1fr; }
+    .task-line { flex-wrap: wrap; gap: 4px; font-size: 10px; }
+    .task-desc { flex-basis: 100%; text-align: right; }
 }
 
 
