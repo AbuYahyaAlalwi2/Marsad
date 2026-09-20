@@ -1,61 +1,115 @@
-# Python
+# ============================================================
+# CYBERGUARD OS / MARSAD — .gitignore
+# ============================================================
+
+# --- Python ---
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
+build/
+dist/
+*.egg-info/
+*.egg
+.installed.cfg
+
+# --- Virtual Environments ---
 venv/
+env/
 ENV/
-env.bak/
-venv.bak/
+.venv/
 
-# Database
-*.db
-*.sqlite3
-data/
-
-# Models
-models/
-*.bin
-*.safetensors
-*.gguf
-
-# Environment
-.env
-.env.local
-
-# IDE
+# --- IDE ---
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
-Thumbs.db
 
-# Logs
-*.log
+# --- Secrets (CRITICAL) ---
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+credentials.json
+service_account.json
+
+# --- Vault & Keys ---
+secure_vault.enc
+data/secure_vault.enc
+encrypted_keys.json
+vpn_configs.json
+data/.vault_master.key
+marsad_state.json
+
+# --- Databases ---
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+data/
+
+# --- Logs & PIDs ---
 logs/
+*.log
+*.pid
+autorun.log
+autorun.pid
 
-# Temporary
+# --- Runtime Directories (empty but keep structure) ---
+models/*
+!models/.gitkeep
+datasets/*
+!datasets/.gitkeep
+exploits/*
+!exploits/.gitkeep
+darkweb_cache/*
+!darkweb_cache/.gitkeep
+
+# --- Models (huge files) ---
+*.bin
+*.safetensors
+*.gguf
+*.pt
+*.pth
+*.onnx
+*.h5
+*.pkl
+*.joblib
+
+# --- Temp ---
 tmp/
 temp/
-*.tmp
-
-data/
-*.enc
-.vault*
-.env
-encrypted_keys.json
-
-# Runtime state
-marsad_state.json
-data/
-*.pid
-__pycache__/
-*.pyc
+*.bak
+*.backup
+*~
+.cache/
 .pytest_cache/
-dashboard_old_backup.py
+.coverage
+htmlcov/
+
+# --- Backups ---
+*.bak
+*.backup
+
+# --- OS ---
+Thumbs.db
+Desktop.ini
+
+# --- Node ---
+node_modules/
+npm-debug.log*
+
+# --- Cloud ---
+.gcloud/
+.render/
+.heroku/
+
+# --- Playwright/Selenium ---
+playwright-report/
+test-results/
+screenshots/
