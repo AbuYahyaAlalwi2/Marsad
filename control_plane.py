@@ -84,6 +84,14 @@ class ControlPlane:
             logger.info("[Control] Million Runtime started")
         except Exception as e:
             logger.warning(f"[Control] Million Runtime failed: {e}")
+        # Cloud Unifier: register all 245 providers on startup
+        try:
+            from cloud_unifier import register_all_providers_in_db, count_registered_providers
+            r = register_all_providers_in_db()
+            c = count_registered_providers()
+            logger.info(f"[Control] Cloud Unifier registered: {r} | Total: {c}")
+        except Exception as e:
+            logger.warning(f"[Control] Cloud Unifier registration failed: {e}")
 
         t = threading.Thread(target=self._main_loop, daemon=True)
         t.start()

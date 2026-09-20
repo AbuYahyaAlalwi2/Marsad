@@ -183,11 +183,18 @@ def safe_status():
     except Exception:
         pass
 
-    # Real cloud counts
+    # Real cloud counts (DB + fallback to in-memory unifier)
     cloud_stats = {"active": 0, "available": 0, "total": 0, "weak": 0}
     try:
-        from cloud_unifier import count_registered_providers
-        cloud_stats.update(count_registered_providers())
+        from cloud_unifier import count_registered_providers, cloud_unifier
+        db_counts = count_registered_providers()
+        cloud_stats.update(db_counts)
+        # Fallback: if DB empty, use in-memory count
+        if cloud_stats["total"] == 0:
+            mem = cloud_unifier.count()
+            cloud_stats["total"] = mem.get("total", 0)
+            cloud_stats["active"] = mem.get("with_account", 0)
+            cloud_stats["available"] = mem.get("free", 0)
         from cloud_health import cloud_health
         cloud_stats["weak"] = len(cloud_health.list_weak())
     except Exception:
