@@ -218,3 +218,32 @@ class SecureVault:
         return out
 
 secure_vault = SecureVault()
+
+
+# ============================================================
+# Compatibility patch: add get_next_key
+# ============================================================
+def _get_next_key(self, platform: str):
+    """Rotation-friendly alias: returns next key for platform."""
+    keys = self.get_keys(platform)
+    if not keys:
+        return None
+    # Simple rotation via round-robin index
+    idx = getattr(self, "_rotation_idx", {})
+    i = idx.get(platform, 0) % len(keys)
+    idx[platform] = i + 1
+    self._rotation_idx = idx
+    return keys[i]
+
+
+def _get_keys_safe(self, platform: str):
+    """Safe alias (returns list)."""
+    try:
+        return self.get_keys(platform)
+    except Exception:
+        return []
+
+
+# Attach to class (works for existing + new instances)
+SecureVault.get_next_key = _get_next_key
+SecureVault.get_keys = _get_keys_safe

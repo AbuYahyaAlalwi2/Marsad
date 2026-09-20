@@ -12,13 +12,53 @@ import sqlite3
 import threading
 from pathlib import Path
 from typing import Dict, Optional, Any
-from cryptography.fernet import Fernet
 import base64
 import logging
 
 # إعداد تسجيل الأحداث
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# ============================================================
+# Fernet-compatible shim using pycryptodome (Termux-friendly)
+# Same interface: generate_key, encrypt, decrypt
+# ============================================================
+class Fernet:
+    def __init__(self, key):
+        if isinstance(key, str):
+            key = key.encode()
+        # key is base64-encoded 32-byte key
+        import base64 as _b64
+        self._key = _b64.urlsafe_b64decode(key)[:32]
+
+    @staticmethod
+    def generate_key():
+        import base64 as _b64
+        import os as _os
+        return _b64.urlsafe_b64encode(_os.urandom(32))
+
+    def encrypt(self, data):
+        import base64 as _b64
+        from Crypto.Cipher import AES
+        from Crypto.Random import get_random_bytes
+        if isinstance(data, str):
+            data = data.encode()
+        iv = get_random_bytes(12)
+        cipher = AES.new(self._key, AES.MODE_GCM, nonce=iv)
+        ct, tag = cipher.encrypt_and_digest(data)
+        return _b64.urlsafe_b64encode(iv + tag + ct)
+
+    def decrypt(self, token):
+        import base64 as _b64
+        from Crypto.Cipher import AES
+        if isinstance(token, str):
+            token = token.encode()
+        raw = _b64.urlsafe_b64decode(token)
+        iv, tag, ct = raw[:12], raw[12:28], raw[28:]
+        cipher = AES.new(self._key, AES.MODE_GCM, nonce=iv)
+        return cipher.decrypt_and_verify(ct, tag)
+
+
 
 
 class KeyManager:
@@ -652,3 +692,43 @@ class KeyManagerCollectorProxy:
 
 # كائن proxy عالمي
 key_collector_proxy = KeyManagerCollectorProxy()
+
+
+# ============================================================
+# Compatibility aliases (for agent_commands.py, etc.)
+# ============================================================
+def _km_add_key(self, key_name: str, key_value: str, category: str = "api"):
+    """Alias for set_key."""
+    return self.set_key(key_name, key_value, key_type=category)
+
+
+def _km_remove_key(self, key_name: str):
+    """Alias for delete_key."""
+    return self.delete_key(key_name)
+
+
+def _km_encrypt_key(self, key_value: str):
+    """Encrypt without saving."""
+    try:
+        k = self._get_fernet()
+        return k.encrypt(key_value.encode()).decode()
+    except Exception:
+        import base64
+        return base64.b64encode(key_value.encode()).decode()
+
+
+def _km_decrypt_key(self, encrypted_value: str):
+    """Decrypt an encrypted value."""
+    try:
+        k = self._get_fernet()
+        return k.decrypt(encrypted_value.encode()).decode()
+    except Exception:
+        import base64
+        return base64.b64decode(encrypted_value.encode()).decode()
+
+
+# Attach to KeyManager class
+KeyManager.add_key = _km_add_key
+KeyManager.remove_key = _km_remove_key
+KeyManager.encrypt_key = _km_encrypt_key
+KeyManager.decrypt_key = _km_decrypt_key

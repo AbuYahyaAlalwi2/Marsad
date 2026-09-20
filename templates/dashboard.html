@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MARSAD — منصة المراقبة الذكية</title>
+<link rel="stylesheet" href="/static/css/dashboard.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">◈</div>
+      <div class="brand-name">MARSAD</div>
+      <div class="brand-sub">Autonomous Intelligence Platform</div>
+    </div>
+
+    <div id="status-badge" class="status-badge status-offline">● جاري الاتصال...</div>
+
+    <div class="nav-header">القائمة الرئيسية</div>
+    <button class="nav-item active">⌂ لوحة التحكم</button>
+    <button class="nav-item">◉ المراقبة المباشرة</button>
+    <button class="nav-item">◈ الوكلاء</button>
+    <button class="nav-item">▣ مصادر البيانات</button>
+    <button class="nav-item">≡ المهام والعمليات</button>
+    <button class="nav-item">◫ التقارير والتحليلات</button>
+    <button class="nav-item">☰ السجلات</button>
+    <button class="nav-item">⚙ الإعدادات</button>
+
+    <div class="nav-header">محركات التصفح</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="padding:8px;background:#0a1424;border:1px solid #1a2332;border-radius:8px;text-align:center">
+        <div style="color:#10b981;font-size:11px">● متصل</div>
+        <div style="color:#64748b;font-size:10px">Playwright</div>
+      </div>
+      <div style="padding:8px;background:#0a1424;border:1px solid #1a2332;border-radius:8px;text-align:center">
+        <div style="color:#10b981;font-size:11px">● متصل</div>
+        <div style="color:#64748b;font-size:10px">Selenium</div>
+      </div>
+    </div>
+
+    <div class="nav-header">موارد النظام</div>
+    <div class="res-bar">
+      <div class="res-label"><span>CPU</span><span id="res-cpu-val">—</span></div>
+      <div class="res-track"><div class="res-fill" id="res-cpu-bar" style="background:#6366f1;width:0%"></div></div>
+    </div>
+    <div class="res-bar">
+      <div class="res-label"><span>RAM</span><span id="res-ram-val">—</span></div>
+      <div class="res-track"><div class="res-fill" id="res-ram-bar" style="background:#22d3ee;width:0%"></div></div>
+    </div>
+    <div class="res-bar">
+      <div class="res-label"><span>DISK</span><span id="res-disk-val">—</span></div>
+      <div class="res-track"><div class="res-fill" id="res-disk-bar" style="background:#10b981;width:0%"></div></div>
+    </div>
+    <div class="res-bar">
+      <div class="res-label"><span>NETWORK</span><span id="res-net-val">—</span></div>
+      <div class="res-track"><div class="res-fill" id="res-net-bar" style="background:#f59e0b;width:0%"></div></div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+
+    <!-- Header -->
+    <div class="header">
+      <div>
+        <div class="header-time">◷ وقت التشغيل: <b id="uptime-val">—</b></div>
+        <div class="header-user">◉ مدير النظام</div>
+      </div>
+      <div class="header-clock" id="header-clock">—</div>
+      <div class="header-status" id="header-status">● جاري الاتصال...</div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-icon icon-agents"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="4" r="2"/><circle cx="4" cy="14" r="2"/><circle cx="20" cy="14" r="2"/><circle cx="8" cy="20" r="2"/><circle cx="16" cy="20" r="2"/><path d="M12 6 L5 12.5 M12 6 L19 12.5 M5 15.5 L8 18.5 M19 15.5 L16 18.5 M10 20 L14 20"/></svg></div>
+        <div class="kpi-label">إجمالي الوكلاء</div>
+        <div class="kpi-value" id="kpi-agents">—</div>
+        <div class="kpi-delta">↑ مباشر</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon icon-clouds"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M12 3 L20 7.5 L20 16.5 L12 21 L4 16.5 L4 7.5 Z"/><circle cx="12" cy="12" r="2"/><path d="M12 10 L12 3 M10.3 12.9 L4 7.5 M13.7 12.9 L20 7.5"/></svg></div>
+        <div class="kpi-label">السحابات النشطة</div>
+        <div class="kpi-value" id="kpi-cloud">—</div>
+        <div class="kpi-delta">↑ مباشر</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon icon-data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6 L5 18 M19 6 L19 18 M5 12 L19 12"/><ellipse cx="12" cy="18" rx="7" ry="2.5"/></svg></div>
+        <div class="kpi-label">مصادر البيانات</div>
+        <div class="kpi-value" id="kpi-sources">—</div>
+        <div class="kpi-delta">↑ مباشر</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon icon-tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 L20 7.5 L20 16.5 L12 21 L4 16.5 L4 7.5 Z"/><path d="M8.5 12 L11 14.5 L15.5 9.5"/></svg></div>
+        <div class="kpi-label">المهام المنفذة</div>
+        <div class="kpi-value" id="kpi-tasks">—</div>
+        <div class="kpi-delta">↑ مباشر</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon icon-success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/><path d="M12 2 L12 3.5 M12 20.5 L12 22 M2 12 L3.5 12 M20.5 12 L22 12"/></svg></div>
+        <div class="kpi-label">معدل النجاح</div>
+        <div class="kpi-value" id="kpi-success">—</div>
+        <div class="kpi-delta">↑ من قاعدة البيانات</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon icon-storage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M12 3 L21 12 L12 21 L3 12 Z"/><path d="M12 7 L17 12 L12 17 L7 12 Z"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg></div>
+        <div class="kpi-label">الاستهلاك الكلي</div>
+        <div class="kpi-value" id="kpi-storage">—</div>
+        <div class="kpi-delta">↑ مباشر</div>
+      </div>
+    </div>
+
+    <!-- Row 2: Activity + Gauges + Donut -->
+    <div class="row row-2-1-1">
+      <div class="card">
+        <div class="card-title">النشاط المباشر <span>آخر 60 ثانية</span></div>
+        <div class="chart-container"><canvas id="activityChart"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">أداء النظام المباشر</div>
+        <div class="pbar-group">
+          <div class="pbar">
+            <div class="pbar-label"><span>استخدام المعالج</span><span id="pbar-cpu-val">—</span></div>
+            <div class="pbar-track"><div class="pbar-fill" id="pbar-cpu" style="width:0%"></div></div>
+          </div>
+          <div class="pbar">
+            <div class="pbar-label"><span>استخدام الذاكرة</span><span id="pbar-ram-val">—</span></div>
+            <div class="pbar-track"><div class="pbar-fill" id="pbar-ram" style="width:0%"></div></div>
+          </div>
+          <div class="pbar">
+            <div class="pbar-label"><span>استخدام القرص</span><span id="pbar-disk-val">—</span></div>
+            <div class="pbar-track"><div class="pbar-fill" id="pbar-disk" style="width:0%"></div></div>
+          </div>
+          <div class="pbar">
+            <div class="pbar-label"><span>النشاط الشبكي</span><span id="pbar-net-val">—</span></div>
+            <div class="pbar-track"><div class="pbar-fill" id="pbar-net" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">توزيع الوكلاء حسب المستوى</div>
+        <div class="chart-container sm" style="position:relative">
+          <canvas id="donutChart"></canvas>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
+            <div style="font-size:20px;font-weight:800;color:#e8eefc" id="donut-total">—</div>
+            <div style="font-size:10px;color:#64748b">إجمالي الوكلاء</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3: Recent tasks + System health -->
+    <div class="row row-2-1-5-1">
+      <div class="card">
+        <div class="card-title">آخر المهام المنفذة <span id="stat-rate">—</span></div>
+        <div id="tasks-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">معلومات النظام</div>
+        <div style="font-size:12px;line-height:2;color:#cbd5e1">
+          <div>Queue Backend: <b id="queue-backend" style="color:#a78bfa">—</b></div>
+          <div>Clinic Tracked: <b id="clinic-tracked" style="color:#22d3ee">—</b></div>
+          <div>Clinic Quarantined: <b id="clinic-quarantined" style="color:#f59e0b">—</b></div>
+          <div>Knowledge Base: <b id="kb-entries" style="color:#10b981">—</b></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">الحالة العامة</div>
+        <div class="health-circle">
+          <div class="health-ring" id="health-ring">✓</div>
+          <div class="health-text" id="health-text">—</div>
+          <div class="health-sub" id="health-sub">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 4: Quick reports -->
+    <div class="row row-1-3-1">
+      <div class="card">
+        <div class="card-title">ملخص اليوم</div>
+        <div class="reports-grid">
+          <div class="report-box">
+            <div class="report-title">مهام ناجحة</div>
+            <div class="report-value" id="today-success">—</div>
+            <div class="report-delta">اليوم</div>
+          </div>
+          <div class="report-box">
+            <div class="report-title">مهام فاشلة</div>
+            <div class="report-value" id="today-failed">—</div>
+            <div class="report-delta" style="color:#f59e0b">اليوم</div>
+          </div>
+          <div class="report-box">
+            <div class="report-title">وكلاء جدد</div>
+            <div class="report-value" id="today-agents">—</div>
+            <div class="report-delta">اليوم</div>
+          </div>
+          <div class="report-box">
+            <div class="report-title">معدل النجاح</div>
+            <div class="report-value" id="today-rate">—</div>
+            <div class="report-delta">اليوم</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">مراكز البيانات النشطة</div>
+        <table>
+          <thead>
+            <tr>
+              <th>المصدر</th>
+              <th>الحالة</th>
+              <th>آخر تحديث</th>
+              <th>البيانات</th>
+            </tr>
+          </thead>
+          <tbody id="sources-tbody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="footer">
+      MARSAD • Autonomous Intelligence Platform • Live data from backend
+    </div>
+  </main>
+</div>
+
+<script src="/static/js/dashboard.js"></script>
+</body>
+</html>

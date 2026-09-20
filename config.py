@@ -794,3 +794,107 @@ os.makedirs(os.path.join(BASE_DIR, "plugins"), exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR, "datasets"), exist_ok=True)
 os.makedirs(EXPLOIT_OUTPUT_DIR, exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR, "darkweb_cache"), exist_ok=True)
+
+
+# ============================================================
+# ============================================================
+# CYBERGUARD OS — NEW SETTINGS (Appended)
+# Queue, Cloud, Sandbox, Critic, Self-Healing, Knowledge
+# ============================================================
+# ============================================================
+
+# --- Task Queue (FlashQ / Huey, no Redis) ---
+TASK_QUEUE_BACKEND = os.environ.get("CG_QUEUE_BACKEND", "flashq")
+TASK_QUEUE_DB_PATH = os.environ.get(
+    "CG_QUEUE_DB_PATH",
+    os.path.join(DATA_DIR, "task_queue.db")
+)
+TASK_QUEUE_WORKERS = int(os.environ.get("CG_QUEUE_WORKERS", "4"))
+TASK_QUEUE_MAX_RETRIES = int(os.environ.get("CG_QUEUE_MAX_RETRIES", "3"))
+TASK_QUEUE_RETRY_DELAY = float(os.environ.get("CG_QUEUE_RETRY_DELAY", "5.0"))
+TASK_QUEUE_TIMEOUT = float(os.environ.get("CG_QUEUE_TIMEOUT", "300.0"))
+
+# --- Cloud Health & Auto-Provision ---
+CLOUD_HEALTH_INTERVAL = int(os.environ.get("CG_CLOUD_HEALTH_INTERVAL", "300"))
+CLOUD_MAX_LATENCY_MS = int(os.environ.get("CG_CLOUD_MAX_LATENCY_MS", "500"))
+CLOUD_MAX_ERROR_RATE = float(os.environ.get("CG_CLOUD_MAX_ERROR_RATE", "0.05"))
+CLOUD_MIN_FREE_QUOTA = float(os.environ.get("CG_CLOUD_MIN_FREE_QUOTA", "0.10"))
+CLOUD_AUTO_PROVISION = os.environ.get("CG_CLOUD_AUTO_PROVISION", "true").lower() == "true"
+CLOUD_MAX_ACCOUNTS_PER_PROVIDER = int(os.environ.get("CG_CLOUD_MAX_ACCOUNTS", "5"))
+
+# --- Multi-Key Policy ---
+MULTI_KEY_POLICY = {
+    "github": {"allows_multi": True, "max_accounts": 5},
+    "gitlab": {"allows_multi": True, "max_accounts": 3},
+    "huggingface": {"allows_multi": True, "max_accounts": 3},
+    "groq": {"allows_multi": False, "max_accounts": 1},
+    "openrouter": {"allows_multi": True, "max_accounts": 5},
+    "together": {"allows_multi": True, "max_accounts": 3},
+    "fireworks": {"allows_multi": True, "max_accounts": 3},
+    "replicate": {"allows_multi": True, "max_accounts": 3},
+    "cohere": {"allows_multi": True, "max_accounts": 2},
+    "deepseek": {"allows_multi": True, "max_accounts": 3},
+    "cloudflare": {"allows_multi": True, "max_accounts": 10},
+    "default": {"allows_multi": False, "max_accounts": 1},
+}
+
+# --- Sandbox ---
+SANDBOX_ENABLED = os.environ.get("CG_SANDBOX_ENABLED", "true").lower() == "true"
+SANDBOX_DEFAULT_LANGUAGE = os.environ.get("CG_SANDBOX_LANG", "python")
+SANDBOX_AUTO_STOP_MIN = int(os.environ.get("CG_SANDBOX_AUTO_STOP", "60"))
+SANDBOX_MAX_EXECUTION_TIME = float(os.environ.get("CG_SANDBOX_MAX_TIME", "30.0"))
+
+# --- Model Merging ---
+MERGE_STRATEGY = os.environ.get("CG_MERGE_STRATEGY", "ties")
+MERGE_OUTPUT_DIR = os.environ.get(
+    "CG_MERGE_OUTPUT_DIR",
+    os.path.join(BASE_DIR, "models", "merged")
+)
+MERGE_BASE_MODEL = os.environ.get(
+    "CG_MERGE_BASE",
+    "Qwen/Qwen2.5-Coder-32B-Instruct"
+)
+
+PROGRAMMING_MODELS = [
+    {"name": "qwen-coder-32b", "path": "Qwen/Qwen2.5-Coder-32B-Instruct", "weight": 0.30, "role": "code"},
+    {"name": "deepseek-coder-v2", "path": "deepseek-ai/DeepSeek-Coder-V2-Instruct", "weight": 0.25, "role": "code"},
+    {"name": "codellama-34b", "path": "codellama/CodeLlama-34b-Instruct", "weight": 0.15, "role": "code"},
+    {"name": "wizardcoder-33b", "path": "WizardLMTeam/WizardCoder-33B-V1.1", "weight": 0.15, "role": "solve"},
+    {"name": "phind-codellama", "path": "Phind/Phind-CodeLlama-34B-v2", "weight": 0.10, "role": "tech"},
+    {"name": "kimi-k3", "path": "MoonshotAI/Kimi-K3", "weight": 0.05, "role": "reasoning"},
+]
+
+# --- Critic ---
+CRITIC_ENABLED = os.environ.get("CG_CRITIC_ENABLED", "true").lower() == "true"
+CRITIC_MODEL = os.environ.get("CG_CRITIC_MODEL", "groq/llama-3.1-70b-versatile")
+CRITIC_MAX_RETRIES = int(os.environ.get("CG_CRITIC_MAX_RETRIES", "2"))
+
+# --- Self-Healing ---
+SELF_HEALING_ENABLED = os.environ.get("CG_SELF_HEALING", "true").lower() == "true"
+SELF_HEALING_HEARTBEAT = int(os.environ.get("CG_HEARTBEAT_INTERVAL", "30"))
+SELF_HEALING_MAX_RESTARTS = int(os.environ.get("CG_MAX_RESTARTS", "5"))
+SELF_HEALING_QUARANTINE = os.environ.get("CG_QUARANTINE", "true").lower() == "true"
+
+# --- Knowledge Sharing ---
+KNOWLEDGE_SHARING_ENABLED = os.environ.get("CG_KNOWLEDGE_SHARING", "true").lower() == "true"
+KNOWLEDGE_BACKEND = os.environ.get("CG_KNOWLEDGE_BACKEND", "sqlite")
+
+# --- Directories (ensure exist) ---
+os.makedirs(MERGE_OUTPUT_DIR, exist_ok=True)
+
+
+# ============================================================
+# Additional top-level env vars (for direct import)
+# ============================================================
+HF_TOKEN = os.environ.get("HF_TOKEN", "")
+HUGGINGFACE_TOKEN = HF_TOKEN  # alias
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
+GITLAB_TOKEN = os.environ.get("GITLAB_TOKEN", "")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
+MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY", "")
+TOGETHER_API_KEY = os.environ.get("TOGETHER_API_KEY", "")
+COHERE_API_KEY = os.environ.get("COHERE_API_KEY", "")

@@ -1,53 +1,44 @@
-# Core Framework
+# ============================================================
+# CYBERGUARD OS / MARSAD - Requirements
+# ============================================================
+
+# --- Core Framework ---
 streamlit>=1.38.0
 flask>=3.0.0
 flask-cors>=4.0.0
+gunicorn>=21.0.0
 
-# HTTP & API Clients
+# --- HTTP & APIs ---
 requests>=2.32.0
 huggingface_hub>=0.24.0
 
-# System Monitoring
+# --- System Monitoring ---
 psutil>=5.9.0
 
-# Data Visualization
+# --- Data ---
 plotly>=5.18.0
 pandas>=2.0.0
-
-# Browser Automation
-playwright>=1.40.0
-undetected-chromedriver>=3.5.0
-selenium>=4.15.0
-
-# CAPTCHA Solving
-2captcha-python>=1.2.0
-
-# Image Processing
-pillow>=10.0.0
-
-# User Agent
-fake-useragent>=1.4.0
-
-# Web Server
-gunicorn>=21.0.0
-
-# HTML Parsing
 beautifulsoup4>=4.12.0
 lxml>=4.9.0
+pyyaml>=6.0.0
 
-# Code Quality
-pylint>=3.0.0
-mypy>=1.8.0
-black>=24.0.0
-flake8>=6.1.0
-isort>=5.13.0
+# --- Task Queue (no Redis required) ---
+huey>=2.6.0
+flashq>=0.2.2
 
-# Testing
-pytest>=7.4.0
-pytest-cov>=4.1.0
+# --- Cloud Abstraction ---
+apache-libcloud>=3.9.1
 
-# Environment
+# --- Security (Termux-friendly) ---
+pycryptodome>=3.20.0
 python-dotenv>=1.0.0
 
-# Type Hints
-types-requests>=0.1.0
+# --- Browser Automation (optional) ---
+playwright>=1.40.0
+selenium>=4.15.0
+fake-useragent>=1.4.0
+
+# --- Code Quality (optional) ---
+pylint>=3.0.0
+black>=24.0.0
+isort>=5.13.0

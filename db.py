@@ -611,3 +611,532 @@ def update_secure_key_usage(key_name: str) -> bool:
     except Exception as e:
         log_event("secure_keys", {"action": "update_usage", "error": str(e), "key_name": key_name})
         return False
+
+
+# ============================================================
+# ============================================================
+# CYBERGUARD OS - Additional DB Helpers
+# ============================================================
+# ============================================================
+
+def insert_row(table: str, data: dict):
+    """
+    Generic row insert (INSERT OR REPLACE).
+    Usage: insert_row("api_providers", {"provider_key": "x", ...})
+    """
+    try:
+        with get_conn() as conn:
+            keys = ", ".join(data.keys())
+            placeholders = ", ".join(["?" for _ in data])
+            conn.execute(
+                f"INSERT OR REPLACE INTO {table} ({keys}) VALUES ({placeholders})",
+                list(data.values())
+            )
+            conn.commit()
+            return True
+    except Exception as e:
+        log_event("db_error", {"action": "insert_row", "table": table, "error": str(e)})
+        return False
+
+
+def get_row(table: str, where: dict):
+    """Fetch one row matching where."""
+    try:
+        with get_conn() as conn:
+            cond = " AND ".join([f"{k} = ?" for k in where.keys()])
+            row = conn.execute(
+                f"SELECT * FROM {table} WHERE {cond} LIMIT 1",
+                list(where.values())
+            ).fetchone()
+            return dict(row) if row else None
+    except Exception:
+        return None
+
+
+def count_rows(table: str, where: dict = None) -> int:
+    """Count rows in table."""
+    try:
+        with get_conn() as conn:
+            if where:
+                cond = " AND ".join([f"{k} = ?" for k in where.keys()])
+                row = conn.execute(
+                    f"SELECT COUNT(*) as c FROM {table} WHERE {cond}",
+                    list(where.values())
+                ).fetchone()
+            else:
+                row = conn.execute(f"SELECT COUNT(*) as c FROM {table}").fetchone()
+            return row["c"] if row else 0
+    except Exception:
+        return 0
+
+
+# Aliases for compatibility
+def get_agent_status(agent_id: str) -> str:
+    """Alias for compatibility."""
+    agent = get_agent(agent_id)
+    return agent["status"] if agent else "unknown"
+
+
+def set_agent_status(agent_id: str, status: str):
+    """Alias for update_agent_status."""
+    return update_agent_status(agent_id, status)
+
+
+def list_agents_by_level(level: int):
+    """List all agents at a specific level."""
+    try:
+        with get_conn() as conn:
+            rows = conn.execute(
+                "SELECT * FROM agents WHERE level = ?", (level,)
+            ).fetchall()
+            return [dict(r) for r in rows]
+    except Exception:
+        return []
+
+
+# ============================================================
+# ============================================================
+# CYBERGUARD OS - Real Data Tables (tasks, data_sources, metrics)
+# ============================================================
+# ============================================================
+
+def _ensure_real_tables():
+    """Create tables for real task tracking, sources, and daily metrics."""
+    schema = """
+    CREATE TABLE IF NOT EXISTS real_tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_id TEXT UNIQUE NOT NULL,
+        title TEXT NOT NULL,
+        task_type TEXT,
+        agent_id TEXT,
+        status TEXT DEFAULT 'pending',
+        started_at REAL NOT NULL,
+        completed_at REAL,
+        result TEXT,
+        error TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_real_tasks_status ON real_tasks(status);
+    CREATE INDEX IF NOT EXISTS idx_real_tasks_started ON real_tasks(started_at DESC);
+
+    CREATE TABLE IF NOT EXISTS data_sources (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        source_key TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        platform TEXT,
+        url TEXT,
+        status TEXT DEFAULT 'active',
+        items_collected INTEGER DEFAULT 0,
+        last_update REAL,
+        created_at REAL NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS daily_metrics (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        metric_date TEXT UNIQUE NOT NULL,
+        tasks_success INTEGER DEFAULT 0,
+        tasks_failed INTEGER DEFAULT 0,
+        items_collected INTEGER DEFAULT 0,
+        agents_spawned INTEGER DEFAULT 0,
+        updated_at REAL NOT NULL
+    );
+    """
+    try:
+        with get_conn() as conn:
+            conn.executescript(schema)
+            conn.commit()
+        return True
+    except Exception as e:
+        log_event("db_error", {"action": "ensure_real_tables", "error": str(e)})
+        return False
+
+
+# Initialize at import time
+try:
+    _ensure_real_tables()
+except Exception:
+    pass
+
+
+# ---------- Real Tasks ----------
+
+def create_task(task_id: str, title: str, task_type: str = "generic",
+                agent_id: str = None) -> bool:
+    """Register a new real task as pending."""
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                "INSERT OR REPLACE INTO real_tasks "
+                "(task_id, title, task_type, agent_id, status, started_at) "
+                "VALUES (?, ?, ?, ?, 'running', ?)",
+                (task_id, title, task_type, agent_id, time.time())
+            )
+            conn.commit()
+        return True
+    except Exception:
+        return False
+
+
+def complete_task(task_id: str, result: str = None, error: str = None) -> bool:
+    """Mark a task as completed (or failed)."""
+    status = "failed" if error else "completed"
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                "UPDATE real_tasks SET status = ?, completed_at = ?, "
+                "result = ?, error = ? WHERE task_id = ?",
+                (status, time.time(), result, error, task_id)
+            )
+            conn.commit()
+
+            # Update daily metrics
+            today = time.strftime("%Y-%m-%d")
+            col = "tasks_success" if not error else "tasks_failed"
+            conn.execute(
+                f"INSERT INTO daily_metrics (metric_date, {col}, updated_at) "
+                f"VALUES (?, 1, ?) "
+                f"ON CONFLICT(metric_date) DO UPDATE SET "
+                f"{col} = {col} + 1, updated_at = excluded.updated_at",
+                (today, time.time())
+            )
+            conn.commit()
+        return True
+    except Exception:
+        return False
+
+
+def get_recent_tasks(limit: int = 10):
+    """Get recent real tasks."""
+    try:
+        with get_conn() as conn:
+            rows = conn.execute(
+                "SELECT * FROM real_tasks ORDER BY started_at DESC LIMIT ?",
+                (limit,)
+            ).fetchall()
+            return [dict(r) for r in rows]
+    except Exception:
+        return []
+
+
+def get_task_stats() -> dict:
+    """Overall stats: total, completed, failed, running, success_rate."""
+    try:
+        with get_conn() as conn:
+            row = conn.execute(
+                "SELECT "
+                "COUNT(*) as total, "
+                "SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) as completed, "
+                "SUM(CASE WHEN status='failed' THEN 1 ELSE 0 END) as failed, "
+                "SUM(CASE WHEN status='running' THEN 1 ELSE 0 END) as running "
+                "FROM real_tasks"
+            ).fetchone()
+            total = row["total"] or 0
+            completed = row["completed"] or 0
+            failed = row["failed"] or 0
+            running = row["running"] or 0
+            success_rate = (completed / total * 100.0) if total > 0 else 0.0
+            return {
+                "total": total,
+                "completed": completed,
+                "failed": failed,
+                "running": running,
+                "success_rate": round(success_rate, 1),
+            }
+    except Exception:
+        return {"total": 0, "completed": 0, "failed": 0,
+                "running": 0, "success_rate": 0.0}
+
+
+# ---------- Data Sources ----------
+
+def register_source(source_key: str, name: str, platform: str = None,
+                    url: str = None) -> bool:
+    """Register a data source (or update last_update)."""
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                "INSERT INTO data_sources "
+                "(source_key, name, platform, url, status, last_update, created_at) "
+                "VALUES (?, ?, ?, ?, 'active', ?, ?) "
+                "ON CONFLICT(source_key) DO UPDATE SET "
+                "last_update = excluded.last_update, status = 'active'",
+                (source_key, name, platform, url, time.time(), time.time())
+            )
+            conn.commit()
+        return True
+    except Exception:
+        return False
+
+
+def bump_source(source_key: str, count: int = 1):
+    """Increment items_collected for a source."""
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                "UPDATE data_sources SET items_collected = items_collected + ?, "
+                "last_update = ? WHERE source_key = ?",
+                (count, time.time(), source_key)
+            )
+            conn.commit()
+        return True
+    except Exception:
+        return False
+
+
+def list_sources():
+    """All data sources ordered by last_update."""
+    try:
+        with get_conn() as conn:
+            rows = conn.execute(
+                "SELECT * FROM data_sources ORDER BY last_update DESC"
+            ).fetchall()
+            return [dict(r) for r in rows]
+    except Exception:
+        return []
+
+
+# ---------- Daily Metrics ----------
+
+def get_today_metrics() -> dict:
+    """Get today's metrics."""
+    today = time.strftime("%Y-%m-%d")
+    try:
+        with get_conn() as conn:
+            row = conn.execute(
+                "SELECT * FROM daily_metrics WHERE metric_date = ?",
+                (today,)
+            ).fetchone()
+            if row:
+                return dict(row)
+        return {
+            "metric_date": today,
+            "tasks_success": 0,
+            "tasks_failed": 0,
+            "items_collected": 0,
+            "agents_spawned": 0,
+        }
+    except Exception:
+        return {}
+
+
+# ============================================================
+# ============================================================
+# CYBERGUARD OS - Real Data Tables (tasks, data_sources, metrics)
+# ============================================================
+# ============================================================
+
+def _ensure_real_tables():
+    """Create tables for real task tracking, sources, and daily metrics."""
+    schema = """
+    CREATE TABLE IF NOT EXISTS real_tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_id TEXT UNIQUE NOT NULL,
+        title TEXT NOT NULL,
+        task_type TEXT,
+        agent_id TEXT,
+        status TEXT DEFAULT 'pending',
+        started_at REAL NOT NULL,
+        completed_at REAL,
+        result TEXT,
+        error TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_real_tasks_status ON real_tasks(status);
+    CREATE INDEX IF NOT EXISTS idx_real_tasks_started ON real_tasks(started_at DESC);
+
+    CREATE TABLE IF NOT EXISTS data_sources (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        source_key TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        platform TEXT,
+        url TEXT,
+        status TEXT DEFAULT 'active',
+        items_collected INTEGER DEFAULT 0,
+        last_update REAL,
+        created_at REAL NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS daily_metrics (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        metric_date TEXT UNIQUE NOT NULL,
+        tasks_success INTEGER DEFAULT 0,
+        tasks_failed INTEGER DEFAULT 0,
+        items_collected INTEGER DEFAULT 0,
+        agents_spawned INTEGER DEFAULT 0,
+        updated_at REAL NOT NULL
+    );
+    """
+    try:
+        with get_conn() as conn:
+            conn.executescript(schema)
+            conn.commit()
+        return True
+    except Exception as e:
+        log_event("db_error", {"action": "ensure_real_tables", "error": str(e)})
+        return False
+
+
+# Initialize at import time
+try:
+    _ensure_real_tables()
+except Exception:
+    pass
+
+
+# ---------- Real Tasks ----------
+
+def create_task(task_id: str, title: str, task_type: str = "generic",
+                agent_id: str = None) -> bool:
+    """Register a new real task as pending."""
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                "INSERT OR REPLACE INTO real_tasks "
+                "(task_id, title, task_type, agent_id, status, started_at) "
+                "VALUES (?, ?, ?, ?, 'running', ?)",
+                (task_id, title, task_type, agent_id, time.time())
+            )
+            conn.commit()
+        return True
+    except Exception:
+        return False
+
+
+def complete_task(task_id: str, result: str = None, error: str = None) -> bool:
+    """Mark a task as completed (or failed)."""
+    status = "failed" if error else "completed"
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                "UPDATE real_tasks SET status = ?, completed_at = ?, "
+                "result = ?, error = ? WHERE task_id = ?",
+                (status, time.time(), result, error, task_id)
+            )
+            conn.commit()
+
+            # Update daily metrics
+            today = time.strftime("%Y-%m-%d")
+            col = "tasks_success" if not error else "tasks_failed"
+            conn.execute(
+                f"INSERT INTO daily_metrics (metric_date, {col}, updated_at) "
+                f"VALUES (?, 1, ?) "
+                f"ON CONFLICT(metric_date) DO UPDATE SET "
+                f"{col} = {col} + 1, updated_at = excluded.updated_at",
+                (today, time.time())
+            )
+            conn.commit()
+        return True
+    except Exception:
+        return False
+
+
+def get_recent_tasks(limit: int = 10):
+    """Get recent real tasks."""
+    try:
+        with get_conn() as conn:
+            rows = conn.execute(
+                "SELECT * FROM real_tasks ORDER BY started_at DESC LIMIT ?",
+                (limit,)
+            ).fetchall()
+            return [dict(r) for r in rows]
+    except Exception:
+        return []
+
+
+def get_task_stats() -> dict:
+    """Overall stats: total, completed, failed, running, success_rate."""
+    try:
+        with get_conn() as conn:
+            row = conn.execute(
+                "SELECT "
+                "COUNT(*) as total, "
+                "SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) as completed, "
+                "SUM(CASE WHEN status='failed' THEN 1 ELSE 0 END) as failed, "
+                "SUM(CASE WHEN status='running' THEN 1 ELSE 0 END) as running "
+                "FROM real_tasks"
+            ).fetchone()
+            total = row["total"] or 0
+            completed = row["completed"] or 0
+            failed = row["failed"] or 0
+            running = row["running"] or 0
+            success_rate = (completed / total * 100.0) if total > 0 else 0.0
+            return {
+                "total": total,
+                "completed": completed,
+                "failed": failed,
+                "running": running,
+                "success_rate": round(success_rate, 1),
+            }
+    except Exception:
+        return {"total": 0, "completed": 0, "failed": 0,
+                "running": 0, "success_rate": 0.0}
+
+
+# ---------- Data Sources ----------
+
+def register_source(source_key: str, name: str, platform: str = None,
+                    url: str = None) -> bool:
+    """Register a data source (or update last_update)."""
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                "INSERT INTO data_sources "
+                "(source_key, name, platform, url, status, last_update, created_at) "
+                "VALUES (?, ?, ?, ?, 'active', ?, ?) "
+                "ON CONFLICT(source_key) DO UPDATE SET "
+                "last_update = excluded.last_update, status = 'active'",
+                (source_key, name, platform, url, time.time(), time.time())
+            )
+            conn.commit()
+        return True
+    except Exception:
+        return False
+
+
+def bump_source(source_key: str, count: int = 1):
+    """Increment items_collected for a source."""
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                "UPDATE data_sources SET items_collected = items_collected + ?, "
+                "last_update = ? WHERE source_key = ?",
+                (count, time.time(), source_key)
+            )
+            conn.commit()
+        return True
+    except Exception:
+        return False
+
+
+def list_sources():
+    """All data sources ordered by last_update."""
+    try:
+        with get_conn() as conn:
+            rows = conn.execute(
+                "SELECT * FROM data_sources ORDER BY last_update DESC"
+            ).fetchall()
+            return [dict(r) for r in rows]
+    except Exception:
+        return []
+
+
+# ---------- Daily Metrics ----------
+
+def get_today_metrics() -> dict:
+    """Get today's metrics."""
+    today = time.strftime("%Y-%m-%d")
+    try:
+        with get_conn() as conn:
+            row = conn.execute(
+                "SELECT * FROM daily_metrics WHERE metric_date = ?",
+                (today,)
+            ).fetchone()
+            if row:
+                return dict(row)
+        return {
+            "metric_date": today,
+            "tasks_success": 0,
+            "tasks_failed": 0,
+            "items_collected": 0,
+            "agents_spawned": 0,
+        }
+    except Exception:
+        return {}

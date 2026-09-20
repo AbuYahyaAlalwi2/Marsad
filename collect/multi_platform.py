@@ -5,7 +5,7 @@ import os
 import time
 import requests
 from bs4 import BeautifulSoup
-from db import insert_sample, log_event
+from db import insert_sample, log_event, register_source, bump_source
 from config import DATASET_PLATFORMS, REQUEST_TIMEOUT, ENABLE_VPN, ENABLE_PROXY
 
 # Import key_manager and vpn_manager
@@ -38,7 +38,19 @@ class MultiPlatformCollector:
         جمع من جميع المنصات
         """
         results = {}
-        
+
+        # Register every platform as a data source
+        for platform in self.PLATFORMS:
+            try:
+                register_source(
+                    source_key=platform,
+                    name=platform.replace("_", " ").title(),
+                    platform=platform,
+                    url=""
+                )
+            except Exception:
+                pass
+
         # Connect VPN if enabled
         if ENABLE_VPN and vpn_manager:
             try:
@@ -64,6 +76,14 @@ class MultiPlatformCollector:
                 results[platform] = {"status": "error", "error": str(e)}
 
             time.sleep(0.5)  # تجنب rate limiting
+
+            # Bump source count if succeeded
+            try:
+                r = results.get(platform, {})
+                if r.get("status") == "success":
+                    bump_source(platform, r.get("count", 0))
+            except Exception:
+                pass
 
         return results
 
