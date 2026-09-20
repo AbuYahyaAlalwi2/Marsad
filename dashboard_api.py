@@ -585,4 +585,44 @@ if __name__ == "__main__":
     if os.environ.get("CG_NO_BROWSER", "false").lower() != "true":
         threading.Thread(target=_open_browser, args=(port,), daemon=True).start()
 
+    if os.environ.get("CG_SELF_PING", "true").lower() == "true":
+        _start_self_ping()
+
     app.run(host="0.0.0.0", port=port, debug=False)
+
+
+# ============================================================
+# Self-Ping: prevents Render free tier from sleeping
+# ============================================================
+import threading as _th
+import requests as _rq
+
+
+def _self_ping_loop():
+    """Ping self every 5 min to stay awake."""
+    time.sleep(60)  # wait for startup
+    import os
+    while True:
+        try:
+            # Get own URL from env or default
+            url = os.environ.get("CG_SELF_URL", "")
+            if not url:
+                # Try Render's provided URL
+                url = os.environ.get("RENDER_EXTERNAL_URL", "")
+            if not url:
+                # Fallback
+                port = os.environ.get("PORT", "10000")
+                url = f"http://localhost:{port}"
+            
+            url = url.rstrip("/") + "/api/status"
+            r = _rq.get(url, timeout=15)
+            print(f"[SelfPing] {url} -> {r.status_code}", flush=True)
+        except Exception as e:
+            print(f"[SelfPing] error: {e}", flush=True)
+        time.sleep(300)  # 5 minutes
+
+
+def _start_self_ping():
+    t = _th.Thread(target=_self_ping_loop, daemon=True)
+    t.start()
+    print("[SelfPing] Started", flush=True)

@@ -32,3 +32,13 @@ services:
         value: "300"
       - key: CG_SCALE_COOLDOWN
         value: "120"
+      - key: CG_SELF_PING
+        value: "true"
+      - key: CG_SELF_URL
+        value: "https://marsad-dashboard.onrender.com"
+      - key: CG_CONTROL_PLANE_URL
+        value: "https://marsad-dashboard.onrender.com"
+      - key: CG_MAX_AGENTS
+        value: "1000000"
+      - key: CG_TARGET_AGENTS
+        value: "1000000"
