@@ -1,43 +1,74 @@
-from flask import Flask, request, jsonify
+"""Small Flask API exposing real state and manual onboarding only."""
+import os
+import sqlite3
+from flask import Flask, jsonify, request
+
+from manual_onboarding import onboarding_status, save_account
+from manual_provider_registry import list_supported_providers, provider_status
 
 app = Flask(__name__)
+DB_PATH = os.environ.get("CG_DB_PATH", "data/cyberguard.db")
 
-@app.route('/')
+
+def agent_count():
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        row = conn.execute("SELECT COUNT(*) FROM agents").fetchone()
+        conn.close()
+        return int(row[0]) if row else 0
+    except (OSError, sqlite3.Error):
+        return None
+
+
+@app.get("/")
 def index():
-    return jsonify({"status": "Marsad Server Running"})
+    return jsonify({"status": "online", "mode": "manual_only"})
 
-@app.route('/api/status')
+
+@app.get("/api/status")
 def status():
-    return jsonify({"status": "online", "mode": "REAL", "version": "1.0.0"})
+    return jsonify({
+        "status": "online",
+        "mode": "manual_only",
+        "agents": agent_count(),
+        "providers": len(list_supported_providers()),
+    })
 
-@app.route('/api/agents/deploy', methods=['POST'])
-def deploy_agents():
-    count = request.json.get('count', 100)
-    cloud = request.json.get('cloud', 'auto')
-    return jsonify({"status": "success", "deployed": count, "cloud": cloud})
 
-@app.route('/api/swarm/deploy', methods=['POST'])
-def deploy_swarm():
-    count = request.json.get('count', 1000000)
-    return jsonify({"status": "success", "deployed": count})
+@app.get("/api/providers")
+def providers():
+    return jsonify({name: provider_status(name) for name in list_supported_providers()})
 
-@app.route('/api/ip/rotate', methods=['POST'])
-def rotate_ip():
-    return jsonify({"status": "rotated", "ip": "new_ip_address"})
 
-@app.route('/api/vault/keys', methods=['GET'])
-def list_keys():
-    return jsonify({"platforms": ["huggingface", "groq", "openrouter", "together"]})
+@app.get("/api/onboarding")
+def onboarding():
+    return jsonify(onboarding_status())
 
-@app.route('/api/logs')
+
+@app.post("/api/onboarding")
+def record_onboarding():
+    payload = request.get_json(silent=True) or {}
+    return jsonify(save_account(
+        payload.get("provider", ""),
+        payload.get("email", ""),
+        payload.get("account_url", ""),
+        payload.get("notes", ""),
+    )), 201
+
+
+@app.post("/api/emails/create")
+def no_email_creation():
+    return jsonify({
+        "status": "disabled",
+        "reason": "automated_email_creation_disabled",
+        "message": "استخدم بريدًا حقيقيًا مملوكًا لك وسجله يدويًا.",
+    }), 403
+
+
+@app.get("/api/logs")
 def logs():
-    return jsonify({"logs": [{"time": "now", "msg": "System running"}]})
+    return jsonify({"status": "not_configured", "logs": []})
 
-@app.route('/api/emails/create', methods=['POST'])
-def create_email():
-    import time
-    return jsonify({"status": "success", "email": f"marsad_{int(time.time())}@example.com"})
 
-if __name__ == '__main__':
-    print("Starting Marsad Server...")
-    app.run(host='0.0.0.0', port=5000, debug=False)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")), debug=False)
