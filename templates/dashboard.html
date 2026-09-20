@@ -173,6 +173,29 @@
       </div>
 
       <div class="card">
+        <div class="card-title">نمو الوكلاء التلقائي <span>Auto-Scaler</span></div>
+        <div style="font-size:12px;line-height:2;color:#cbd5e1">
+          <div>المرحلة الحالية: <b id="scaler-stage" style="color:#a78bfa">—</b></div>
+          <div>الوكلاء الحاليون: <b id="scaler-current" style="color:#22d3ee">—</b></div>
+          <div>الهدف التالي: <b id="scaler-next" style="color:#10b981">—</b></div>
+          <div>السقف الأقصى: <b id="scaler-max" style="color:#f59e0b">—</b></div>
+        </div>
+        <div style="margin-top:12px;font-size:10px;color:#64748b;text-align:center">
+          Stages: 1 → 10 → 100 → 1K → 10K → 100K → 1M
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">مجمع الإيميلات الجاهزة <span>Email Pool</span></div>
+        <div style="font-size:12px;line-height:2;color:#cbd5e1">
+          <div>متاح: <b id="epool-available" style="color:#10b981">—</b></div>
+          <div>المجموع: <b id="epool-total" style="color:#22d3ee">—</b></div>
+          <div>الهدف: <b id="epool-target" style="color:#a78bfa">—</b></div>
+          <div>الطلب الكلي: <b id="epool-demand" style="color:#f59e0b">—</b></div>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="card-title">الحالة العامة</div>
         <div class="health-circle">
           <div class="health-ring" id="health-ring">✓</div>

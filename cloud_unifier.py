@@ -221,3 +221,95 @@ class CloudUnifier:
 
 # Singleton
 cloud_unifier = CloudUnifier()
+
+
+# ============================================================
+# Bulk registration: register ALL providers in DB
+# ============================================================
+def register_all_providers_in_db() -> Dict[str, int]:
+    """
+    Register every known provider in the api_providers table.
+    Providers without keys get status='available' (not 'active').
+    This lets the dashboard show all 245 providers.
+    """
+    from db import get_conn
+    registered = 0
+    skipped = 0
+    errors = 0
+
+    try:
+        with get_conn() as conn:
+            for name, info in cloud_unifier.providers.items():
+                try:
+                    # Check if already exists
+                    existing = conn.execute(
+                        "SELECT provider_key FROM api_providers WHERE provider_key = ?",
+                        (name,)
+                    ).fetchone()
+                    if existing:
+                        skipped += 1
+                        continue
+
+                    # Status: 'active' if has account, otherwise 'available'
+                    status = "active" if info.get("has_account") else "available"
+
+                    conn.execute(
+                        "INSERT OR IGNORE INTO api_providers "
+                        "(provider_key, name, category, api_url, auth_type, "
+                        "env_key, api_key, status, daily_limit, used_today, created_at) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        (
+                            name,
+                            info.get("name", name),
+                            "cloud_provider",
+                            info.get("api_url", ""),
+                            "bearer",
+                            f"{name.upper()}_API_KEY",
+                            None,
+                            status,
+                            1000,
+                            0,
+                            time.time(),
+                        )
+                    )
+                    registered += 1
+                except Exception as e:
+                    errors += 1
+                    logger.warning(f"[Unifier] register {name} failed: {e}")
+
+            conn.commit()
+
+        # Now update counts
+        cloud_unifier._load_providers()
+
+        result = {"registered": registered, "skipped": skipped, "errors": errors}
+        logger.info(f"[Unifier] Bulk registration: {result}")
+        try:
+            log_event("cloud_unifier", {"action": "bulk_register", **result})
+        except Exception:
+            pass
+        return result
+
+    except Exception as e:
+        logger.error(f"[Unifier] bulk register failed: {e}")
+        return {"registered": 0, "skipped": 0, "errors": 1}
+
+
+def count_registered_providers() -> Dict[str, int]:
+    """Count providers in DB by status."""
+    from db import get_conn
+    try:
+        with get_conn() as conn:
+            active = conn.execute(
+                "SELECT COUNT(*) as c FROM api_providers WHERE status='active'"
+            ).fetchone()["c"]
+            available = conn.execute(
+                "SELECT COUNT(*) as c FROM api_providers WHERE status='available'"
+            ).fetchone()["c"]
+            total = conn.execute(
+                "SELECT COUNT(*) as c FROM api_providers"
+            ).fetchone()["c"]
+            return {"active": active, "available": available, "total": total}
+    except Exception as e:
+        logger.error(f"[Unifier] count failed: {e}")
+        return {"active": 0, "available": 0, "total": 0}

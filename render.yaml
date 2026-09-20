@@ -24,3 +24,11 @@ services:
         value: "1"
       - key: PYTHON_VERSION
         value: "3.11.0"
+      - key: CG_BOOTSTRAP_STAGE
+        value: "4"
+      - key: CG_EMAIL_POOL_SIZE
+        value: "50"
+      - key: CG_ORCH_COLLECT
+        value: "300"
+      - key: CG_SCALE_COOLDOWN
+        value: "120"

@@ -55,6 +55,22 @@ class ControlPlane:
         except Exception as e:
             logger.warning(f"[Control] Orchestrator failed: {e}")
 
+        # Auto-Scaler: grows the agent hierarchy dynamically
+        try:
+            from auto_scaler import auto_scaler
+            auto_scaler.start()
+            logger.info("[Control] Auto-Scaler started")
+        except Exception as e:
+            logger.warning(f"[Control] Auto-Scaler failed: {e}")
+
+        # Email Pool: pre-creates real emails for fast provisioning
+        try:
+            from email_pool import email_pool
+            email_pool.start()
+            logger.info("[Control] Email Pool started")
+        except Exception as e:
+            logger.warning(f"[Control] Email Pool failed: {e}")
+
         t = threading.Thread(target=self._main_loop, daemon=True)
         t.start()
         self._threads.append(t)
@@ -73,6 +89,16 @@ class ControlPlane:
         try:
             from orchestrator import orchestrator
             orchestrator.stop()
+        except Exception:
+            pass
+        try:
+            from auto_scaler import auto_scaler
+            auto_scaler.stop()
+        except Exception:
+            pass
+        try:
+            from email_pool import email_pool
+            email_pool.stop()
         except Exception:
             pass
         for t in self._threads:
@@ -116,6 +142,8 @@ class ControlPlane:
             "queue_backend": get_backend(),
             "orchestrator": (lambda: __import__("orchestrator").orchestrator.status())(),
             "cloud_unifier": (lambda: __import__("cloud_unifier").cloud_unifier.status())(),
+            "auto_scaler": (lambda: __import__("auto_scaler").auto_scaler.status())(),
+            "email_pool": (lambda: __import__("email_pool").email_pool.stats())(),
             "cloud_health": {
                 "weak": len(cloud_health.list_weak()),
                 "healthy": len(cloud_health.list_healthy()),

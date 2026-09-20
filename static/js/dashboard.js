@@ -80,7 +80,7 @@ function applyStatus(data) {
 
     // KPI
     setText("kpi-agents", fmt(data.agents?.total || 0));
-    setText("kpi-cloud", fmt(data.cloud_health?.healthy || 0));
+    setText("kpi-cloud", fmt(data.cloud_stats?.total || 0));
     setText("kpi-sources", fmt(data.sources_count || 0));
     setText("kpi-tasks", fmt(data.tasks?.total || 0));
     setText("kpi-success", (data.tasks?.success_rate || 0).toFixed(1) + "%");
@@ -246,6 +246,40 @@ async function loadTodayMetrics() {
     }
 }
 
+
+// ----------------------------------------------------------
+// Auto-Scaler status
+// ----------------------------------------------------------
+async function loadScaler() {
+    try {
+        const r = await fetch(`${API}/scaler/status`);
+        const data = await r.json();
+        setText("scaler-stage", data.stage ?? "—");
+        setText("scaler-current", fmt(data.current || 0));
+        setText("scaler-next", fmt(data.next_target || 0));
+        setText("scaler-max", fmt(data.max_agents || 0));
+    } catch (e) { console.error(e); }
+}
+
+
+// ----------------------------------------------------------
+// Email Pool
+// ----------------------------------------------------------
+async function loadEmailPool() {
+    try {
+        const r = await fetch(`${API}/email_pool/stats`);
+        const data = await r.json();
+        setText("epool-available", fmt(data.available || 0));
+        setText("epool-total", fmt(data.total || 0));
+        setText("epool-target", fmt(data.target || 0));
+    } catch (e) { console.error(e); }
+    try {
+        const r = await fetch(`${API}/email_pool/demand`);
+        const data = await r.json();
+        setText("epool-demand", fmt(data.total_demand || 0));
+    } catch (e) { console.error(e); }
+}
+
 // ----------------------------------------------------------
 // Charts
 // ----------------------------------------------------------
@@ -335,12 +369,16 @@ document.addEventListener("DOMContentLoaded", () => {
     loadSources();
     loadTaskStats();
     loadTodayMetrics();
+    loadScaler();
+    loadEmailPool();
 
     setInterval(loadStatus, 5000);
     setInterval(loadTasks, 10000);
     setInterval(loadSources, 15000);
     setInterval(loadTaskStats, 10000);
     setInterval(loadTodayMetrics, 15000);
+    setInterval(loadScaler, 30000);
+    setInterval(loadEmailPool, 20000);
     setInterval(tickActivity, 2000);
 
     document.querySelectorAll(".nav-item").forEach(el => {

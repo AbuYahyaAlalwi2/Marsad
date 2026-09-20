@@ -183,6 +183,16 @@ def safe_status():
     except Exception:
         pass
 
+    # Real cloud counts
+    cloud_stats = {"active": 0, "available": 0, "total": 0, "weak": 0}
+    try:
+        from cloud_unifier import count_registered_providers
+        cloud_stats.update(count_registered_providers())
+        from cloud_health import cloud_health
+        cloud_stats["weak"] = len(cloud_health.list_weak())
+    except Exception:
+        pass
+
     return {
         "timestamp": datetime.now().isoformat(),
         "running": cp.get("running", False),
@@ -190,12 +200,15 @@ def safe_status():
         "uptime_seconds": cp.get("uptime_seconds", 0),
         "metrics": metrics,
         "agents": agents,
+        "cloud_stats": cloud_stats,
         "cloud_health": cp.get("cloud_health", {"healthy": 0, "weak": 0}),
         "clinic": cp.get("clinic", {"tracked": 0, "quarantined": 0}),
         "knowledge": cp.get("knowledge", {"total_entries": 0}),
         "database": db,
         "tasks": task_stats,
         "sources_count": sources_count,
+        "auto_scaler": (lambda: __import__("auto_scaler").auto_scaler.status())(),
+        "email_pool": (lambda: __import__("email_pool").email_pool.stats())(),
         "storage_bytes": storage_bytes,
         "today": today_metrics,
     }
@@ -373,6 +386,55 @@ def api_orch_status():
     try:
         from orchestrator import orchestrator
         return jsonify(orchestrator.status())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
+
+@app.route("/api/scaler/status")
+def api_scaler_status():
+    try:
+        from auto_scaler import auto_scaler
+        return jsonify(auto_scaler.status())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/scaler/force/<int:stage>", methods=["POST"])
+def api_scaler_force(stage):
+    try:
+        from auto_scaler import auto_scaler
+        return jsonify(auto_scaler.force_stage(stage))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
+
+@app.route("/api/email_pool/stats")
+def api_email_pool_stats():
+    try:
+        from email_pool import email_pool
+        return jsonify(email_pool.stats())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/email_pool/demand")
+def api_email_pool_demand():
+    try:
+        from email_pool import email_pool
+        return jsonify(email_pool.get_demand_report())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/email_pool/expand", methods=["POST"])
+def api_email_pool_expand():
+    try:
+        from email_pool import email_pool
+        return jsonify(email_pool.expand_for_clouds())
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
