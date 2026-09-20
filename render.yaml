@@ -13,8 +13,6 @@ services:
         value: "false"
       - key: CG_ENABLE_VPN
         value: "false"
-      - key: CG_VPN_AUTO_CONNECT
-        value: "false"
       - key: CG_ENABLE_PROXY
         value: "false"
       - key: CG_ENABLE_EXPLOIT_GEN
@@ -35,11 +33,9 @@ services:
         value: "10"
       - key: CG_DUPLICATE_CHECK
         value: "true"
-      - key: CG_COLLECTION_INTERVAL
-        value: "3600"
+      - key: PYTHONUNBUFFERED
+        value: "1"
       - key: STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION
         value: "false"
       - key: STREAMLIT_SERVER_ENABLE_CORS
         value: "false"
-      - key: PYTHONUNBUFFERED
-        value: "1"
