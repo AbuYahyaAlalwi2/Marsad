@@ -566,31 +566,6 @@ def _open_browser(port):
         print(f"[Dashboard] Open manually: {url}")
 
 
-if __name__ == "__main__":
-    _prime_psutil()
-    port = int(os.environ.get("PORT", "5000"))
-
-    print(f"""
-    ╔══════════════════════════════════════════════════════════╗
-    ║           MARSAD DASHBOARD - Flask Server                ║
-    ║  http://0.0.0.0:{port:<42}║
-    ╚══════════════════════════════════════════════════════════╝
-    """)
-
-    # Auto-start subsystems
-    if os.environ.get("CG_NO_AUTOSTART", "false").lower() != "true":
-        _auto_start_subsystems()
-
-    # Auto-open browser
-    if os.environ.get("CG_NO_BROWSER", "false").lower() != "true":
-        threading.Thread(target=_open_browser, args=(port,), daemon=True).start()
-
-    if os.environ.get("CG_SELF_PING", "true").lower() == "true":
-        _start_self_ping()
-
-    app.run(host="0.0.0.0", port=port, debug=False)
-
-
 # ============================================================
 # Self-Ping: prevents Render free tier from sleeping
 # ============================================================
@@ -626,3 +601,31 @@ def _start_self_ping():
     t = _th.Thread(target=_self_ping_loop, daemon=True)
     t.start()
     print("[SelfPing] Started", flush=True)
+
+
+if __name__ == "__main__":
+    _prime_psutil()
+    port = int(os.environ.get("PORT", "5000"))
+
+    print(f"""
+    ╔══════════════════════════════════════════════════════════╗
+    ║           MARSAD DASHBOARD - Flask Server                ║
+    ║  http://0.0.0.0:{port:<42}║
+    ╚══════════════════════════════════════════════════════════╝
+    """)
+
+    # Auto-start subsystems
+    if os.environ.get("CG_NO_AUTOSTART", "false").lower() != "true":
+        _auto_start_subsystems()
+
+    # Auto-open browser
+    if os.environ.get("CG_NO_BROWSER", "false").lower() != "true":
+        threading.Thread(target=_open_browser, args=(port,), daemon=True).start()
+
+    if os.environ.get("CG_SELF_PING", "true").lower() == "true":
+        _start_self_ping()
+
+    app.run(host="0.0.0.0", port=port, debug=False)
+
+
+
