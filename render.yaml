@@ -3,7 +3,7 @@ services:
     name: marsad-dashboard
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: streamlit run main.py --server.port=$PORT --server.address=0.0.0.0 --server.enableXsrfProtection=false --server.enableCORS=false --server.headless=true
+    startCommand: streamlit run dashboard.py --server.port=$PORT --server.address=0.0.0.0 --server.enableXsrfProtection=false --server.enableCORS=false --server.headless=true
     envVars:
       - key: CG_DB_PATH
         value: /tmp/cyberguard.db
