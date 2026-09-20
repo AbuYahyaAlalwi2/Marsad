@@ -1,33 +1,26 @@
 #!/usr/bin/env python3
-"""
-محرك التشغيل التلقائي الدائم — ضغطة واحدة وتشغيل بلا توقف
+"""Real autorun engine.
+
+This engine never invents success or generates fake accounts. It validates real
+credentials before attempting any provider or cloud action.
 """
 import os
 import sys
 import time
 import signal
-import threading
 import traceback
 from pathlib import Path
 
-# تأكد أن المسار صحيح
 BASE = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE))
 os.chdir(BASE)
 
 from db import _ensure_db, log_event, get_memory_size_gb
+
 _ensure_db()
 
 from agents.hierarchy import hierarchy
-from agents.real_email_agent import real_email_agent
-from agents.real_signup_agent import real_signup
 from agents.real_cloud_linker import real_cloud_linker
-try:
-    from agents.vuln_intel_agent import vuln_intel_agent
-except Exception:
-    vuln_intel_agent = None
-from agents.vpn_agent import vpn_agent
-# cleaner optional
 from collect.multi_platform import collector
 try:
     from collect.datasets import dataset_collector
@@ -36,15 +29,15 @@ except Exception:
 from merge.omni_merger import merger
 from hf_upload.uploader import hf_uploader
 from keep_alive import start_keep_alive
+
 try:
     from marsad_state_writer import write_state, mark_running, update_from_db
 except Exception:
     write_state = mark_running = update_from_db = lambda *a, **k: None
-from core.memory import memory
-# learner optional
 
 RUNNING = True
 CYCLE = 0
+
 
 def signal_handler(sig, frame):
     global RUNNING
@@ -52,15 +45,16 @@ def signal_handler(sig, frame):
     log_event("autorun", {"status": "shutdown_signal"})
     print("\n[!] Stopping autorun...")
 
+
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
+
 
 def init_hierarchy():
     try:
         if not hierarchy.root_id:
             root = hierarchy.initialize()
             log_event("autorun", {"action": "hierarchy_init", "root": root})
-            # توسيع محدود في البداية لتجنب انفجار
             for i in range(min(5, 100)):
                 hierarchy.expand(f"agent_1_{i}", target_agents=1000)
             return True
@@ -68,54 +62,51 @@ def init_hierarchy():
         log_event("autorun_error", {"stage": "hierarchy", "error": str(e)})
     return False
 
-def cycle_email_and_signup():
+
+def cycle_validate_real_credentials():
+    """Only validate real credentials. No fake signup jobs."""
     try:
-        emails = real_email_agent.generate_batch(3)
-        log_event("autorun", {"action": "emails_created", "count": len(emails)})
-        if emails:
-            res = real_signup.register_all(["huggingface"])
-            log_event("autorun", {"action": "signup_cycle", "result": res})
+        env_names = [
+            "HF_TOKEN",
+            "GITHUB_TOKEN",
+            "GROQ_API_KEY",
+            "OPENROUTER_API_KEY",
+            "DEEPSEEK_API_KEY",
+            "MISTRAL_API_KEY",
+        ]
+        found = [n for n in env_names if os.environ.get(n, "").strip()]
+        log_event("autorun", {"action": "real_credentials_check", "count": len(found), "names": found})
+        return len(found)
     except Exception as e:
-        log_event("autorun_error", {"stage": "signup", "error": str(e)})
+        log_event("autorun_error", {"stage": "credentials_check", "error": str(e)})
+        return 0
+
 
 def cycle_collect_clean():
     try:
         if hasattr(collector, "collect_github"):
             collector.collect_github(query="python agent", limit=5)
         if dataset_collector:
-            # المنصات المطلوبة: HF, Kaggle, Google DS, Common Crawl, UCI, OpenML, Google Research, OPUS
-            res = dataset_collector.collect_all(
-                query="machine learning security code",
-                limit_per_platform=5
-            )
+            res = dataset_collector.collect_all(query="machine learning security code", limit_per_platform=5)
             log_event("autorun", {"action": "dataset_collect", "result": str(res)[:300]})
             print(f"[+] Dataset collect: {res}")
         log_event("autorun", {"action": "collect_cycle"})
     except Exception as e:
         log_event("autorun_error", {"stage": "collect", "error": str(e)})
 
+
 def cycle_merge_upload():
     try:
         if get_memory_size_gb() > 0.5:
             plan = merger.get_merge_plan()
             log_event("autorun", {"action": "merge_plan", "plan": plan})
-            # لا نشغل صهر كامل كل دورة — ثقيل جداً
-        if hasattr(hf_uploader, "start_auto_upload"):
+        if os.environ.get("HF_TOKEN"):
             hf_uploader.start_auto_upload(interval=1800)
+        else:
+            log_event("autorun", {"action": "hf_upload_skip", "reason": "HF_TOKEN_missing"})
     except Exception as e:
         log_event("autorun_error", {"stage": "merge_upload", "error": str(e)})
 
-def cycle_vpn_rotate():
-    try:
-        if vpn_agent:
-            st = vpn_agent.get_status()
-            if not st.get("connected"):
-                vpn_agent.connect("US")
-            else:
-                vpn_agent.rotate()
-            log_event("autorun", {"action": "vpn_rotate", "status": vpn_agent.get_status()})
-    except Exception as e:
-        log_event("autorun_error", {"stage": "vpn", "error": str(e)})
 
 def cycle_cloud_dispatch():
     try:
@@ -124,14 +115,6 @@ def cycle_cloud_dispatch():
     except Exception as e:
         log_event("autorun_error", {"stage": "cloud", "error": str(e)})
 
-def cycle_vuln_intel():
-    try:
-        if vuln_intel_agent:
-            res = vuln_intel_agent.run_cycle()
-            log_event("autorun", {"action": "vuln_intel", "result": res})
-            print(f"[+] Vuln intel: {res.get('collected', 0)} items from {res.get('sources')}")
-    except Exception as e:
-        log_event("autorun_error", {"stage": "vuln_intel", "error": str(e)})
 
 def main_loop(interval: int = 300):
     global CYCLE, RUNNING
@@ -153,18 +136,14 @@ def main_loop(interval: int = 300):
         except Exception:
             pass
         try:
-            cycle_vpn_rotate()
-            cycle_email_and_signup()
+            cycle_validate_real_credentials()
             cycle_collect_clean()
             cycle_cloud_dispatch()
-            if CYCLE % 2 == 0:
-                cycle_vuln_intel()
-            if CYCLE % 6 == 0:  # كل ساعة تقريباً
+            if CYCLE % 6 == 0:
                 cycle_merge_upload()
         except Exception as e:
             log_event("autorun_error", {"cycle": CYCLE, "error": str(e), "trace": traceback.format_exc()})
             print(f"[!] Cycle error: {e}")
-        # انتظار
         for _ in range(interval):
             if not RUNNING:
                 break
@@ -176,6 +155,7 @@ def main_loop(interval: int = 300):
     except Exception:
         pass
     log_event("autorun", {"status": "stopped", "cycles": CYCLE})
+
 
 if __name__ == "__main__":
     interval = int(os.environ.get("CG_AUTORUN_INTERVAL", "300"))

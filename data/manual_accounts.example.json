@@ -1,0 +1,9 @@
+{
+  "provider-id": {
+    "provider": "provider-id",
+    "email": "your.real.email@example.com",
+    "account_url": "https://official-provider.example/account",
+    "notes": "Created and verified manually by the operator.",
+    "registration": "operator_completed"
+  }
+}
