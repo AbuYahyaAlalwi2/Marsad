@@ -217,6 +217,10 @@ def safe_status():
         "auto_scaler": (lambda: __import__("auto_scaler").auto_scaler.status())(),
         "email_pool": (lambda: __import__("email_pool").email_pool.stats())(),
         "million_runtime": (lambda: __import__("million_runtime").million_runtime.status())(),
+        "cloud_multiplier": (lambda: __import__("cloud_multiplier").cloud_multiplier.status())(),
+        "bootstrap": (lambda: __import__("bootstrap_controller").bootstrap_controller.status())(),
+        "mission": (lambda: __import__("mission_controller").mission_controller.status())(),
+        "auto_deployer": (lambda: __import__("auto_deployer").auto_deployer.status())(),
         "storage_bytes": storage_bytes,
         "today": today_metrics,
     }

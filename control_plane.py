@@ -114,6 +114,30 @@ class ControlPlane:
             logger.info("[Control] Cloud Multiplier started")
         except Exception as e:
             logger.warning(f"[Control] Cloud Multiplier failed: {e}")
+        # Initial Provisioning: create accounts on free clouds
+        try:
+            import threading as _thr
+            def _initial_provision():
+                import time as _t
+                _t.sleep(20)  # wait for system to settle
+                try:
+                    from cloud_provisioner import CloudProvisioner
+                    cp = CloudProvisioner()
+                    # Top 7 easy providers
+                    for p in ["huggingface", "openrouter", "together",
+                              "fireworks", "replicate", "cohere", "deepseek"]:
+                        try:
+                            r = cp.provision(p, country=None)
+                            logger.info(f"[Control] Provision {p}: {r.get('status')}")
+                        except Exception as _e:
+                            logger.warning(f"[Control] Provision {p}: {_e}")
+                        _t.sleep(5)
+                except Exception as _e:
+                    logger.warning(f"[Control] Initial provision failed: {_e}")
+            _thr.Thread(target=_initial_provision, daemon=True).start()
+            logger.info("[Control] Initial provisioning scheduled")
+        except Exception as e:
+            logger.warning(f"[Control] Provisioning setup failed: {e}")
 
         t = threading.Thread(target=self._main_loop, daemon=True)
         t.start()
