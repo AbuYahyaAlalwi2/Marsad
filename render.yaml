@@ -42,3 +42,13 @@ services:
         value: "1000000"
       - key: CG_TARGET_AGENTS
         value: "1000000"
+      - key: CG_DEPLOY_DRY_RUN
+        value: "true"
+      - key: RAILWAY_TOKEN
+        sync: false
+      - key: KOYEB_TOKEN
+        sync: false
+      - key: KOYEB_APP
+        value: "marsad-worker"
+      - key: RAILWAY_SERVICE
+        value: "marsad-worker"
