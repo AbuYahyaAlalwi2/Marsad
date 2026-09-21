@@ -221,6 +221,8 @@ def safe_status():
         "bootstrap": (lambda: __import__("bootstrap_controller").bootstrap_controller.status())(),
         "mission": (lambda: __import__("mission_controller").mission_controller.status())(),
         "auto_deployer": (lambda: __import__("auto_deployer").auto_deployer.status())(),
+        "hf_token_present": bool(os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")),
+        "github_token_present": bool(os.environ.get("GITHUB_TOKEN")),
         "storage_bytes": storage_bytes,
         "today": today_metrics,
     }
