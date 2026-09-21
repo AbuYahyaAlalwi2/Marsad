@@ -99,6 +99,13 @@ class ControlPlane:
             logger.info("[Control] Auto-Deployer started")
         except Exception as e:
             logger.warning(f"[Control] Auto-Deployer failed: {e}")
+        # Bootstrap Controller: orchestrates the 6 phases
+        try:
+            from bootstrap_controller import bootstrap_controller
+            bootstrap_controller.start()
+            logger.info("[Control] Bootstrap Controller started")
+        except Exception as e:
+            logger.warning(f"[Control] Bootstrap Controller failed: {e}")
 
         t = threading.Thread(target=self._main_loop, daemon=True)
         t.start()
@@ -143,6 +150,11 @@ class ControlPlane:
         try:
             from auto_deployer import auto_deployer
             auto_deployer.stop()
+        except Exception:
+            pass
+        try:
+            from bootstrap_controller import bootstrap_controller
+            bootstrap_controller.stop()
         except Exception:
             pass
         for t in self._threads:
@@ -190,6 +202,8 @@ class ControlPlane:
             "email_pool": (lambda: __import__("email_pool").email_pool.stats())(),
             "distributed": (lambda: __import__("distributed_manager").distributed_manager.status())(),
             "master_deploy": (lambda: __import__("master_deploy").master_deployer.status())(),
+            "bootstrap": (lambda: __import__("bootstrap_controller").bootstrap_controller.status())(),
+            "mission": (lambda: __import__("mission_controller").mission_controller.status())(),
             "cloud_health": {
                 "weak": len(cloud_health.list_weak()),
                 "healthy": len(cloud_health.list_healthy()),

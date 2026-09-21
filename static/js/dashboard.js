@@ -333,6 +333,33 @@ async function loadDeployer() {
     } catch (e) { console.error(e); }
 }
 
+
+// ----------------------------------------------------------
+// Mission Control
+// ----------------------------------------------------------
+async function loadMission() {
+    try {
+        const r = await fetch(`${API}/mission/status`);
+        const data = await r.json();
+        setText("ms-phase", (data.current_phase?.phase) || "—");
+        setText("ms-current", data.current_mission || "لا توجد");
+        const p = data.mission_running ? "يعمل" : "متوقف";
+        setText("ms-progress", p);
+        setText("ms-items", "—");
+    } catch (e) { console.error(e); }
+    try {
+        const r = await fetch(`${API}/mission/list`);
+        const data = await r.json();
+        const missions = data.missions || [];
+        const running = missions.find(m => m.status === "running");
+        if (running) {
+            setText("ms-current", running.name);
+            setText("ms-progress", (running.progress || 0).toFixed(1) + "%");
+            setText("ms-items", fmt(running.items_done || 0));
+        }
+    } catch (e) { console.error(e); }
+}
+
 // ----------------------------------------------------------
 // Charts
 // ----------------------------------------------------------
@@ -427,6 +454,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loadDistributed();
     loadMillion();
     loadDeployer();
+    loadMission();
 
     setInterval(loadStatus, 5000);
     setInterval(loadTasks, 10000);
@@ -438,6 +466,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setInterval(loadDistributed, 30000);
     setInterval(loadMillion, 5000);
     setInterval(loadDeployer, 30000);
+    setInterval(loadMission, 15000);
     setInterval(tickActivity, 2000);
 
     document.querySelectorAll(".nav-item").forEach(el => {

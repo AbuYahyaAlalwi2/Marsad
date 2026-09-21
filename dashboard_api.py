@@ -567,6 +567,97 @@ def api_deployer_force():
         return jsonify({"error": str(e)}), 500
 
 
+
+
+# ============================================================
+# Mission Controller API
+# ============================================================
+
+@app.route("/api/mission/status")
+def api_mission_status():
+    try:
+        from mission_controller import mission_controller
+        return jsonify(mission_controller.status())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/mission/list")
+def api_mission_list():
+    try:
+        from mission_controller import mission_controller
+        return jsonify({"missions": mission_controller.list_missions()})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/mission/start", methods=["POST"])
+def api_mission_start():
+    try:
+        from mission_controller import mission_controller
+        data = request.json or {}
+        key = data.get("mission", "collect_code")
+        config = data.get("config", {})
+        return jsonify(mission_controller.start_mission(key, config))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/mission/stop", methods=["POST"])
+def api_mission_stop():
+    try:
+        from mission_controller import mission_controller
+        return jsonify(mission_controller.stop_mission())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/mission/custom", methods=["POST"])
+def api_mission_custom():
+    """Create and start a custom mission instantly."""
+    try:
+        from mission_controller import mission_controller, BUILTIN_MISSIONS
+        import json as _json
+        data = request.json or {}
+        key = data.get("mission_key", f"custom_{int(time.time())}")
+        name = data.get("name", "مهمة مخصصة")
+        description = data.get("description", "")
+        config = data.get("config", {"type": "generic", "target_count": 1000})
+
+        # Save mission to DB
+        from db import get_conn
+        with get_conn() as conn:
+            conn.execute(
+                "INSERT OR REPLACE INTO missions "
+                "(mission_key, name, description, config, status, created_at) "
+                "VALUES (?, ?, ?, ?, 'pending', ?)",
+                (key, name, description, _json.dumps(config), time.time())
+            )
+            conn.commit()
+
+        # Register as built-in for immediate use
+        BUILTIN_MISSIONS[key] = {
+            "name": name,
+            "description": description,
+            "config": config,
+        }
+
+        # Start it
+        result = mission_controller.start_mission(key, config)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/bootstrap/status")
+def api_bootstrap_status():
+    try:
+        from bootstrap_controller import bootstrap_controller
+        return jsonify(bootstrap_controller.status())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "service": "marsad-dashboard"})
