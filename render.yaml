@@ -52,3 +52,11 @@ services:
         value: "marsad-worker"
       - key: RAILWAY_SERVICE
         value: "marsad-worker"
+      - key: CG_SCALE_UP_QUEUE
+        value: "1"
+      - key: CG_SCALE_UP_CPU
+        value: "20"
+      - key: CG_SCALE_UP_RAM
+        value: "50"
+      - key: CG_AUTODEPLOY_INTERVAL
+        value: "60"
