@@ -60,26 +60,45 @@ def deploy_railway(token: str, service_name: str, count: int, dry_run: bool = Fa
         if not projects:
             return {"ok": False, "status": "no_projects", "output": ""}
 
-        # 2. Find the target service
+        # 2. Find target service:
+        #    - First: look for service named as `service_name`
+        #    - Fallback: use first service in first project
         found = None
+        fallback = None
+
         for edge in projects:
             proj = edge["node"]
             services = proj.get("services", {}).get("edges", [])
             envs = proj.get("environments", {}).get("edges", [])
+            env_id = envs[0]["node"]["id"] if envs else None
+
             for s in services:
+                svc = {
+                    "project_id": proj["id"],
+                    "project_name": proj.get("name", ""),
+                    "service_id": s["node"]["id"],
+                    "service_name": s["node"]["name"],
+                    "environment_id": env_id,
+                }
+                # Match by exact name
                 if s["node"]["name"] == service_name:
-                    found = {
-                        "project_id": proj["id"],
-                        "service_id": s["node"]["id"],
-                        "environment_id": envs[0]["node"]["id"] if envs else None,
-                    }
+                    found = svc
                     break
+                # Match by project name
+                if proj.get("name", "") == service_name and fallback is None:
+                    fallback = svc
+                # Remember first service as last fallback
+                if fallback is None:
+                    fallback = svc
             if found:
                 break
 
+        if not found:
+            found = fallback  # use whatever service exists
+
         if not found or not found["environment_id"]:
             return {"ok": False, "status": "service_not_found",
-                    "output": f"Service '{service_name}' not found in Railway"}
+                    "output": f"No services found in Railway account. Create a service first."}
 
         # 3. Scale replicas
         mutation = """
