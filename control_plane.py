@@ -107,6 +107,14 @@ class ControlPlane:
         except Exception as e:
             logger.warning(f"[Control] Bootstrap Controller failed: {e}")
 
+        # Cloud Multiplier: doubles clouds when load rises
+        try:
+            from cloud_multiplier import cloud_multiplier
+            cloud_multiplier.start()
+            logger.info("[Control] Cloud Multiplier started")
+        except Exception as e:
+            logger.warning(f"[Control] Cloud Multiplier failed: {e}")
+
         t = threading.Thread(target=self._main_loop, daemon=True)
         t.start()
         self._threads.append(t)
@@ -145,6 +153,11 @@ class ControlPlane:
         try:
             from million_runtime import million_runtime
             million_runtime.stop()
+        except Exception:
+            pass
+        try:
+            from cloud_multiplier import cloud_multiplier
+            cloud_multiplier.stop()
         except Exception:
             pass
         try:
@@ -204,6 +217,7 @@ class ControlPlane:
             "master_deploy": (lambda: __import__("master_deploy").master_deployer.status())(),
             "bootstrap": (lambda: __import__("bootstrap_controller").bootstrap_controller.status())(),
             "mission": (lambda: __import__("mission_controller").mission_controller.status())(),
+            "cloud_multiplier": (lambda: __import__("cloud_multiplier").cloud_multiplier.status())(),
             "cloud_health": {
                 "weak": len(cloud_health.list_weak()),
                 "healthy": len(cloud_health.list_healthy()),

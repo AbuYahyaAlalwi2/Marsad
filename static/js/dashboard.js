@@ -360,6 +360,21 @@ async function loadMission() {
     } catch (e) { console.error(e); }
 }
 
+
+// ----------------------------------------------------------
+// Cloud Multiplier
+// ----------------------------------------------------------
+async function loadMultiplier() {
+    try {
+        const r = await fetch(`${API}/multiplier/status`);
+        const data = await r.json();
+        setText("cm-agents", fmt(data.agents_total || 0));
+        setText("cm-clouds", fmt(data.clouds_current || 0));
+        setText("cm-per-cloud", fmt(data.agents_per_cloud || 0));
+        setText("cm-gen", data.generation || 0);
+    } catch (e) { console.error(e); }
+}
+
 // ----------------------------------------------------------
 // Charts
 // ----------------------------------------------------------
@@ -455,6 +470,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loadMillion();
     loadDeployer();
     loadMission();
+    loadMultiplier();
 
     setInterval(loadStatus, 5000);
     setInterval(loadTasks, 10000);
@@ -467,6 +483,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setInterval(loadMillion, 5000);
     setInterval(loadDeployer, 30000);
     setInterval(loadMission, 15000);
+    setInterval(loadMultiplier, 20000);
     setInterval(tickActivity, 2000);
 
     document.querySelectorAll(".nav-item").forEach(el => {

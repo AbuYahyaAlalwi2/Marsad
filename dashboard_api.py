@@ -658,6 +658,30 @@ def api_bootstrap_status():
         return jsonify({"error": str(e)}), 500
 
 
+
+
+# ============================================================
+# Cloud Multiplier API
+# ============================================================
+
+@app.route("/api/multiplier/status")
+def api_multiplier_status():
+    try:
+        from cloud_multiplier import cloud_multiplier
+        return jsonify(cloud_multiplier.status())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/multiplier/double", methods=["POST"])
+def api_multiplier_double():
+    try:
+        from cloud_multiplier import cloud_multiplier
+        return jsonify(cloud_multiplier.force_double())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "service": "marsad-dashboard"})
