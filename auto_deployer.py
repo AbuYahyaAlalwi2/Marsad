@@ -223,7 +223,7 @@ class AutoDeployer:
         new_total = self.current_workers.get(provider, 0) + count
         cmd = self._build_command(provider, new_total)
 
-        result = self._run(cmd)
+        result = self._run_http(provider, new_total)
 
         with self._lock:
             if result["ok"]:
@@ -236,7 +236,7 @@ class AutoDeployer:
         new_total = max(0, self.current_workers.get(provider, 0) - count)
         cmd = self._build_command(provider, new_total)
 
-        result = self._run(cmd)
+        result = self._run_http(provider, new_total)
 
         with self._lock:
             if result["ok"]:
@@ -246,36 +246,41 @@ class AutoDeployer:
         logger.info(f"[Deployer] Scale DOWN {provider} -> {new_total} workers")
 
     def _build_command(self, provider: str, count: int) -> str:
+        """Describe command for logging (HTTP API called instead)."""
         if provider == "fly":
-            return f"flyctl scale count {count} --app {self.fly_app} --yes"
+            return f"HTTP: fly machines/{self.fly_app} -> {count}"
         if provider == "railway":
-            return f"railway scale --service {self.railway_service} --count {count}"
+            return f"HTTP: railway service/{self.railway_service} -> {count}"
         if provider == "koyeb":
-            return f"koyeb app update {self.koyeb_app} --replicas {count}"
+            return f"HTTP: koyeb service/{self.koyeb_app} -> {count}"
         if provider == "render":
-            return f"render services scale {self.railway_service} --count {count}"
+            return f"HTTP: render service -> {count}"
         return ""
 
-    def _run(self, cmd: str) -> Dict:
-        if not cmd:
-            return {"ok": False, "status": "invalid_command", "output": ""}
+    def _get_token_and_name(self, provider: str):
+        if provider == "fly":
+            return self.fly_token, self.fly_app
+        if provider == "railway":
+            return self.railway_token, self.railway_service
+        if provider == "koyeb":
+            return self.koyeb_token, self.koyeb_app
+        if provider == "render":
+            return self.render_token, self.railway_service
+        return "", ""
 
+    def _run_http(self, provider: str, count: int) -> Dict:
+        """Execute deployment via HTTP API."""
         if self.dry_run:
             return {
                 "ok": True,
                 "status": "dry_run",
-                "output": f"[DRY RUN] Would execute: {cmd}",
+                "output": f"[DRY] {provider} -> {count}",
             }
 
         try:
-            r = subprocess.run(
-                cmd, shell=True, capture_output=True, text=True, timeout=180
-            )
-            return {
-                "ok": r.returncode == 0,
-                "status": "success" if r.returncode == 0 else "failed",
-                "output": (r.stdout + r.stderr)[-1000:],
-            }
+            from http_deployers import deploy as http_deploy
+            token, name = self._get_token_and_name(provider)
+            return http_deploy(provider, token, name, count, dry_run=False)
         except Exception as e:
             return {"ok": False, "status": "error", "output": str(e)}
 
@@ -312,7 +317,7 @@ class AutoDeployer:
             return {"status": "error", "reason": "unknown_provider"}
 
         cmd = self._build_command(provider, count)
-        result = self._run(cmd)
+        result = self._run_http(provider, count)
 
         with self._lock:
             if result["ok"]:
