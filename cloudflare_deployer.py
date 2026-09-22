@@ -181,6 +181,44 @@ def deploy_worker(token: str, account_id: str, worker_name: str,
         return {"ok": False, "status": sub.get("status", "subdomain_failed"),
                 "output": f"Subdomain setup failed: {sub.get('output', '')}"}
 
+    # Now deploy the actual worker
+    if not token or not account_id:
+        return {"ok": False, "status": "no_credentials", "output": ""}
+
+    url = (f"https://api.cloudflare.com/client/v4/accounts/"
+           f"{account_id}/workers/scripts/{worker_name}")
+    headers = {"Authorization": f"Bearer {token}"}
+    metadata = {
+        "main_module": "worker.js",
+        "compatibility_date": "2024-01-01",
+    }
+    files = {
+        "metadata": (None, __import__("json").dumps(metadata), "application/json"),
+        "worker.js": ("worker.js", WORKER_SCRIPT, "application/javascript"),
+    }
+
+    try:
+        r = requests.put(url, headers=headers, files=files, timeout=60)
+        if r.status_code in (200, 201):
+            return {"ok": True, "status": "success",
+                    "output": f"Worker '{worker_name}' deployed to {account_id[:8]}..."}
+
+        # Extract detailed error
+        try:
+            error_data = r.json()
+            errors = error_data.get("errors", [])
+            error_msg = "; ".join(
+                f"{e.get('code', '?')}: {e.get('message', '?')}"
+                for e in errors
+            ) if errors else r.text[:300]
+        except Exception:
+            error_msg = r.text[:300]
+
+        return {"ok": False, "status": f"http_{r.status_code}",
+                "output": error_msg}
+    except Exception as e:
+        return {"ok": False, "status": "error", "output": str(e)}
+
 
 def delete_worker(token: str, account_id: str, worker_name: str) -> Dict[str, Any]:
     """Delete a worker script."""
