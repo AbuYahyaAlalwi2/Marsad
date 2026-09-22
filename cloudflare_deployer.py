@@ -158,8 +158,20 @@ def deploy_worker(token: str, account_id: str, worker_name: str,
         if r.status_code in (200, 201):
             return {"ok": True, "status": "success",
                     "output": f"Worker '{worker_name}' deployed to {account_id[:8]}..."}
+        
+        # Extract detailed error
+        try:
+            error_data = r.json()
+            errors = error_data.get("errors", [])
+            error_msg = "; ".join(
+                f"{e.get('code', '?')}: {e.get('message', '?')}"
+                for e in errors
+            ) if errors else r.text[:300]
+        except Exception:
+            error_msg = r.text[:300]
+        
         return {"ok": False, "status": f"http_{r.status_code}",
-                "output": r.text[:300]}
+                "output": error_msg}
     except Exception as e:
         return {"ok": False, "status": "error", "output": str(e)}
 
