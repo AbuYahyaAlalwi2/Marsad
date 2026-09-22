@@ -144,13 +144,12 @@ class MultiAccountManager:
                         )
                         added += 1
                     else:
-                        # Update token (may have changed)
                         conn.execute(
                             "UPDATE cf_accounts SET token = ?, status = 'active' "
                             "WHERE account_id = ?",
                             (a["token"], a["account_id"])
                         )
-                conn.commit()
+                    conn.commit()
             except Exception as e:
                 logger.warning(f"[CF-Multi] sync {a['name']}: {e}")
 
@@ -172,12 +171,13 @@ class MultiAccountManager:
 
         results = []
         for a in self.accounts:
-            v = verify_token(a["token"])
+            v = verify_token(a["token"], a["account_id"])
             results.append({
                 "name": a["name"],
                 "account_id": a["account_id"][:8] + "...",
                 "verified": v.get("ok", False),
                 "status": v.get("status", "unknown"),
+                "token_type": v.get("type", "unknown"),
             })
         return {"accounts": results, "total": len(results)}
 

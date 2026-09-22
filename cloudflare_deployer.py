@@ -50,21 +50,47 @@ export default {
 '''
 
 
-def verify_token(token: str) -> Dict[str, Any]:
-    """Verify Cloudflare API token."""
+def verify_token(token: str, account_id: str = None) -> Dict[str, Any]:
+    """
+    Verify Cloudflare API token.
+    Tries BOTH user-owned AND account-owned endpoints.
+    """
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 1. Try user-owned endpoint first
     try:
         r = requests.get(
             "https://api.cloudflare.com/client/v4/user/tokens/verify",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10,
+            headers=headers, timeout=10,
         )
         data = r.json()
-        return {
-            "ok": data.get("success", False),
-            "status": data.get("result", {}).get("status"),
-        }
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
+        if data.get("success") and data.get("result", {}).get("status") == "active":
+            return {
+                "ok": True,
+                "status": "active",
+                "type": "user_owned",
+            }
+    except Exception:
+        pass
+
+    # 2. Try account-owned endpoint (requires account_id)
+    if account_id:
+        try:
+            r = requests.get(
+                f"https://api.cloudflare.com/client/v4/accounts/{account_id}/tokens/verify",
+                headers=headers, timeout=10,
+            )
+            data = r.json()
+            if data.get("success"):
+                return {
+                    "ok": True,
+                    "status": "active",
+                    "type": "account_owned",
+                }
+        except Exception:
+            pass
+
+    return {"ok": False, "status": "unknown", "type": "invalid"}
 
 
 def list_accounts(token: str) -> Dict[str, Any]:
