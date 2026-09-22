@@ -133,8 +133,9 @@ def list_workers(token: str, account_id: str) -> Dict[str, Any]:
 
 def ensure_subdomain(token: str, account_id: str, dry_run: bool = False) -> Dict[str, Any]:
     """
-    Register a workers.dev subdomain for the account (required before deploying).
-    Uses PUT /accounts/{account_id}/workers/subdomain
+    Register a workers.dev subdomain for the account.
+    Required before deploying any Worker.
+    Uses PUT /accounts/{account_id}/workers/subdomain with JSON body.
     """
     if dry_run:
         return {"ok": True, "status": "dry_run", "output": "[DRY] subdomain check"}
@@ -143,25 +144,32 @@ def ensure_subdomain(token: str, account_id: str, dry_run: bool = False) -> Dict
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
     }
-    # Generate a unique subdomain name
     import hashlib
-    sub_name = "marsad-" + hashlib.md5(account_id.encode()).hexdigest()[:8]
-
+    sub_name = "marsad-" + hashlib.md5(account_id.encode()).hexdigest()[:10]
     url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/workers/subdomain"
+
+    # 1. Check if subdomain already exists
+    try:
+        r = requests.get(url, headers=headers, timeout=15)
+        if r.status_code == 200:
+            data = r.json()
+            existing = data.get("result", {}).get("subdomain", "")
+            if existing:
+                return {"ok": True, "status": "exists",
+                        "output": f"Subdomain '{existing}.workers.dev' already registered"}
+    except Exception:
+        pass
+
+    # 2. Register new subdomain via PUT
     try:
         r = requests.put(url, headers=headers, json={"subdomain": sub_name}, timeout=30)
         if r.status_code in (200, 201):
             return {"ok": True, "status": "success",
-                    "output": f"Subdomain '{sub_name}.workers.dev' ready"}
-        # If already exists, try GET to confirm
-        r2 = requests.get(url, headers=headers, timeout=15)
-        if r2.status_code == 200:
-            return {"ok": True, "status": "exists",
-                    "output": "Subdomain already registered"}
-        # Return detailed error
+                    "output": f"Subdomain '{sub_name}.workers.dev' registered"}
         try:
             err = r.json()
-            msg = "; ".join(e.get("message", "") for e in err.get("errors", []))
+            errors = err.get("errors", [])
+            msg = "; ".join(f"{e.get('code')}: {e.get('message')}" for e in errors)
         except Exception:
             msg = r.text[:200]
         return {"ok": False, "status": f"http_{r.status_code}", "output": msg}
@@ -172,29 +180,36 @@ def ensure_subdomain(token: str, account_id: str, dry_run: bool = False) -> Dict
 def deploy_worker(token: str, account_id: str, worker_name: str,
                   dry_run: bool = False) -> Dict[str, Any]:
     """
-    Deploy a worker script.
-    Automatically ensures the workers.dev subdomain is registered first.
+    Deploy a worker script with proper multipart metadata.
     """
-    # Ensure subdomain is set up before deploying
-    sub = ensure_subdomain(token, account_id, dry_run=dry_run)
-    if not sub.get("ok") and sub.get("status") not in ("exists", "dry_run"):
-        return {"ok": False, "status": sub.get("status", "subdomain_failed"),
-                "output": f"Subdomain setup failed: {sub.get('output', '')}"}
-
-    # Now deploy the actual worker
+    if dry_run:
+        return {"ok": True, "status": "dry_run",
+                "output": f"[DRY] deploy {worker_name}"}
     if not token or not account_id:
         return {"ok": False, "status": "no_credentials", "output": ""}
 
+    # Ensure subdomain exists first
+    sub = ensure_subdomain(token, account_id, dry_run=False)
+    if not sub.get("ok"):
+        return {"ok": False, "status": sub.get("status", "subdomain_failed"),
+                "output": f"Subdomain setup failed: {sub.get('output', '')}"}
+
     url = (f"https://api.cloudflare.com/client/v4/accounts/"
            f"{account_id}/workers/scripts/{worker_name}")
+
     headers = {"Authorization": f"Bearer {token}"}
+
+    # Metadata part (JSON) - REQUIRED
     metadata = {
         "main_module": "worker.js",
         "compatibility_date": "2024-01-01",
+        "compatibility_flags": [],
     }
+
+    # Multipart with correct content-type for ES module
     files = {
-        "metadata": (None, __import__("json").dumps(metadata), "application/json"),
-        "worker.js": ("worker.js", WORKER_SCRIPT, "application/javascript"),
+        "metadata": (None, json.dumps(metadata), "application/json"),
+        "worker.js": ("worker.js", WORKER_SCRIPT, "application/javascript+module"),
     }
 
     try:
@@ -213,6 +228,13 @@ def deploy_worker(token: str, account_id: str, worker_name: str,
             ) if errors else r.text[:300]
         except Exception:
             error_msg = r.text[:300]
+
+        # Special handling for subdomain_required error
+        if "10063" in error_msg or "subdomain" in error_msg.lower():
+            return {"ok": False, "status": "subdomain_required",
+                    "output": ("يجب تسجيل workers.dev subdomain يدوياً: "
+                               "افتح dash.cloudflare.com → Workers & Pages → "
+                               "Register a workers.dev subdomain")}
 
         return {"ok": False, "status": f"http_{r.status_code}",
                 "output": error_msg}
