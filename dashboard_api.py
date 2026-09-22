@@ -688,6 +688,43 @@ def api_multiplier_double():
         return jsonify({"error": str(e)}), 500
 
 
+
+
+# ============================================================
+# Cloudflare Multi-Account API
+# ============================================================
+
+@app.route("/api/cf/status")
+def api_cf_status():
+    try:
+        from multi_account_manager import multi_account_manager
+        return jsonify(multi_account_manager.status())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/cf/verify")
+def api_cf_verify():
+    try:
+        from multi_account_manager import multi_account_manager
+        return jsonify(multi_account_manager.verify_all())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/cf/deploy", methods=["POST"])
+def api_cf_deploy():
+    try:
+        from multi_account_manager import multi_account_manager
+        data = request.json or {}
+        return jsonify(multi_account_manager.deploy_all(
+            workers_per_account=data.get("workers_per_account", 10),
+            dry_run=data.get("dry_run", False),
+        ))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "service": "marsad-dashboard"})

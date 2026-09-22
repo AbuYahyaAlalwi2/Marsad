@@ -114,6 +114,14 @@ class ControlPlane:
             logger.info("[Control] Cloud Multiplier started")
         except Exception as e:
             logger.warning(f"[Control] Cloud Multiplier failed: {e}")
+        # CF Multi-Account Manager: deploys workers on all CF accounts
+        try:
+            from multi_account_manager import multi_account_manager
+            multi_account_manager.start()
+            logger.info("[Control] CF Multi-Account Manager started")
+        except Exception as e:
+            logger.warning(f"[Control] CF Multi-Account failed: {e}")
+
         # Initial Provisioning: create accounts on free clouds
         try:
             import threading as _thr
@@ -185,6 +193,11 @@ class ControlPlane:
         except Exception:
             pass
         try:
+            from multi_account_manager import multi_account_manager
+            multi_account_manager.stop()
+        except Exception:
+            pass
+        try:
             from auto_deployer import auto_deployer
             auto_deployer.stop()
         except Exception:
@@ -242,6 +255,7 @@ class ControlPlane:
             "bootstrap": (lambda: __import__("bootstrap_controller").bootstrap_controller.status())(),
             "mission": (lambda: __import__("mission_controller").mission_controller.status())(),
             "cloud_multiplier": (lambda: __import__("cloud_multiplier").cloud_multiplier.status())(),
+            "cf_multi_account": (lambda: __import__("multi_account_manager").multi_account_manager.status())(),
             "cloud_health": {
                 "weak": len(cloud_health.list_weak()),
                 "healthy": len(cloud_health.list_healthy()),
