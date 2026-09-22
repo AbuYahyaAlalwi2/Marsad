@@ -839,3 +839,40 @@ if __name__ == "__main__":
 
 
 
+
+
+@app.route("/api/cf/diagnose")
+def api_cf_diagnose():
+    """Diagnose Cloudflare tokens - show raw API errors."""
+    import requests as _rq
+    try:
+        from multi_account_manager import multi_account_manager
+        results = []
+        for a in multi_account_manager.accounts:
+            token = a["token"]
+            account = a["account_id"]
+            url = f"https://api.cloudflare.com/client/v4/accounts/{account}/workers/scripts/test-diag"
+            headers = {"Authorization": f"Bearer {token}"}
+            metadata = {"main_module": "worker.js", "compatibility_date": "2024-01-01"}
+            files = {
+                "metadata": (None, __import__("json").dumps(metadata), "application/json"),
+                "worker.js": ("worker.js", "export default { fetch() { return new Response('ok'); } }", "application/javascript"),
+            }
+            try:
+                r = _rq.put(url, headers=headers, files=files, timeout=30)
+                try:
+                    parsed = r.json()
+                    errors = parsed.get("errors", [])
+                except Exception:
+                    errors = []
+                results.append({
+                    "account": a["name"],
+                    "http_status": r.status_code,
+                    "errors": errors,
+                    "raw": r.text[:400],
+                })
+            except Exception as e:
+                results.append({"account": a["name"], "error": str(e)})
+        return jsonify({"results": results})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
