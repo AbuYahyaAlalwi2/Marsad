@@ -121,6 +121,13 @@ class ControlPlane:
             logger.info("[Control] CF Multi-Account Manager started")
         except Exception as e:
             logger.warning(f"[Control] CF Multi-Account failed: {e}")
+        # Free Merger: runs merges without GPU
+        try:
+            from free_merger import free_merger
+            free_merger.start()
+            logger.info("[Control] Free Merger started")
+        except Exception as e:
+            logger.warning(f"[Control] Free Merger failed: {e}")
 
         # Initial Provisioning: create accounts on free clouds
         try:
@@ -198,6 +205,11 @@ class ControlPlane:
         except Exception:
             pass
         try:
+            from free_merger import free_merger
+            free_merger.stop()
+        except Exception:
+            pass
+        try:
             from auto_deployer import auto_deployer
             auto_deployer.stop()
         except Exception:
@@ -256,6 +268,7 @@ class ControlPlane:
             "mission": (lambda: __import__("mission_controller").mission_controller.status())(),
             "cloud_multiplier": (lambda: __import__("cloud_multiplier").cloud_multiplier.status())(),
             "cf_multi_account": (lambda: __import__("multi_account_manager").multi_account_manager.status())(),
+            "free_merger": (lambda: __import__("free_merger").free_merger.status())(),
             "cloud_health": {
                 "weak": len(cloud_health.list_weak()),
                 "healthy": len(cloud_health.list_healthy()),

@@ -10,6 +10,14 @@ import threading
 from typing import Dict, Any, Optional
 
 from db import log_event, get_memory_size_gb, get_task_stats
+try:
+    from free_merger import free_merger
+except ImportError:
+    free_merger = None
+try:
+    from core.constitution import constitution_guard
+except ImportError:
+    constitution_guard = None
 from config import MEMORY_MAX_GB, MEMORY_AUTO_TRAIN, MEMORY_AUTO_UPLOAD
 
 logger = logging.getLogger(__name__)
@@ -137,6 +145,13 @@ class AutonomousOrchestrator:
 
     def _task_train(self):
         """Clean + train on new memory."""
+        # فحص الدستور
+        if constitution_guard:
+            check = constitution_guard.check_command("train model on new memory")
+            if not check.get("allowed"):
+                logger.warning(f"الدستور منع التدريب: {check}")
+                return
+        
         logger.info("[Orchestrator] Training cycle...")
         try:
             # Check memory size
@@ -159,17 +174,23 @@ class AutonomousOrchestrator:
             logger.error(f"[Orchestrator] train error: {e}")
 
     def _task_merge(self):
-        """Merge models."""
+        """Merge models - uses free_merger if available."""
         logger.info("[Orchestrator] Merge cycle...")
         try:
-            from model_merger import model_merger
-            result = model_merger.merge_all()
-            self.stats["merges"] += 1
-            log_event("orchestrator", {
-                "action": "merge",
-                "status": result.get("status"),
-            })
-            logger.info(f"[Orchestrator] Merge done: {result.get('status')}")
+            if free_merger:
+                result = free_merger.merge(strategy="auto")
+                self.stats["merges"] += 1
+                log_event("orchestrator", {
+                    "action": "merge",
+                    "status": result.get("status"),
+                    "method": result.get("method"),
+                })
+                logger.info(f"[Orchestrator] Merge: {result.get('status')}")
+            else:
+                from model_merger import model_merger
+                result = model_merger.merge_all()
+                self.stats["merges"] += 1
+                log_event("orchestrator", {"action": "merge", "status": result.get("status")})
         except Exception as e:
             self.stats["errors"] += 1
             logger.error(f"[Orchestrator] merge error: {e}")

@@ -1126,3 +1126,21 @@ def api_cf_diagnose():
         return jsonify({"error": str(e)}), 500
 
 
+
+
+@app.route("/api/merger/status")
+def api_merger_status():
+    try:
+        from free_merger import free_merger
+        return jsonify(free_merger.status())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/merger/run", methods=["POST"])
+def api_merger_run():
+    try:
+        from free_merger import free_merger
+        return jsonify(free_merger.merge(strategy="auto"))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

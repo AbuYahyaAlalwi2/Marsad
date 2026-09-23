@@ -13,6 +13,10 @@ import threading
 from typing import Dict, Any, List, Optional
 
 from db import get_conn, log_event
+try:
+    from core.constitution import constitution_guard
+except ImportError:
+    constitution_guard = None
 
 logger = logging.getLogger(__name__)
 
@@ -210,6 +214,17 @@ class MissionController:
     # ------------------------------------------------------------
     def start_mission(self, mission_key: str, custom_config: Dict = None) -> Dict:
         """Start a mission. If a mission is running, it stops and new starts."""
+        # فحص الدستور
+        if constitution_guard:
+            check = constitution_guard.check_command(f"{mission_key} {custom_config or ''}")
+            if not check.get("allowed"):
+                logger.warning(f"الدستور منع المهمة {mission_key}: {check}")
+                return {
+                    "status": "blocked",
+                    "reason": check.get("reason"),
+                    "article": check.get("article"),
+                    "mission": mission_key,
+                }
         # Stop current
         if self.mission_running:
             logger.info(f"[Mission] Switching from {self.current_mission} to {mission_key}")
