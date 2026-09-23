@@ -866,6 +866,68 @@ def api_cf_force_subdomain():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+
+# ============================================================
+# Cloudflare Subdomain Creation (Async)
+# ============================================================
+
+@app.route("/api/cf/force_subdomain_dummy")
+def api_cf_force_subdomain_dummy():
+    """Force subdomain creation via dummy worker - runs in BACKGROUND."""
+    import threading as _thr
+    import json as _json
+    from pathlib import Path as _P
+    import time as _t
+
+    status_file = _P("/tmp/subdomain_status.json")
+
+    def _worker():
+        try:
+            from multi_account_manager import multi_account_manager
+            from cloudflare_deployer import force_subdomain_via_dummy
+            results = []
+            for a in multi_account_manager.accounts:
+                r = force_subdomain_via_dummy(a["token"], a["account_id"])
+                results.append({
+                    "account": a["name"],
+                    "result": r.get("status"),
+                    "output": r.get("output", "")[:100],
+                })
+                _t.sleep(1)
+            status_file.write_text(_json.dumps({"results": results}))
+        except Exception as e:
+            status_file.write_text(_json.dumps({"error": str(e)}))
+
+    if status_file.exists():
+        try:
+            status_file.unlink()
+        except Exception:
+            pass
+
+    _thr.Thread(target=_worker, daemon=True).start()
+
+    return jsonify({
+        "status": "started",
+        "message": "Running in background. Check /api/cf/subdomain_status in 60 seconds."
+    })
+
+
+@app.route("/api/cf/subdomain_status")
+def api_cf_subdomain_status():
+    """Check background subdomain creation status."""
+    from pathlib import Path as _P
+    import json as _json
+
+    status_file = _P("/tmp/subdomain_status.json")
+    if status_file.exists():
+        try:
+            return jsonify(_json.loads(status_file.read_text()))
+        except Exception:
+            pass
+    return jsonify({"status": "running_or_not_started"})
+
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "service": "marsad-dashboard"})
@@ -1019,20 +1081,3 @@ def api_cf_diagnose():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/api/cf/force_subdomain_dummy")
-def api_cf_force_subdomain_dummy():
-    """Force subdomain creation via dummy worker workaround."""
-    try:
-        from multi_account_manager import multi_account_manager
-        from cloudflare_deployer import force_subdomain_via_dummy
-        results = []
-        for a in multi_account_manager.accounts:
-            r = force_subdomain_via_dummy(a["token"], a["account_id"])
-            results.append({
-                "account": a["name"],
-                "result": r.get("status"),
-                "output": r.get("output", "")[:100],
-            })
-        return jsonify({"results": results})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
