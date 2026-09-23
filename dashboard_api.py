@@ -928,6 +928,51 @@ def api_cf_subdomain_status():
     return jsonify({"status": "running_or_not_started"})
 
 
+
+
+@app.route("/api/cf/whoami")
+def api_cf_whoami():
+    """Show which accounts each token actually has access to."""
+    import requests as _rq
+    try:
+        from multi_account_manager import multi_account_manager
+        results = []
+        for a in multi_account_manager.accounts:
+            token = a["token"]
+            given_account = a["account_id"]
+            name = a["name"]
+
+            # Query user details + accounts
+            try:
+                r = _rq.get(
+                    "https://api.cloudflare.com/client/v4/accounts",
+                    headers={"Authorization": f"Bearer {token}"},
+                    timeout=15,
+                )
+                data = r.json()
+                real_accounts = [
+                    {"id": acc.get("id"), "name": acc.get("name")}
+                    for acc in (data.get("result") or [])
+                ]
+                match = any(acc["id"] == given_account for acc in real_accounts)
+                results.append({
+                    "variable": name,
+                    "given_account_id": given_account[:12] + "...",
+                    "match": match,
+                    "real_accounts": real_accounts,
+                    "http_status": r.status_code,
+                })
+            except Exception as e:
+                results.append({
+                    "variable": name,
+                    "given_account_id": given_account[:12] + "...",
+                    "error": str(e),
+                })
+        return jsonify({"results": results})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "service": "marsad-dashboard"})
