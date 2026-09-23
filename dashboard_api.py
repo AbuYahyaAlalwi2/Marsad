@@ -778,6 +778,37 @@ def api_cf_diagnose():
         return jsonify({"error": str(e)}), 500
 
 
+
+
+@app.route("/api/cf/check_subdomains")
+def api_cf_check_subdomains():
+    """Check workers.dev subdomain status for each account."""
+    import requests as _rq
+    try:
+        from multi_account_manager import multi_account_manager
+        results = []
+        for a in multi_account_manager.accounts:
+            token = a["token"]
+            account = a["account_id"]
+            name = a["name"]
+            url = f"https://api.cloudflare.com/client/v4/accounts/{account}/workers/subdomain"
+            headers = {"Authorization": f"Bearer {token}"}
+            try:
+                r = _rq.get(url, headers=headers, timeout=15)
+                data = r.json()
+                subdomain = data.get("result", {}).get("subdomain", "NOT_SET")
+                results.append({
+                    "account": name,
+                    "account_id": account[:10] + "...",
+                    "subdomain": subdomain,
+                    "status_code": r.status_code,
+                })
+            except Exception as e:
+                results.append({"account": name, "error": str(e)})
+        return jsonify({"results": results})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "service": "marsad-dashboard"})
