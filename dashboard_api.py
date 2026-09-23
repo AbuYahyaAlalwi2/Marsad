@@ -809,6 +809,63 @@ def api_cf_check_subdomains():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+
+@app.route("/api/cf/force_subdomain")
+def api_cf_force_subdomain():
+    """Try to create subdomain via PUT for each account - show raw error."""
+    import requests as _rq
+    import hashlib
+    try:
+        from multi_account_manager import multi_account_manager
+        results = []
+        for a in multi_account_manager.accounts:
+            token = a["token"]
+            account = a["account_id"]
+            name = a["name"]
+
+            sub_name = "marsad-" + hashlib.md5(account.encode()).hexdigest()[:8]
+            url = f"https://api.cloudflare.com/client/v4/accounts/{account}/workers/subdomain"
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+            }
+
+            # 1. Check current state
+            try:
+                g = _rq.get(url, headers=headers, timeout=15)
+                g_data = g.json()
+                current = (g_data.get("result") or {}).get("subdomain", "NONE")
+            except Exception as e:
+                current = f"error: {e}"
+
+            # 2. Try to create
+            try:
+                p = _rq.put(url, headers=headers, json={"subdomain": sub_name}, timeout=30)
+                try:
+                    p_data = p.json()
+                    errors = p_data.get("errors", [])
+                except Exception:
+                    errors = []
+                results.append({
+                    "account": name,
+                    "current_subdomain": current,
+                    "put_status": p.status_code,
+                    "put_success": p_data.get("success") if 'p_data' in dir() else None,
+                    "put_errors": errors,
+                    "raw": p.text[:250] if p.status_code != 200 else "OK",
+                })
+            except Exception as e:
+                results.append({
+                    "account": name,
+                    "current_subdomain": current,
+                    "put_error": str(e),
+                })
+
+        return jsonify({"results": results})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "service": "marsad-dashboard"})
@@ -957,6 +1014,25 @@ def api_cf_diagnose():
                 })
             except Exception as e:
                 results.append({"account": a["name"], "error": str(e)})
+        return jsonify({"results": results})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/cf/force_subdomain_dummy")
+def api_cf_force_subdomain_dummy():
+    """Force subdomain creation via dummy worker workaround."""
+    try:
+        from multi_account_manager import multi_account_manager
+        from cloudflare_deployer import force_subdomain_via_dummy
+        results = []
+        for a in multi_account_manager.accounts:
+            r = force_subdomain_via_dummy(a["token"], a["account_id"])
+            results.append({
+                "account": a["name"],
+                "result": r.get("status"),
+                "output": r.get("output", "")[:100],
+            })
         return jsonify({"results": results})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

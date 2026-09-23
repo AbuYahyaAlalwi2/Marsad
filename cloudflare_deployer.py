@@ -177,6 +177,57 @@ def ensure_subdomain(token: str, account_id: str, dry_run: bool = False) -> Dict
         return {"ok": False, "status": "error", "output": str(e)}
 
 
+
+
+def force_subdomain_via_dummy(token: str, account_id: str, dry_run: bool = False) -> Dict[str, Any]:
+    """
+    Official workaround: create a dummy worker, then delete it.
+    Cloudflare allocates a subdomain automatically after this.
+    """
+    if dry_run:
+        return {"ok": True, "status": "dry_run", "output": "[DRY] dummy worker"}
+
+    headers = {"Authorization": f"Bearer {token}"}
+    dummy_name = "marsad-dummy-init"
+    url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/workers/scripts/{dummy_name}"
+
+    # 1. Create dummy worker
+    try:
+        r = requests.put(
+            url,
+            headers=headers,
+            files={
+                "metadata": (None, json.dumps({"main_module": "worker.js", "compatibility_date": "2024-01-01"}), "application/json"),
+                "worker.js": ("worker.js", "export default { fetch() { return new Response('OK'); } }", "application/javascript+module"),
+            },
+            timeout=30,
+        )
+        if r.status_code not in (200, 201):
+            return {"ok": False, "status": f"create_{r.status_code}", "output": r.text[:200]}
+    except Exception as e:
+        return {"ok": False, "status": "create_error", "output": str(e)}
+
+    # 2. Delete dummy worker
+    try:
+        requests.delete(url, headers=headers, timeout=15)
+    except Exception:
+        pass
+
+    # 3. Check if subdomain was created
+    import time as _t
+    _t.sleep(2)
+    sub_url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/workers/subdomain"
+    try:
+        r = requests.get(sub_url, headers=headers, timeout=15)
+        data = r.json()
+        subdomain = (data.get("result") or {}).get("subdomain", "NOT_SET")
+        if subdomain != "NOT_SET":
+            return {"ok": True, "status": "success", "output": f"Subdomain created: {subdomain}"}
+        return {"ok": False, "status": "subdomain_still_missing", "output": "Subdomain not created yet"}
+    except Exception as e:
+        return {"ok": False, "status": "check_error", "output": str(e)}
+
+
 def deploy_worker(token: str, account_id: str, worker_name: str,
                   dry_run: bool = False) -> Dict[str, Any]:
     """
