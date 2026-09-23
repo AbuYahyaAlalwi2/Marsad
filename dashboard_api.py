@@ -725,6 +725,59 @@ def api_cf_deploy():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/cf/diagnose")
+def api_cf_diagnose():
+    """Show subdomain status + raw errors for each account."""
+    import requests as _rq
+    try:
+        from multi_account_manager import multi_account_manager
+        results = []
+        for a in multi_account_manager.accounts:
+            token = a["token"]
+            account = a["account_id"]
+            name = a["name"]
+
+            # Check subdomain status
+            sub_url = f"https://api.cloudflare.com/client/v4/accounts/{account}/workers/subdomain"
+            sub_headers = {"Authorization": f"Bearer {token}"}
+            try:
+                sub_r = _rq.get(sub_url, headers=sub_headers, timeout=15)
+                sub_data = sub_r.json()
+                sub_status = sub_data.get("result", {}).get("subdomain", "NOT_SET")
+            except Exception as e:
+                sub_status = f"error: {e}"
+
+            # Try deploy
+            deploy_url = f"https://api.cloudflare.com/client/v4/accounts/{account}/workers/scripts/diag-{name}"
+            metadata = {"main_module": "worker.js", "compatibility_date": "2024-01-01"}
+            files = {
+                "metadata": (None, __import__("json").dumps(metadata), "application/json"),
+                "worker.js": ("worker.js", "export default { fetch() { return new Response('ok'); } }", "application/javascript+module"),
+            }
+            try:
+                dep_r = _rq.put(deploy_url, headers=sub_headers, files=files, timeout=30)
+                try:
+                    dep_json = dep_r.json()
+                    dep_errors = dep_json.get("errors", [])
+                except Exception:
+                    dep_errors = []
+                results.append({
+                    "account": name,
+                    "subdomain": sub_status,
+                    "deploy_status": dep_r.status_code,
+                    "deploy_errors": dep_errors,
+                })
+            except Exception as e:
+                results.append({
+                    "account": name,
+                    "subdomain": sub_status,
+                    "deploy_error": str(e),
+                })
+        return jsonify({"results": results})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "service": "marsad-dashboard"})
