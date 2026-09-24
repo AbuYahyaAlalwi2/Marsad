@@ -200,7 +200,11 @@ def safe_status():
     except Exception:
         pass
 
-    return {
+    # ابدأ بكل ما يرجعه control_plane (تلقائياً)
+    result = dict(cp) if cp else {}
+
+    # أضف الحقول الخاصة بـ dashboard_api
+    result.update({
         "timestamp": datetime.now().isoformat(),
         "running": cp.get("running", False),
         "queue_backend": cp.get("queue_backend", "unknown"),
@@ -208,24 +212,43 @@ def safe_status():
         "metrics": metrics,
         "agents": agents,
         "cloud_stats": cloud_stats,
-        "cloud_health": cp.get("cloud_health", {"healthy": 0, "weak": 0}),
-        "clinic": cp.get("clinic", {"tracked": 0, "quarantined": 0}),
-        "knowledge": cp.get("knowledge", {"total_entries": 0}),
         "database": db,
         "tasks": task_stats,
         "sources_count": sources_count,
-        "auto_scaler": (lambda: __import__("auto_scaler").auto_scaler.status())(),
-        "email_pool": (lambda: __import__("email_pool").email_pool.stats())(),
-        "million_runtime": (lambda: __import__("million_runtime").million_runtime.status())(),
-        "cloud_multiplier": (lambda: __import__("cloud_multiplier").cloud_multiplier.status())(),
-        "bootstrap": (lambda: __import__("bootstrap_controller").bootstrap_controller.status())(),
-        "mission": (lambda: __import__("mission_controller").mission_controller.status())(),
-        "auto_deployer": (lambda: __import__("auto_deployer").auto_deployer.status())(),
         "hf_token_present": bool(os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")),
         "github_token_present": bool(os.environ.get("GITHUB_TOKEN")),
         "storage_bytes": storage_bytes,
         "today": today_metrics,
+    })
+
+    # أضف الحقول الإضافية (بأمان)
+    extras = {
+        "auto_scaler": "auto_scaler.auto_scaler",
+        "email_pool": "email_pool.email_pool",
+        "million_runtime": "million_runtime.million_runtime",
+        "cloud_multiplier": "cloud_multiplier.cloud_multiplier",
+        "bootstrap": "bootstrap_controller.bootstrap_controller",
+        "mission": "mission_controller.mission_controller",
+        "auto_deployer": "auto_deployer.auto_deployer",
+        "free_merger": "free_merger.free_merger",
+        "cf_multi_account": "multi_account_manager.multi_account_manager",
+        "orchestrator": "orchestrator.orchestrator",
+        "cloud_unifier": "cloud_unifier.cloud_unifier",
+        "distributed": "distributed_manager.distributed_manager",
     }
+    for key, path in extras.items():
+        try:
+            parts = path.split(".")
+            module = __import__(parts[0])
+            obj = getattr(module, parts[1])
+            if hasattr(obj, "status"):
+                result[key] = obj.status()
+            elif hasattr(obj, "stats"):
+                result[key] = obj.stats()
+        except Exception as e:
+            result[key] = {"error": str(e)[:100]}
+
+    return result
 
 
 @app.route("/")
