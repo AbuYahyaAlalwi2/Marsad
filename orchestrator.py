@@ -196,25 +196,38 @@ class AutonomousOrchestrator:
             logger.error(f"[Orchestrator] merge error: {e}")
 
     def _task_upload(self):
-        """Upload to HuggingFace."""
+        """Upload to HuggingFace - runs every cycle if there is data."""
         logger.info("[Orchestrator] Upload cycle...")
         try:
-            if not MEMORY_AUTO_UPLOAD:
-                logger.info("[Orchestrator] Auto-upload disabled")
+            if not hf_uploader:
+                logger.info("[Orchestrator] hf_uploader not available")
                 return
-            from hf_upload.uploader import hf_uploader
             from db import get_untrained_memory
-            pending = get_untrained_memory(limit=100)
+            pending = get_untrained_memory(limit=200)
             if not pending:
                 logger.info("[Orchestrator] Nothing to upload")
                 return
+            
+            # ارفع
             result = hf_uploader.upload_memory_batch(pending)
-            self.stats["uploads"] += 1
-            log_event("orchestrator", {
-                "action": "upload",
-                "success": result.success if hasattr(result, "success") else False,
-            })
-            logger.info(f"[Orchestrator] Upload done")
+            success = result.success if hasattr(result, "success") else False
+            
+            if success:
+                self.stats["uploads"] += 1
+                log_event("orchestrator", {
+                    "action": "upload",
+                    "success": True,
+                    "count": len(pending),
+                    "dataset_id": getattr(result, "dataset_id", ""),
+                })
+                logger.info(f"[Orchestrator] Upload OK: {len(pending)} items")
+            else:
+                log_event("orchestrator", {
+                    "action": "upload",
+                    "success": False,
+                    "error": getattr(result, "error", "unknown"),
+                })
+                logger.warning(f"[Orchestrator] Upload failed")
         except Exception as e:
             self.stats["errors"] += 1
             logger.error(f"[Orchestrator] upload error: {e}")
