@@ -193,9 +193,11 @@ def safe_status():
         }
         for key, path in extras.items():
             try:
+                # دعم المسارات المتعددة: module.submodule.object
                 parts = path.split(".")
-                module = __import__(parts[0])
-                obj = getattr(module, parts[1])
+                obj = __import__(parts[0])
+                for p in parts[1:]:
+                    obj = getattr(obj, p)
                 if hasattr(obj, "status"):
                     result[key] = obj.status()
                 elif hasattr(obj, "stats"):
