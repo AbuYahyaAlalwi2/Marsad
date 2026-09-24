@@ -11,6 +11,10 @@ from typing import Dict, Any, Optional
 
 from db import log_event, get_memory_size_gb, get_task_stats
 try:
+    from gpu_pool.unified_executor import unified_executor
+except ImportError:
+    unified_executor = None
+try:
     from free_merger import free_merger
 except ImportError:
     free_merger = None
@@ -174,9 +178,24 @@ class AutonomousOrchestrator:
             logger.error(f"[Orchestrator] train error: {e}")
 
     def _task_merge(self):
-        """Merge models - uses free_merger if available."""
+        """Merge models - uses strongest GPU if available."""
         logger.info("[Orchestrator] Merge cycle...")
         try:
+            # جرب الكرت القوي أولاً
+            if unified_executor:
+                pool_status = unified_executor.status().get("gpu_pool", {})
+                if pool_status.get("total_providers", 0) > 0:
+                    result = unified_executor.execute_merge()
+                    self.stats["merges"] += 1
+                    log_event("orchestrator", {
+                        "action": "merge",
+                        "status": result.get("status"),
+                        "gpu": result.get("gpu_used", {}).get("type"),
+                    })
+                    logger.info(f"[Orchestrator] Merge via GPU: {result.get('status')}")
+                    return
+            
+            # fallback: الصاهر المجاني
             if free_merger:
                 result = free_merger.merge(strategy="auto")
                 self.stats["merges"] += 1
