@@ -13,6 +13,7 @@ from pathlib import Path
 
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
+import importlib
 
 # --- Paths ---
 BASE = Path(__file__).resolve().parent
@@ -191,13 +192,12 @@ def safe_status():
             "distributed": "distributed_manager.distributed_manager",
             "gpu_pool": "gpu_pool.pool_manager.gpu_pool",
         }
+        import importlib
         for key, path in extras.items():
             try:
-                # دعم المسارات المتعددة: module.submodule.object
-                parts = path.split(".")
-                obj = __import__(parts[0])
-                for p in parts[1:]:
-                    obj = getattr(obj, p)
+                module_path, attr_name = path.rsplit(".", 1)
+                module = importlib.import_module(module_path)
+                obj = getattr(module, attr_name)
                 if hasattr(obj, "status"):
                     result[key] = obj.status()
                 elif hasattr(obj, "stats"):
