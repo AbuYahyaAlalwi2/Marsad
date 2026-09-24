@@ -37,6 +37,9 @@ class UnifiedGPUExecutor:
             if gpu.name.startswith("kaggle_"):
                 from gpu_pool.kaggle_deployer import kaggle_deployer
                 result = kaggle_deployer.run(gpu, task_type, payload)
+            elif gpu.name.startswith("saturn_"):
+                from gpu_pool.saturn_deployer import saturn_deployer
+                result = saturn_deployer.run(gpu, task_type, payload)
             elif gpu.name.startswith("lightning_"):
                 from gpu_pool.lightning_deployer import lightning_deployer
                 result = lightning_deployer.run(gpu, task_type, payload)

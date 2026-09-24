@@ -71,6 +71,20 @@ class GPUPoolManager:
                     priority=2,
                 ))
 
+        # 1.b ساتورن كلاود
+        for i in range(1, 51):
+            token = os.environ.get(f"SATURN_API_KEY_{i}", "")
+            if token:
+                self.providers.append(GPUProvider(
+                    name=f"saturn_{i}",
+                    username=f"saturn_{i}",
+                    token=token,
+                    gpu_type="A10G",
+                    vram_gb=24,
+                    weekly_hours=150,
+                    priority=3,
+                ))
+
         # 2. لايتنينغ
         for i in range(1, 51):
             token = os.environ.get(f"LIGHTNING_TOKEN_{i}", "")
