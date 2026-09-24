@@ -189,6 +189,7 @@ def safe_status():
             "orchestrator": "orchestrator.orchestrator",
             "cloud_unifier": "cloud_unifier.cloud_unifier",
             "distributed": "distributed_manager.distributed_manager",
+            "gpu_pool": "gpu_pool.pool_manager.gpu_pool",
         }
         for key, path in extras.items():
             try:
