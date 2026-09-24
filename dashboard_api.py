@@ -1097,6 +1097,26 @@ def api_gpu_train():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route("/api/ping")
+def api_ping():
+    import subprocess
+    try:
+        commit = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True, text=True, timeout=5
+        ).stdout.strip()
+    except Exception:
+        commit = "unknown"
+    return jsonify({
+        "status": "ok",
+        "commit": commit,
+        "gpu_routes": [
+            str(r) for r in __import__("flask").current_app.url_map.iter_rules()
+            if "gpu" in str(r)
+        ],
+    })
+
 if __name__ == "__main__":
     _prime_psutil()
     port = int(os.environ.get("PORT", "5000"))
