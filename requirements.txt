@@ -42,3 +42,4 @@ fake-useragent>=1.4.0
 pylint>=3.0.0
 black>=24.0.0
 isort>=5.13.0
+mergekit

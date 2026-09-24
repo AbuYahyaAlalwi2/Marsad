@@ -63,192 +63,172 @@ def _prime_psutil():
 
 
 def safe_status():
-    """Full dashboard status."""
-    _prime_psutil()
-
-    cp = get_cp_status()
-    db = {}
+    """Full dashboard status - hardened with error handling."""
     try:
-        db = get_database_stats()
-    except Exception:
-        pass
-
-    # CPU / RAM / DISK (Termux-friendly)
-    metrics = {"cpu": 0, "ram": 0, "disk": 0, "net": 0}
-    try:
-        import psutil as _ps
-        import os as _os
-
-        # RAM
+        _prime_psutil()
+        cp = get_cp_status()
+        db = {}
         try:
-            metrics["ram"] = round(_ps.virtual_memory().percent, 1)
+            db = get_database_stats()
         except Exception:
             pass
 
-        # Disk (Termux home, not /)
+        # Metrics
+        metrics = {"cpu": 0, "ram": 0, "disk": 0, "net": 0}
         try:
-            home = _os.path.expanduser("~")
-            metrics["disk"] = round(_ps.disk_usage(home).percent, 1)
-        except Exception:
+            import psutil
+            metrics["cpu"] = round(psutil.cpu_percent(interval=0.1), 1)
+            metrics["ram"] = round(psutil.virtual_memory().percent, 1)
+            metrics["disk"] = round(psutil.disk_usage(str(BASE)).percent, 1)
             try:
-                metrics["disk"] = round(_ps.disk_usage("/data/data/com.termux/files/home").percent, 1)
+                n1 = psutil.net_io_counters()
+                import time as _t
+                _t.sleep(0.1)
+                n2 = psutil.net_io_counters()
+                delta = (n2.bytes_sent - n1.bytes_sent) + (n2.bytes_recv - n1.bytes_recv)
+                metrics["net"] = min(100.0, round(delta / 102.4, 1))
             except Exception:
-                pass
-
-        # CPU from load average / cpu count
-        try:
-            la = _os.getloadavg()[0]
-            ncpu = _os.cpu_count() or 1
-            pct = (la / ncpu) * 100.0
-            metrics["cpu"] = round(min(100.0, pct), 1)
+                metrics["net"] = 0
         except Exception:
             pass
 
-        # Network (best-effort)
+        # Agents
+        agents = {"total": 0, "level_1": 0, "level_2": 0, "level_3": 0, "level_4": 0, "level_5": 0}
         try:
-            n1 = _ps.net_io_counters()
-            import time as _t
-            _t.sleep(0.1)
-            n2 = _ps.net_io_counters()
-            delta = (n2.bytes_sent - n1.bytes_sent) + (n2.bytes_recv - n1.bytes_recv)
-            metrics["net"] = min(100.0, round(delta / 102.4, 1))
+            for i in range(5):
+                c = count_agents_by_level(i)
+                if i == 0: agents["level_1"] = c
+                elif i == 1: agents["level_2"] = c
+                elif i == 2: agents["level_3"] = c
+                elif i == 3: agents["level_4"] = c
+                elif i == 4: agents["level_5"] = c
+                agents["total"] += c
         except Exception:
-            metrics["net"] = 0
+            pass
+
+        # Cloud stats
+        cloud_stats = {"active": 0, "available": 0, "total": 0, "weak": 0}
+        try:
+            from cloud_unifier import count_registered_providers
+            cloud_stats.update(count_registered_providers())
+            from cloud_health import cloud_health
+            cloud_stats["weak"] = len(cloud_health.list_weak())
+        except Exception:
+            pass
+
+        # Task stats
+        task_stats = {"total": 0, "completed": 0, "failed": 0, "running": 0, "success_rate": 0.0}
+        try:
+            task_stats = get_task_stats()
+        except Exception:
+            pass
+
+        # Sources count
+        sources_count = 0
+        try:
+            sources_count = len(list_sources())
+        except Exception:
+            pass
+
+        # Today's metrics
+        today_metrics = {}
+        try:
+            today_metrics = get_today_metrics()
+        except Exception:
+            pass
+
+        # Storage bytes
+        storage_bytes = 0
+        try:
+            import os as _os
+            for sub in ("data", "models", "datasets"):
+                root = str(BASE / sub)
+                if not _os.path.isdir(root): continue
+                for dirpath, _, filenames in _os.walk(root):
+                    for fn in filenames:
+                        try: storage_bytes += _os.path.getsize(_os.path.join(dirpath, fn))
+                        except Exception: pass
+            try:
+                from config import DB_PATH
+                if _os.path.isfile(DB_PATH): storage_bytes += _os.path.getsize(DB_PATH)
+            except Exception: pass
+        except Exception:
+            pass
+
+        # ابدأ بكل ما يرجعه control_plane
+        result = dict(cp) if cp else {}
+
+        result.update({
+            "timestamp": datetime.now().isoformat(),
+            "running": cp.get("running", False),
+            "queue_backend": cp.get("queue_backend", "unknown"),
+            "uptime_seconds": cp.get("uptime_seconds", 0),
+            "metrics": metrics,
+            "agents": agents,
+            "cloud_stats": cloud_stats,
+            "database": db,
+            "tasks": task_stats,
+            "sources_count": sources_count,
+            "hf_token_present": bool(os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")),
+            "github_token_present": bool(os.environ.get("GITHUB_TOKEN")),
+            "storage_bytes": storage_bytes,
+            "today": today_metrics,
+        })
+
+        # أضف الوحدات الإضافية بأمان
+        extras = {
+            "auto_scaler": "auto_scaler.auto_scaler",
+            "email_pool": "email_pool.email_pool",
+            "million_runtime": "million_runtime.million_runtime",
+            "cloud_multiplier": "cloud_multiplier.cloud_multiplier",
+            "bootstrap": "bootstrap_controller.bootstrap_controller",
+            "mission": "mission_controller.mission_controller",
+            "auto_deployer": "auto_deployer.auto_deployer",
+            "free_merger": "free_merger.free_merger",
+            "cf_multi_account": "multi_account_manager.multi_account_manager",
+            "orchestrator": "orchestrator.orchestrator",
+            "cloud_unifier": "cloud_unifier.cloud_unifier",
+            "distributed": "distributed_manager.distributed_manager",
+        }
+        for key, path in extras.items():
+            try:
+                parts = path.split(".")
+                module = __import__(parts[0])
+                obj = getattr(module, parts[1])
+                if hasattr(obj, "status"):
+                    result[key] = obj.status()
+                elif hasattr(obj, "stats"):
+                    result[key] = obj.stats()
+            except Exception as e:
+                result[key] = {"error": str(e)[:100]}
+
+        # تأكد من إمكانية التسلسل
+        import json as _json
+        try:
+            _json.dumps(result, default=str)
+        except Exception:
+            clean = {}
+            for k, v in result.items():
+                try:
+                    _json.dumps(v, default=str)
+                    clean[k] = v
+                except Exception:
+                    clean[k] = str(v)[:200]
+            return clean
+
+        return result
+
     except Exception as e:
-        print(f"[status] metrics error: {e}")
-
-    # Agents per level
-    agents = {"total": 0, "level_1": 0, "level_2": 0, "level_3": 0, "level_4": 0, "level_5": 0}
-    try:
-        for i in range(5):
-            c = count_agents_by_level(i)
-            if i == 0:
-                agents["level_1"] = c
-            elif i == 1:
-                agents["level_2"] = c
-            elif i == 2:
-                agents["level_3"] = c
-            elif i == 3:
-                agents["level_4"] = c
-            elif i == 4:
-                agents["level_5"] = c
-            agents["total"] += c
-    except Exception:
-        pass
-
-    # Real task stats
-    task_stats = {"total": 0, "completed": 0, "failed": 0, "running": 0, "success_rate": 0.0}
-    try:
-        task_stats = get_task_stats()
-    except Exception:
-        pass
-
-    # Real sources count
-    sources_count = 0
-    try:
-        sources_count = len(list_sources())
-    except Exception:
-        pass
-
-    # Storage: DB + data dir + merged models
-    storage_bytes = 0
-    try:
-        import os as _os
-        total = 0
-        for sub in ("data", "models", "datasets"):
-            root = str(BASE / sub)
-            if not _os.path.isdir(root):
-                continue
-            for dirpath, _, filenames in _os.walk(root):
-                for fn in filenames:
-                    try:
-                        total += _os.path.getsize(_os.path.join(dirpath, fn))
-                    except Exception:
-                        pass
-        # DB itself
-        try:
-            from config import DB_PATH
-            if _os.path.isfile(DB_PATH):
-                total += _os.path.getsize(DB_PATH)
-        except Exception:
-            pass
-        storage_bytes = total
-    except Exception:
-        pass
-
-    # Today's metrics
-    today_metrics = {}
-    try:
-        today_metrics = get_today_metrics()
-    except Exception:
-        pass
-
-    # Real cloud counts (DB + fallback to in-memory unifier)
-    cloud_stats = {"active": 0, "available": 0, "total": 0, "weak": 0}
-    try:
-        from cloud_unifier import count_registered_providers, cloud_unifier
-        db_counts = count_registered_providers()
-        cloud_stats.update(db_counts)
-        # Fallback: if DB empty, use in-memory count
-        if cloud_stats["total"] == 0:
-            mem = cloud_unifier.count()
-            cloud_stats["total"] = mem.get("total", 0)
-            cloud_stats["active"] = mem.get("with_account", 0)
-            cloud_stats["available"] = mem.get("free", 0)
-        from cloud_health import cloud_health
-        cloud_stats["weak"] = len(cloud_health.list_weak())
-    except Exception:
-        pass
-
-    # ابدأ بكل ما يرجعه control_plane (تلقائياً)
-    result = dict(cp) if cp else {}
-
-    # أضف الحقول الخاصة بـ dashboard_api
-    result.update({
-        "timestamp": datetime.now().isoformat(),
-        "running": cp.get("running", False),
-        "queue_backend": cp.get("queue_backend", "unknown"),
-        "uptime_seconds": cp.get("uptime_seconds", 0),
-        "metrics": metrics,
-        "agents": agents,
-        "cloud_stats": cloud_stats,
-        "database": db,
-        "tasks": task_stats,
-        "sources_count": sources_count,
-        "hf_token_present": bool(os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")),
-        "github_token_present": bool(os.environ.get("GITHUB_TOKEN")),
-        "storage_bytes": storage_bytes,
-        "today": today_metrics,
-    })
-
-    # أضف الحقول الإضافية (بأمان)
-    extras = {
-        "auto_scaler": "auto_scaler.auto_scaler",
-        "email_pool": "email_pool.email_pool",
-        "million_runtime": "million_runtime.million_runtime",
-        "cloud_multiplier": "cloud_multiplier.cloud_multiplier",
-        "bootstrap": "bootstrap_controller.bootstrap_controller",
-        "mission": "mission_controller.mission_controller",
-        "auto_deployer": "auto_deployer.auto_deployer",
-        "free_merger": "free_merger.free_merger",
-        "cf_multi_account": "multi_account_manager.multi_account_manager",
-        "orchestrator": "orchestrator.orchestrator",
-        "cloud_unifier": "cloud_unifier.cloud_unifier",
-        "distributed": "distributed_manager.distributed_manager",
-    }
-    for key, path in extras.items():
-        try:
-            parts = path.split(".")
-            module = __import__(parts[0])
-            obj = getattr(module, parts[1])
-            if hasattr(obj, "status"):
-                result[key] = obj.status()
-            elif hasattr(obj, "stats"):
-                result[key] = obj.stats()
-        except Exception as e:
-            result[key] = {"error": str(e)[:100]}
-
-    return result
+        # في حال حدوث أي خطأ غير متوقع، نعيد استجابة طارئة
+        import traceback
+        return {
+            "status": "error",
+            "message": "safe_status failed",
+            "error": str(e),
+            "trace": traceback.format_exc()[:500],
+            "running": True,
+            "timestamp": datetime.now().isoformat(),
+        }
 
 
 @app.route("/")
