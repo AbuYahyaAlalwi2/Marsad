@@ -1150,3 +1150,34 @@ def api_merger_run():
         return jsonify(free_merger.merge(strategy="auto"))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/gpu/status")
+def api_gpu_status():
+    try:
+        from gpu_pool.pool_manager import gpu_pool
+        return jsonify(gpu_pool.status())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/gpu/merge", methods=["POST"])
+def api_gpu_merge():
+    try:
+        from gpu_pool.unified_executor import unified_executor
+        data = request.json or {}
+        result = unified_executor.execute("merge", data)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/gpu/train", methods=["POST"])
+def api_gpu_train():
+    try:
+        from gpu_pool.unified_executor import unified_executor
+        data = request.json or {}
+        result = unified_executor.execute("train", data)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
