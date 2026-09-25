@@ -169,6 +169,17 @@ class GPUPoolManager:
     # ==========================================================
     # اختيار الكرت المناسب
     # ==========================================================
+    def list_all(self) -> List[GPUProvider]:
+        """كل الكروت."""
+        return list(self.providers)
+
+    def list_available(self, min_memory_gb: int = 0) -> List[GPUProvider]:
+        """الكروت المتاحة."""
+        return [
+            p for p in self.providers
+            if p.available and p.vram_gb >= min_memory_gb
+        ]
+
     def get_strongest(self) -> Optional[GPUProvider]:
         """أقوى كرت متاح — للصهر."""
         with self._lock:
