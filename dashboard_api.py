@@ -1245,6 +1245,63 @@ def api_diag_kaggle_full():
     except Exception as e:
         import traceback
         return jsonify({"error": str(e)[:300], "traceback": traceback.format_exc()[-1000:]}), 500
+
+@app.route("/api/diag/kaggle_async")
+def api_diag_kaggle_async():
+    """يشغّل kaggle_deployer.run() في الخلفية."""
+    import threading as _thr
+    from pathlib import Path as _P
+    import json as _json
+
+    result_file = _P("/tmp/kaggle_async_result.json")
+
+    def _worker():
+        try:
+            from gpu_pool.pool_manager import gpu_pool
+            from gpu_pool.kaggle_deployer import kaggle_deployer
+            kp = [p for p in gpu_pool.providers if p.name.startswith("kaggle_")]
+            if not kp:
+                result_file.write_text(_json.dumps({"error": "no kaggle provider"}))
+                return
+            provider = kp[0]
+            result = kaggle_deployer.run(
+                provider=provider,
+                task_type="merge",
+                payload={"base_model": "cognitivecomputations/dolphin-2.9-llama3-8b"},
+            )
+            result_file.write_text(_json.dumps({
+                "provider": provider.name,
+                "username": provider.username,
+                "result": result,
+            }, default=str))
+        except Exception as e:
+            import traceback
+            result_file.write_text(_json.dumps({
+                "error": str(e)[:300],
+                "traceback": traceback.format_exc()[-1500:],
+            }))
+
+    if result_file.exists():
+        try:
+            result_file.unlink()
+        except Exception:
+            pass
+
+    _thr.Thread(target=_worker, daemon=True).start()
+    return jsonify({"status": "started"})
+
+
+@app.route("/api/diag/kaggle_async_result")
+def api_diag_kaggle_async_result():
+    from pathlib import Path as _P
+    import json as _json
+    f = _P("/tmp/kaggle_async_result.json")
+    if f.exists():
+        try:
+            return jsonify(_json.loads(f.read_text()))
+        except Exception:
+            pass
+    return jsonify({"status": "not_ready"})
 if __name__ == "__main__":
     _prime_psutil()
     port = int(os.environ.get("PORT", "5000"))
