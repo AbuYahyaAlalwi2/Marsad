@@ -34,12 +34,16 @@ class UnifiedGPUExecutor:
 
         # وجّه للمنفّذ المناسب
         try:
+            # التوجيه حسب المزود
             if gpu.name.startswith("kaggle_"):
                 from gpu_pool.kaggle_deployer import kaggle_deployer
                 result = kaggle_deployer.run(gpu, task_type, payload)
             elif gpu.name.startswith("saturn_"):
                 from gpu_pool.saturn_deployer import saturn_deployer
                 result = saturn_deployer.run(gpu, task_type, payload)
+            elif gpu.name == "huggingface":
+                from gpu_pool.huggingface_deployer import huggingface_deployer
+                result = huggingface_deployer.run(gpu, task_type, payload)
             elif gpu.name.startswith("lightning_"):
                 from gpu_pool.lightning_deployer import lightning_deployer
                 result = lightning_deployer.run(gpu, task_type, payload)
@@ -48,6 +52,21 @@ class UnifiedGPUExecutor:
                     "status": "unsupported",
                     "provider": gpu.name,
                 }
+
+            # Fallback: إذا فشل، جرّب كرتاً آخر
+            if result.get("status") in ("unsupported", "error", "auth_failed"):
+                logger.info(f"[منفّذ] فشل {gpu.name} — نجرّب كرتاً آخر")
+                # اختر الكرت التالي
+                alt_gpu = gpu_pool.get_lightest()
+                if alt_gpu and alt_gpu.name != gpu.name:
+                    if alt_gpu.name.startswith("saturn_"):
+                        from gpu_pool.saturn_deployer import saturn_deployer
+                        result = saturn_deployer.run(alt_gpu, task_type, payload)
+                        result["fallback"] = True
+                    elif alt_gpu.name.startswith("kaggle_"):
+                        from gpu_pool.kaggle_deployer import kaggle_deployer
+                        result = kaggle_deployer.run(alt_gpu, task_type, payload)
+                        result["fallback"] = True
 
             result["gpu_used"] = {
                 "name": gpu.name,
