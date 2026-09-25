@@ -18,15 +18,23 @@ class KaggleDeployer:
         self.kernels_dir.mkdir(exist_ok=True)
 
     def _setup_credentials(self, provider):
-        """يكتب ملف kaggle.json للتوثيق."""
+        """يكتب ملف kaggle.json في مجلد خاص لكل حساب."""
         try:
-            kaggle_dir = Path.home() / ".kaggle"
-            kaggle_dir.mkdir(exist_ok=True)
+            # مجلد خاص لكل حساب لتجنب التعارض
+            kaggle_dir = self.kernels_dir / f"auth_{provider.name}"
+            kaggle_dir.mkdir(parents=True, exist_ok=True)
             (kaggle_dir / "kaggle.json").write_text(json.dumps({
                 "username": provider.username,
                 "key": provider.token,
             }))
-            os.chmod(kaggle_dir / "kaggle.json", 0o600)
+            try:
+                os.chmod(kaggle_dir / "kaggle.json", 0o600)
+            except Exception:
+                pass
+            # اضبط متغير البيئة ليعرفه kaggle
+            os.environ["KAGGLE_CONFIG_DIR"] = str(kaggle_dir)
+            os.environ["KAGGLE_USERNAME"] = provider.username
+            os.environ["KAGGLE_KEY"] = provider.token
             return True
         except Exception as e:
             logger.error(f"[Kaggle] credentials: {e}")
@@ -81,6 +89,11 @@ class KaggleDeployer:
 
         # ارفع
         try:
+            # احذف النسخة القديمة إن وُجدت
+            try:
+                api.kernels_delete(f"{provider.username}/{kernel_slug}")
+            except Exception:
+                pass
             api.kernels_push(str(kernel_dir))
             logger.info(f"[Kaggle] تم رفع {kernel_slug}")
         except Exception as e:
