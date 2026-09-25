@@ -1219,6 +1219,32 @@ def api_diag_kaggle():
         result["push_attempt"]["traceback"] = traceback.format_exc()[-800:]
     
     return jsonify(result)
+
+@app.route("/api/diag/kaggle_full")
+def api_diag_kaggle_full():
+    """يختبر kaggle_deployer.run() مباشرة."""
+    try:
+        from gpu_pool.pool_manager import gpu_pool
+        from gpu_pool.kaggle_deployer import kaggle_deployer
+        
+        kp = [p for p in gpu_pool.providers if p.name.startswith("kaggle_")]
+        if not kp:
+            return jsonify({"error": "no kaggle provider"})
+        
+        provider = kp[0]
+        result = kaggle_deployer.run(
+            provider=provider,
+            task_type="merge",
+            payload={"base_model": "cognitivecomputations/dolphin-2.9-llama3-8b"},
+        )
+        return jsonify({
+            "provider": provider.name,
+            "username": provider.username,
+            "result": result,
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({"error": str(e)[:300], "traceback": traceback.format_exc()[-1000:]}), 500
 if __name__ == "__main__":
     _prime_psutil()
     port = int(os.environ.get("PORT", "5000"))
