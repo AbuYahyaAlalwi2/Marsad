@@ -1202,3 +1202,35 @@ def api_merger_run():
         return jsonify({"error": str(e)}), 500
 
 
+
+
+@app.route("/api/diag/saturn")
+def api_diag_saturn():
+    """يختبر اتصال ساتورن من Render."""
+    import os
+    import requests as _rq
+    token = os.environ.get("SATURN_API_KEY_1", "")
+    if not token:
+        return jsonify({"error": "no_token", "length": 0})
+
+    results = {"token_length": len(token)}
+
+    # جرّب 4 روابط
+    urls = [
+        "https://app.compute.studio/api/user/profile",
+        "https://api.compute.studio/user/profile",
+        "https://api.saturncloud.io/user/profile",
+        "https://unity.saturnenterprise.io/api/user/profile",
+    ]
+
+    for url in urls:
+        try:
+            r = _rq.get(url, headers={"Authorization": f"Bearer {token}"}, timeout=10)
+            results[url] = {
+                "status": r.status_code,
+                "response": r.text[:150],
+            }
+        except Exception as e:
+            results[url] = {"error": str(e)[:100]}
+
+    return jsonify(results)
