@@ -15,77 +15,50 @@ class UnifiedGPUExecutor:
     # المهام التي تحتاج كرتاً قوياً
     HEAVY = ["merge", "quantization", "full_finetune"]
 
+
     def execute(self, task_type: str, payload: Dict = None) -> Dict:
-        """يختار الكرت المناسب ويشغّل المهمة."""
+        """Try each GPU in the pool until a task is successfully queued."""
         payload = payload or {}
-        
         logger.info(f"[منفّذ] مهمة {task_type}")
 
-        # اختر الكرت
-        gpu = gpu_pool.get_for_task(task_type)
-        if not gpu:
-            return {
-                "status": "no_gpu",
-                "message": "لا يوجد كرت متاح",
-                "task": task_type,
-            }
+        all_gpus = gpu_pool.list_available()
+        if not all_gpus:
+            return {"status": "no_gpu", "message": "لا يوجد كرت متاح"}
 
-        logger.info(f"[منفّذ] → {gpu.name} ({gpu.gpu_type})")
+        all_gpus.sort(key=lambda g: gpu_pool.GPU_RANK.get(g.gpu_type, 0), reverse=True)
 
-        # وجّه للمنفّذ المناسب
-        try:
-            # التوجيه حسب المزود
-            if gpu.name.startswith("kaggle_"):
-                from gpu_pool.kaggle_deployer import kaggle_deployer
-                result = kaggle_deployer.run(gpu, task_type, payload)
-            elif gpu.name.startswith("saturn_"):
-                from gpu_pool.saturn_deployer import saturn_deployer
-                result = saturn_deployer.run(gpu, task_type, payload)
-            elif gpu.name == "huggingface":
-                from gpu_pool.huggingface_deployer import huggingface_deployer
-                result = huggingface_deployer.run(gpu, task_type, payload)
-            elif gpu.name.startswith("lightning_"):
-                from gpu_pool.lightning_deployer import lightning_deployer
-                result = lightning_deployer.run(gpu, task_type, payload)
-            else:
-                result = {
-                    "status": "unsupported",
-                    "provider": gpu.name,
-                }
+        last_error = "no_provider_tried"
+        for gpu in all_gpus:
+            logger.info(f"[منفّذ] محاولة على {gpu.name} ({gpu.gpu_type})")
+            try:
+                result = self._try_provider(gpu, task_type, payload)
+                if result.get("status") in ("queued", "success"):
+                    result["gpu_used"] = {"name": gpu.name, "type": gpu.gpu_type, "vram_gb": gpu.vram_gb}
+                    return result
+                last_error = result.get("status", "unknown_error")
+            except Exception as e:
+                logger.error(f"[منفّذ] فشل {gpu.name}: {e}")
+                last_error = str(e)
+                continue
 
-            # Fallback: إذا فشل، جرّب كرتاً آخر
-            if result.get("status") in ("unsupported", "error", "auth_failed"):
-                logger.info(f"[منفّذ] فشل {gpu.name} — نجرّب كرتاً آخر")
-                # اختر الكرت التالي
-                alt_gpu = gpu_pool.get_lightest()
-                if alt_gpu and alt_gpu.name != gpu.name:
-                    if alt_gpu.name.startswith("saturn_"):
-                        from gpu_pool.saturn_deployer import saturn_deployer
-                        result = saturn_deployer.run(alt_gpu, task_type, payload)
-                        result["fallback"] = True
-                    elif alt_gpu.name.startswith("kaggle_"):
-                        from gpu_pool.kaggle_deployer import kaggle_deployer
-                        result = kaggle_deployer.run(alt_gpu, task_type, payload)
-                        result["fallback"] = True
+        return {"status": "all_providers_failed", "last_error": last_error, "task": task_type}
 
-            result["gpu_used"] = {
-                "name": gpu.name,
-                "type": gpu.gpu_type,
-                "vram_gb": gpu.vram_gb,
-            }
-
-            # علّم الكرت كمستخدم
-            gpu.last_used = __import__("time").time()
-
-            return result
-        except Exception as e:
-            logger.error(f"[منفّذ] خطأ: {e}")
-            return {
-                "status": "error",
-                "error": str(e),
-                "gpu_used": gpu.name,
-            }
-
+    def _try_provider(self, gpu, task_type, payload) -> Dict:
+        """Helper to call the correct deployer based on the provider name."""
+        if gpu.name.startswith("kaggle_"):
+            from gpu_pool.kaggle_deployer import kaggle_deployer
+            return kaggle_deployer.run(gpu, task_type, payload)
+        elif gpu.name.startswith("saturn_"):
+            from gpu_pool.saturn_deployer import saturn_deployer
+            return saturn_deployer.run(gpu, task_type, payload)
+        elif gpu.name == "huggingface":
+            from gpu_pool.huggingface_deployer import huggingface_deployer
+            return huggingface_deployer.run(gpu, task_type, payload)
+        elif gpu.name.startswith("lightning_"):
+            from gpu_pool.lightning_deployer import lightning_deployer
+            return lightning_deployer.run(gpu, task_type, payload)
+        else:
+            return {"status": "unsupported", "provider": gpu.name}
     def execute_merge(self, payload: Dict = None) -> Dict:
         """اختصار للصهر — يستخدم أقوى كرت."""
         return self.execute("merge", payload)
