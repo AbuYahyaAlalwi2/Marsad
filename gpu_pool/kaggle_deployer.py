@@ -88,8 +88,8 @@ class KaggleDeployer:
         (kernel_dir / "script.ipynb").write_text(json.dumps(notebook))
 
         # ارفع
+        import traceback
         try:
-            # احذف النسخة القديمة إن وُجدت
             try:
                 api.kernels_delete(f"{provider.username}/{kernel_slug}")
             except Exception:
@@ -97,7 +97,17 @@ class KaggleDeployer:
             api.kernels_push(str(kernel_dir))
             logger.info(f"[Kaggle] تم رفع {kernel_slug}")
         except Exception as e:
-            return {"status": "push_failed", "error": str(e)}
+            tb = traceback.format_exc()
+            logger.error(f"[Kaggle] push failed: {tb}")
+            return {
+                "status": "push_failed",
+                "error": str(e)[:300],
+                "traceback": tb[-800:],
+                "kernel_dir": str(kernel_dir),
+                "username": provider.username,
+                "slug": kernel_slug,
+                "metadata_file": (kernel_dir / "kernel-metadata.json").read_text()[:300],
+            }
 
         # سجّل للتحقق لاحقاً
         return {
