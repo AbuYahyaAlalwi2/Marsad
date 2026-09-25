@@ -1117,6 +1117,108 @@ def api_ping():
         ],
     })
 
+
+@app.route("/api/diag/kaggle")
+def api_diag_kaggle():
+    """تشخيص مباشر لكاغل - يعرض كل التفاصيل."""
+    import traceback
+    result = {
+        "kaggle_installed": False,
+        "credentials": {},
+        "push_attempt": {},
+    }
+    
+    # 1. هل kaggle مثبت؟
+    try:
+        from kaggle.api.kaggle_api_extended import KaggleApi
+        result["kaggle_installed"] = True
+    except ImportError as e:
+        result["kaggle_error"] = str(e)
+        return jsonify(result)
+    
+    # 2. الإعدادات
+    import os
+    result["credentials"] = {
+        "KAGGLE_USERNAME": os.environ.get("KAGGLE_USERNAME", "")[:20],
+        "KAGGLE_KEY_length": len(os.environ.get("KAGGLE_KEY", "")),
+        "KAGGLE_CONFIG_DIR": os.environ.get("KAGGLE_CONFIG_DIR", "not_set"),
+    }
+    
+    # من gpu_pool
+    try:
+        from gpu_pool.pool_manager import gpu_pool
+        kaggle_providers = [p for p in gpu_pool.providers if p.name.startswith("kaggle_")]
+        result["providers_found"] = len(kaggle_providers)
+        if kaggle_providers:
+            kp = kaggle_providers[0]
+            result["first_provider"] = {
+                "name": kp.name,
+                "username": kp.username[:20],
+                "token_length": len(kp.token),
+            }
+    except Exception as e:
+        result["pool_error"] = str(e)
+        return jsonify(result)
+    
+    # 3. جرّب رفع دفتر تجريبي
+    try:
+        import json, tempfile, os
+        from pathlib import Path
+        
+        kp = kaggle_providers[0]
+        kaggle_dir = Path(tempfile.gettempdir()) / f"auth_diag_{kp.name}"
+        kaggle_dir.mkdir(parents=True, exist_ok=True)
+        (kaggle_dir / "kaggle.json").write_text(json.dumps({
+            "username": kp.username,
+            "key": kp.token,
+        }))
+        os.environ["KAGGLE_CONFIG_DIR"] = str(kaggle_dir)
+        os.environ["KAGGLE_USERNAME"] = kp.username
+        os.environ["KAGGLE_KEY"] = kp.token
+        
+        # اكتب دفتر تجريبي
+        test_dir = Path(tempfile.gettempdir()) / "diag_kernel"
+        test_dir.mkdir(exist_ok=True)
+        
+        (test_dir / "kernel-metadata.json").write_text(json.dumps({
+            "id": f"{kp.username}/marsad-diag-test",
+            "title": "Marsad Diag Test",
+            "code_file": "test.ipynb",
+            "language": "python",
+            "kernel_type": "notebook",
+            "is_private": True,
+            "enable_gpu": False,
+            "enable_internet": True,
+            "dataset_sources": [],
+            "competition_sources": [],
+            "kernel_sources": [],
+        }, indent=2))
+        
+        (test_dir / "test.ipynb").write_text(json.dumps({
+            "cells": [{"cell_type": "code", "source": ["print('hi')"], 
+                       "metadata": {}, "outputs": [], "execution_count": None}],
+            "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"}},
+            "nbformat": 4, "nbformat_minor": 5,
+        }))
+        
+        api = KaggleApi()
+        api.authenticate()
+        
+        result["push_attempt"]["username"] = kp.username
+        result["push_attempt"]["test_dir"] = str(test_dir)
+        
+        try:
+            api.kernels_push(str(test_dir))
+            result["push_attempt"]["result"] = "SUCCESS"
+        except Exception as push_err:
+            result["push_attempt"]["result"] = "FAILED"
+            result["push_attempt"]["error"] = str(push_err)[:500]
+            result["push_attempt"]["traceback"] = traceback.format_exc()[-800:]
+    except Exception as e:
+        result["push_attempt"]["error"] = str(e)[:300]
+        result["push_attempt"]["traceback"] = traceback.format_exc()[-800:]
+    
+    return jsonify(result)
 if __name__ == "__main__":
     _prime_psutil()
     port = int(os.environ.get("PORT", "5000"))
