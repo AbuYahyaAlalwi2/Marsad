@@ -71,7 +71,7 @@ class KaggleDeployer:
         # metadata
         metadata = {
             "id": f"{provider.username}/{kernel_slug}",
-            "title": f"Marsad {task_type}",
+            "title": f"Marsad {task_type} {int(time.time())}",
             "code_file": "script.ipynb",
             "language": "python",
             "kernel_type": "notebook",
@@ -90,8 +90,22 @@ class KaggleDeployer:
         # ارفع
         import traceback
         try:
+            # احذف كل الدفاتر القديمة بنفس الاسم
             try:
-                api.kernels_delete(f"{provider.username}/{kernel_slug}")
+                api.kernels_delete(kernel_slug)
+            except Exception:
+                pass
+            # احذف الدفاتر القديمة من runs سابقة
+            try:
+                old_kernels = api.kernels_list(
+                    user=provider.username, page_size=100
+                )
+                for k in old_kernels:
+                    if "marsad" in k.ref.lower():
+                        try:
+                            api.kernels_delete(k.ref)
+                        except Exception:
+                            pass
             except Exception:
                 pass
             api.kernels_push(str(kernel_dir))
