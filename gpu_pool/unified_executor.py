@@ -17,7 +17,7 @@ class UnifiedGPUExecutor:
 
 
     def execute(self, task_type: str, payload: Dict = None) -> Dict:
-        """Try each GPU in the pool until a task is successfully queued."""
+        """يجرّب كل الكروت حتى ينجح."""
         payload = payload or {}
         logger.info(f"[منفّذ] مهمة {task_type}")
 
@@ -25,26 +25,45 @@ class UnifiedGPUExecutor:
         if not all_gpus:
             return {"status": "no_gpu", "message": "لا يوجد كرت متاح"}
 
-        all_gpus.sort(key=lambda g: gpu_pool.GPU_RANK.get(g.gpu_type, 0), reverse=True)
+        # رتّب حسب القوة
+        all_gpus.sort(
+            key=lambda g: gpu_pool.GPU_RANK.get(g.gpu_type, 0),
+            reverse=True
+        )
 
         last_error = "no_provider_tried"
+        tried = []
+
         for gpu in all_gpus:
             logger.info(f"[منفّذ] محاولة على {gpu.name} ({gpu.gpu_type})")
+            tried.append(gpu.name)
             try:
                 result = self._try_provider(gpu, task_type, payload)
+                
                 if result.get("status") in ("queued", "success"):
-                    result["gpu_used"] = {"name": gpu.name, "type": gpu.gpu_type, "vram_gb": gpu.vram_gb}
+                    result["gpu_used"] = {
+                        "name": gpu.name,
+                        "type": gpu.gpu_type,
+                        "vram_gb": gpu.vram_gb,
+                    }
+                    result["tried"] = tried
                     return result
+                
                 last_error = result.get("status", "unknown_error")
+                logger.warning(f"[منفّذ] فشل {gpu.name}: {last_error}")
             except Exception as e:
-                logger.error(f"[منفّذ] فشل {gpu.name}: {e}")
+                logger.error(f"[منفّذ] خطأ في {gpu.name}: {e}")
                 last_error = str(e)
-                continue
 
-        return {"status": "all_providers_failed", "last_error": last_error, "task": task_type}
+        return {
+            "status": "all_providers_failed",
+            "last_error": last_error,
+            "task": task_type,
+            "tried": tried,
+        }
 
-    def _try_provider(self, gpu, task_type, payload) -> Dict:
-        """Helper to call the correct deployer based on the provider name."""
+    def _try_provider(self, gpu, task_type: str, payload: Dict) -> Dict:
+        """يوجّه للمنفّذ الصحيح."""
         if gpu.name.startswith("kaggle_"):
             from gpu_pool.kaggle_deployer import kaggle_deployer
             return kaggle_deployer.run(gpu, task_type, payload)
@@ -59,6 +78,7 @@ class UnifiedGPUExecutor:
             return lightning_deployer.run(gpu, task_type, payload)
         else:
             return {"status": "unsupported", "provider": gpu.name}
+
     def execute_merge(self, payload: Dict = None) -> Dict:
         """اختصار للصهر — يستخدم أقوى كرت."""
         return self.execute("merge", payload)

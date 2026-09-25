@@ -43,3 +43,8 @@ pylint>=3.0.0
 black>=24.0.0
 isort>=5.13.0
 mergekit
+
+# GPU SDKs
+kaggle>=1.6.0
+lightning-sdk>=0.0.0
+huggingface_hub>=0.24.0
