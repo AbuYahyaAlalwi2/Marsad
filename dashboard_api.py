@@ -1302,6 +1302,32 @@ def api_diag_kaggle_async_result():
         except Exception:
             pass
     return jsonify({"status": "not_ready"})
+@app.route("/api/gpu/kaggle_status/<kernel_slug>")
+def api_kaggle_status(kernel_slug):
+    try:
+        from gpu_pool.kaggle_deployer import kaggle_deployer
+        from gpu_pool.pool_manager import gpu_pool
+        kp = [p for p in gpu_pool.providers if p.name.startswith("kaggle_")]
+        if not kp:
+            return jsonify({"error": "no kaggle provider"}), 404
+
+        provider = kp[0]
+        kaggle_deployer._setup_credentials(provider)
+
+        from kaggle.api.kaggle_api_extended import KaggleApi
+        api = KaggleApi()
+        api.authenticate()
+
+        status = api.kernels_status(f"{provider.username}/{kernel_slug}")
+        return jsonify({
+            "kernel": kernel_slug,
+            "status": str(status),
+            "username": provider.username,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)[:300]}), 500
+
+
 if __name__ == "__main__":
     _prime_psutil()
     port = int(os.environ.get("PORT", "5000"))
@@ -1421,27 +1447,3 @@ def api_diag_saturn():
     return jsonify(results)
 
 
-@app.route("/api/gpu/kaggle_status/<kernel_slug>")
-def api_kaggle_status(kernel_slug):
-    try:
-        from gpu_pool.kaggle_deployer import kaggle_deployer
-        from gpu_pool.pool_manager import gpu_pool
-        kp = [p for p in gpu_pool.providers if p.name.startswith("kaggle_")]
-        if not kp:
-            return jsonify({"error": "no kaggle provider"}), 404
-
-        provider = kp[0]
-        kaggle_deployer._setup_credentials(provider)
-
-        from kaggle.api.kaggle_api_extended import KaggleApi
-        api = KaggleApi()
-        api.authenticate()
-
-        status = api.kernels_status(f"{provider.username}/{kernel_slug}")
-        return jsonify({
-            "kernel": kernel_slug,
-            "status": str(status),
-            "username": provider.username,
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)[:300]}), 500
