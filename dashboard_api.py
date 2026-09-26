@@ -1419,3 +1419,29 @@ def api_diag_saturn():
             results[url] = {"error": str(e)[:100]}
 
     return jsonify(results)
+
+
+@app.route("/api/gpu/kaggle_status/<kernel_slug>")
+def api_kaggle_status(kernel_slug):
+    try:
+        from gpu_pool.kaggle_deployer import kaggle_deployer
+        from gpu_pool.pool_manager import gpu_pool
+        kp = [p for p in gpu_pool.providers if p.name.startswith("kaggle_")]
+        if not kp:
+            return jsonify({"error": "no kaggle provider"}), 404
+
+        provider = kp[0]
+        kaggle_deployer._setup_credentials(provider)
+
+        from kaggle.api.kaggle_api_extended import KaggleApi
+        api = KaggleApi()
+        api.authenticate()
+
+        status = api.kernels_status(f"{provider.username}/{kernel_slug}")
+        return jsonify({
+            "kernel": kernel_slug,
+            "status": str(status),
+            "username": provider.username,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)[:300]}), 500
