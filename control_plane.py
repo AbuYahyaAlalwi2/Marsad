@@ -129,7 +129,21 @@ class ControlPlane:
         except Exception as e:
             logger.warning(f"[Control] Free Merger failed: {e}")
 
-        # Initial Provisioning: create accounts on free clouds
+                # Structural Safety Layer: prevents exfiltration/self-modify/hiding
+        try:
+            from core.structural_safety import (
+                StructuralSafetyModel,
+                AtomicConstraintUpdater,
+                DualAuditorSystem,
+            )
+            import core.structural_safety as _ss
+            _ss._global_updater = None
+            _ss._global_auditor = DualAuditorSystem()
+            logger.info("[Control] Structural Safety layer loaded (ready to bind)")
+        except Exception as e:
+            logger.warning(f"[Control] Structural Safety failed: {e}")
+
+# Initial Provisioning: create accounts on free clouds
         try:
             import threading as _thr
             def _initial_provision():
