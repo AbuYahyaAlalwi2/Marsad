@@ -128,14 +128,14 @@ class KaggleDeployer:
 
     def _notebook_merge(self, payload, hf_token=""):
         """دفتر للصهر."""
-        base = payload.get("base_model", "cognitivecomputations/dolphin-2.9-llama3-8b")
-        # ملاحظة: Qwen2.5-Coder-7B له 28 طبقة بينما البقية 32 طبقة -> يفشل الدمج.
+        base = payload.get("base_model", "deepseek-ai/DeepSeek-R1-Distill-Llama-8B")
+        # ملاحظة: DeepSeek-R1-Distill-Llama-8B عائلة Llama (32 طبقة) متوافق مع DeepSeek-Coder و CodeLlama.
         # الافتراضي الآمن يستبعد Qwen ما لم يحدد payload خلاف ذلك صراحة.
         models = payload.get("models", [
             {"model": "deepseek-ai/deepseek-coder-6.7b-instruct", "weight": 0.5, "density": 0.5},
             {"model": "codellama/CodeLlama-7b-Instruct-hf", "weight": 0.5, "density": 0.5},
         ])
-        repo_id = payload.get("repo_id", "abuyahya/dolphin-marsad")
+        repo_id = payload.get("repo_id", "abuyahya/deepseek-marsad")
 
         models_yaml_lines = []
         for m in models:
@@ -216,7 +216,7 @@ class KaggleDeployer:
                     "from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments\n",
                     "from peft import LoraConfig, get_peft_model\n",
                     "from trl import SFTTrainer\n",
-                    "model_id = 'cognitivecomputations/dolphin-2.9-llama3-8b'\n",
+                    "model_id = 'deepseek-ai/DeepSeek-R1-Distill-Llama-8B'\n",
                     "tok = AutoTokenizer.from_pretrained(model_id)\n",
                     "model = AutoModelForCausalLM.from_pretrained(model_id, load_in_4bit=True)\n",
                     "lora = LoraConfig(r=16, lora_alpha=32, target_modules=['q_proj','v_proj'])\n",

@@ -14,6 +14,10 @@ from typing import Dict, Any, List, Optional
 
 from db import get_conn, log_event
 try:
+    from missions_extended import EXTENDED_MISSIONS
+except ImportError:
+    EXTENDED_MISSIONS = {}
+try:
     from core.constitution import constitution_guard
 except ImportError:
     constitution_guard = None
@@ -113,6 +117,9 @@ BUILTIN_MISSIONS = {
         },
     },
 }
+
+# دمج المهام الموسّعة
+BUILTIN_MISSIONS.update(EXTENDED_MISSIONS)
 
 
 class MissionController:
