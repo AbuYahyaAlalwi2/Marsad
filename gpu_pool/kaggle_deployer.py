@@ -20,7 +20,6 @@ class KaggleDeployer:
     def _setup_credentials(self, provider):
         """يكتب ملف kaggle.json في مجلد خاص لكل حساب."""
         try:
-            # مجلد خاص لكل حساب لتجنب التعارض
             kaggle_dir = self.kernels_dir / f"auth_{provider.name}"
             kaggle_dir.mkdir(parents=True, exist_ok=True)
             (kaggle_dir / "kaggle.json").write_text(json.dumps({
@@ -31,7 +30,6 @@ class KaggleDeployer:
                 os.chmod(kaggle_dir / "kaggle.json", 0o600)
             except Exception:
                 pass
-            # اضبط متغير البيئة ليعرفه kaggle
             os.environ["KAGGLE_CONFIG_DIR"] = str(kaggle_dir)
             os.environ["KAGGLE_USERNAME"] = provider.username
             os.environ["KAGGLE_KEY"] = provider.token
@@ -52,23 +50,23 @@ class KaggleDeployer:
         except Exception as e:
             return {"status": "sdk_missing", "error": str(e)}
 
-        # أنشئ دفاتر حسب نوع المهمة
+        # يُقرأ من بيئة Render مباشرة ويُحقن تلقائيًا في كل كيرنل
+        hf_token = os.environ.get("HF_TOKEN", "")
+
         kernel_slug = f"marsad-{task_type}-{int(time.time())}"
 
         if task_type == "merge":
-            notebook = self._notebook_merge(payload)
+            notebook = self._notebook_merge(payload, hf_token)
         elif task_type == "train":
-            notebook = self._notebook_train(payload)
+            notebook = self._notebook_train(payload, hf_token)
         elif task_type == "evaluate":
             notebook = self._notebook_evaluate(payload)
         else:
             return {"status": "unknown_task", "task": task_type}
 
-        # اكتب الدفتر
         kernel_dir = self.kernels_dir / kernel_slug
         kernel_dir.mkdir(exist_ok=True)
 
-        # metadata
         metadata = {
             "id": f"{provider.username}/{kernel_slug}",
             "title": f"Marsad {task_type} {int(time.time())}",
@@ -87,15 +85,12 @@ class KaggleDeployer:
         )
         (kernel_dir / "script.ipynb").write_text(json.dumps(notebook))
 
-        # ارفع
         import traceback
         try:
-            # احذف كل الدفاتر القديمة بنفس الاسم
             try:
                 api.kernels_delete(kernel_slug)
             except Exception:
                 pass
-            # احذف الدفاتر القديمة من runs سابقة
             try:
                 old_kernels = api.kernels_list(
                     user=provider.username, page_size=100
@@ -123,7 +118,6 @@ class KaggleDeployer:
                 "metadata_file": (kernel_dir / "kernel-metadata.json").read_text()[:300],
             }
 
-        # سجّل للتحقق لاحقاً
         return {
             "status": "queued",
             "provider": provider.name,
@@ -132,18 +126,29 @@ class KaggleDeployer:
             "url": f"https://kaggle.com/code/{provider.username}/{kernel_slug}",
         }
 
-    def _notebook_merge(self, payload):
+    def _notebook_merge(self, payload, hf_token=""):
         """دفتر للصهر."""
         base = payload.get("base_model", "cognitivecomputations/dolphin-2.9-llama3-8b")
+        # ملاحظة: Qwen2.5-Coder-7B له 28 طبقة بينما البقية 32 طبقة -> يفشل الدمج.
+        # الافتراضي الآمن يستبعد Qwen ما لم يحدد payload خلاف ذلك صراحة.
         models = payload.get("models", [
-            {"model": "Qwen/Qwen2.5-Coder-7B-Instruct", "weight": 0.4},
-            {"model": "deepseek-ai/deepseek-coder-6.7b-instruct", "weight": 0.3},
-            {"model": "codellama/CodeLlama-7b-Instruct-hf", "weight": 0.3},
+            {"model": "deepseek-ai/deepseek-coder-6.7b-instruct", "weight": 0.5, "density": 0.5},
+            {"model": "codellama/CodeLlama-7b-Instruct-hf", "weight": 0.5, "density": 0.5},
         ])
+        repo_id = payload.get("repo_id", "abuyahya/dolphin-marsad")
+
+        models_yaml_lines = []
+        for m in models:
+            w = m.get("weight", 0.3)
+            d = m.get("density", 0.5)
+            models_yaml_lines.append(
+                f"    {{'model': '{m['model']}', 'parameters': {{'weight': {w}, 'density': {d}}}}},\n"
+            )
+
         return {
             "cells": [
                 {"cell_type": "code", "source": [
-                    "!pip install -q mergekit transformers torch\n",
+                    "!pip install -q mergekit transformers torch huggingface_hub\n",
                 ], "metadata": {}, "outputs": [], "execution_count": None},
                 {"cell_type": "code", "source": [
                     "import yaml\n",
@@ -151,9 +156,7 @@ class KaggleDeployer:
                     "  'merge_method': 'ties',\n",
                     f"  'base_model': '{base}',\n",
                     "  'models': [\n",
-                    "    {'model': 'Qwen/Qwen2.5-Coder-7B-Instruct', 'parameters': {'weight': 0.4, 'density': 0.5}},\n",
-                    "    {'model': 'deepseek-ai/deepseek-coder-6.7b-instruct', 'parameters': {'weight': 0.3, 'density': 0.5}},\n",
-                    "    {'model': 'codellama/CodeLlama-7b-Instruct-hf', 'parameters': {'weight': 0.3, 'density': 0.5}},\n",
+                    *models_yaml_lines,
                     "  ],\n",
                     "  'parameters': {'normalize': True},\n",
                     "  'dtype': 'float16',\n",
@@ -164,12 +167,23 @@ class KaggleDeployer:
                     "print(open('merge_config.yaml').read())\n",
                 ], "metadata": {}, "outputs": [], "execution_count": None},
                 {"cell_type": "code", "source": [
-                    "!mergekit-yaml merge_config.yaml ./merged --copy-tokenizer --allow-crimes --out-shard-size 2B\n",
+                    "import subprocess\n",
+                    "result = subprocess.run(['mergekit-yaml', 'merge_config.yaml', './merged', "
+                    "'--copy-tokenizer', '--allow-crimes', '--out-shard-size', '2B'], "
+                    "capture_output=True, text=True)\n",
+                    "print(result.stdout)\n",
+                    "print(result.stderr)\n",
+                    "if result.returncode != 0:\n",
+                    "    raise RuntimeError('Merge failed, see logs above')\n",
+                    "print('Merge completed successfully')\n",
                 ], "metadata": {}, "outputs": [], "execution_count": None},
                 {"cell_type": "code", "source": [
+                    f"HF_TOKEN = {hf_token!r}\n",
                     "from huggingface_hub import HfApi\n",
-                    "api = HfApi()\n",
-                    "api.upload_folder(folder_path='./merged', repo_id='abuyahya/dolphin-marsad', repo_type='model')\n",
+                    "api = HfApi(token=HF_TOKEN if HF_TOKEN else None)\n",
+                    f"api.upload_folder(folder_path='./merged', repo_id='{repo_id}', "
+                    "repo_type='model', token=HF_TOKEN if HF_TOKEN else None)\n",
+                    "print('Upload completed successfully')\n",
                 ], "metadata": {}, "outputs": [], "execution_count": None},
             ],
             "metadata": {
@@ -180,16 +194,20 @@ class KaggleDeployer:
             "nbformat_minor": 5,
         }
 
-    def _notebook_train(self, payload):
+    def _notebook_train(self, payload, hf_token=""):
         """دفتر للتدريب."""
         dataset = payload.get("dataset", "abuyahya/marsad-data")
         epochs = payload.get("epochs", 1)
         return {
             "cells": [
                 {"cell_type": "code", "source": [
-                    "!pip install -q transformers peft datasets accelerate bitsandbytes\n",
+                    "!pip install -q transformers peft datasets accelerate bitsandbytes huggingface_hub\n",
                 ], "metadata": {}, "outputs": [], "execution_count": None},
                 {"cell_type": "code", "source": [
+                    f"HF_TOKEN = {hf_token!r}\n",
+                    "import os\n",
+                    "if HF_TOKEN:\n",
+                    "    os.environ['HF_TOKEN'] = HF_TOKEN\n",
                     "from datasets import load_dataset\n",
                     f"ds = load_dataset('{dataset}')\n",
                     "print(ds)\n",
