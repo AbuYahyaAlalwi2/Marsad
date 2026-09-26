@@ -132,7 +132,7 @@ class KaggleDeployer:
         # ملاحظة: DeepSeek-R1-Distill-Llama-8B عائلة Llama (32 طبقة) متوافق مع DeepSeek-Coder و CodeLlama.
         # الافتراضي الآمن يستبعد Qwen ما لم يحدد payload خلاف ذلك صراحة.
         models = payload.get("models", [
-            {"model": "meta-llama/Meta-Llama-3.1-8B-Instruct", "weight": 0.3, "density": 0.5},
+            {"model": "NousResearch/Meta-Llama-3-8B-Instruct", "weight": 0.3, "density": 0.5},
             {"model": "NousResearch/Hermes-2-Pro-Llama-3-8B", "weight": 0.2, "density": 0.5},
         ])
         repo_id = payload.get("repo_id", "abuyahya/deepseek-marsad")
