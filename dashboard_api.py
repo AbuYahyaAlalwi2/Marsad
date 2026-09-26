@@ -1328,6 +1328,46 @@ def api_kaggle_status(kernel_slug):
         return jsonify({"error": str(e)[:300]}), 500
 
 
+
+@app.route("/api/diag/saturn_urls")
+def api_diag_saturn_urls():
+    """يجرّب كل روابط ساتورن الممكنة."""
+    import os
+    import requests as _rq
+    
+    token = os.environ.get("SATURN_API_KEY_1", "")
+    if not token:
+        return jsonify({"error": "no_token"})
+    
+    urls = [
+        "https://app.compute.studio/api/user/profile",
+        "https://api.compute.studio/api/user/profile",
+        "https://api.saturncloud.io/api/user/profile",
+        "https://api.saturncloud.io/user/profile",
+        "https://unity.saturnenterprise.io/api/user/profile",
+        "https://saturnenterprise.io/api/user/profile",
+        "https://api.saturnenterprise.io/user/profile",
+        "https://app.compute.studio/api/v1/user/profile",
+    ]
+    
+    results = {}
+    for url in urls:
+        try:
+            r = _rq.get(
+                url,
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=10,
+                allow_redirects=True,
+            )
+            results[url] = {
+                "status": r.status_code,
+                "response": r.text[:150],
+                "url_final": r.url,
+            }
+        except Exception as e:
+            results[url] = {"error": str(e)[:100]}
+    
+    return jsonify({"token_length": len(token), "results": results})
 if __name__ == "__main__":
     _prime_psutil()
     port = int(os.environ.get("PORT", "5000"))
