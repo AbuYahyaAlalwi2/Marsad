@@ -133,7 +133,6 @@ class KaggleDeployer:
         # الافتراضي الآمن يستبعد Qwen ما لم يحدد payload خلاف ذلك صراحة.
         models = payload.get("models", [
             {"model": "NousResearch/Meta-Llama-3-8B-Instruct", "weight": 0.3, "density": 0.5},
-            {"model": "NousResearch/Hermes-2-Pro-Llama-3-8B", "weight": 0.2, "density": 0.5},
         ])
         repo_id = payload.get("repo_id", "abuyahya/deepseek-marsad")
 
