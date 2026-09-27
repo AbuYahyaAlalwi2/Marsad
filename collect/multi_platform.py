@@ -103,7 +103,9 @@ class MultiPlatformCollector:
     # --- GitHub ---
     def _collect_github(self, query: str, limit: int) -> dict:
         """جمع من GitHub API"""
-        token = os.environ.get("GITHUB_TOKEN")
+        token = (os.environ.get("GITHUB_TOKEN")
+             or os.environ.get("GITHUB_TOKEN_1")
+             or os.environ.get("GITHUB_TOKEN_2"))
         if not token:
             return {"status": "auth_required", "message": "يرجى تعين GITHUB_TOKEN"}
         
