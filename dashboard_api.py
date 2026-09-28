@@ -302,6 +302,38 @@ def api_queue():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/saturn/test")
+def api_saturn_test():
+    """يختبر المصادقة على Saturn Cloud (كل الحسابات)."""
+    try:
+        import httpx
+        from core.account_pool import account_pool
+        results = []
+        for acc in account_pool.accounts:
+            if acc.platform != "saturn":
+                continue
+            token = acc.creds.get("key", "")
+            try:
+                r = httpx.get(
+                    "https://app.community.saturnenterprise.io/me",
+                    headers={"Authorization": f"token {token}"},
+                    timeout=15, follow_redirects=True)
+                results.append({
+                    "account": acc.name(),
+                    "status": r.status_code,
+                    "ok": r.status_code == 200,
+                    "preview": r.text[:120] if not r.ok else "authenticated",
+                })
+            except Exception as e:
+                results.append({
+                    "account": acc.name(),
+                    "error": str(e)[:120],
+                })
+        return jsonify({"count": len(results), "results": results})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/accounts/status")
 def api_accounts_status():
     """حالة مجموعة الحسابات (Cloudflare/Kaggle/Saturn/Fly/Railway...)."""
