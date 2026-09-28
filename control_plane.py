@@ -143,19 +143,48 @@ class ControlPlane:
         except Exception as e:
             logger.warning(f"[Control] Structural Safety failed: {e}")
 
-                # Cloudflare Workers: deploy 50 workers across 5 accounts
+                # Cloudflare Workers deployer (module-level functions)
         try:
             import threading as _cf_thr
             def _cf_deploy():
                 try:
-                    from cloudflare_deployer import CloudflareDeployer
                     import os as _os
+                    from cloudflare_deployer import (
+                        deploy_worker, list_workers, verify_token)
                     if _os.environ.get("CG_DEPLOY_DRY_RUN", "true").lower() == "true":
                         logger.info("[Control] CF Deployer in DRY_RUN — skipping")
                         return
-                    cf = CloudflareDeployer()
-                    result = cf.deploy_all()
-                    logger.info(f"[Control] CF workers: {result}")
+                    # اكتشف الحسابات من account_pool
+                    try:
+                        from core.account_pool import account_pool
+                    except Exception:
+                        account_pool = None
+                    if not account_pool:
+                        logger.warning("[Control] account_pool not available")
+                        return
+                    deployed = 0
+                    for acc in account_pool.accounts:
+                        if acc.platform != "cloudflare":
+                            continue
+                        token = acc.creds.get("token", "")
+                        account_id = acc.creds.get("account", "")
+                        if not token or not account_id:
+                            continue
+                        # تحقق أولاً
+                        v = verify_token(token, account_id)
+                        if not v.get("valid"):
+                            logger.warning(f"[Control] CF {acc.name()} invalid token")
+                            continue
+                        # انشر worker
+                        name = f"marsad-{acc.idx}"
+                        r = deploy_worker(token, account_id, name, dry_run=False)
+                        if r.get("ok"):
+                            deployed += 1
+                            logger.info(f"[Control] CF deployed: {name}")
+                        else:
+                            err = r.get("status", "unknown")
+                            logger.warning(f"[Control] CF {name}: {err} | {r.get('output','')[:120]}")
+                    logger.info(f"[Control] CF workers deployed: {deployed}")
                 except Exception as _e:
                     logger.warning(f"[Control] CF deploy failed: {_e}")
             _cf_thr.Thread(target=_cf_deploy, daemon=True).start()
