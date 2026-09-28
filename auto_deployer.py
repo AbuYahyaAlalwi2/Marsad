@@ -13,6 +13,11 @@ from typing import Dict, Any, List, Optional
 
 from db import get_conn, log_event
 
+try:
+    from core.account_pool import account_pool
+except ImportError:
+    account_pool = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -64,10 +69,32 @@ class AutoDeployer:
         self._lock = threading.Lock()
 
         # Tokens
-        self.fly_token = os.environ.get("FLY_API_TOKEN", "")
-        self.railway_token = os.environ.get("RAILWAY_TOKEN", "")
-        self.render_token = os.environ.get("RENDER_API_KEY", "")
-        self.koyeb_token = os.environ.get("KOYEB_TOKEN", "")
+        # نستخدم account_pool إذا متاح، وإلا متغيرات البيئة الفردية
+        self._tokens_cache = {}
+        if account_pool:
+            self.fly_token = self._get_token("fly")
+            self.railway_token = self._get_token("railway")
+            self.render_token = self._get_token("render")
+            self.koyeb_token = self._get_token("koyeb")
+        else:
+            self.fly_token = os.environ.get("FLY_API_TOKEN", "")
+            self.railway_token = os.environ.get("RAILWAY_TOKEN", "")
+            self.render_token = os.environ.get("RENDER_API_KEY", "")
+            self.koyeb_token = os.environ.get("KOYEB_TOKEN", "")
+
+    def _get_token(self, provider: str) -> str:
+        """يجلب token من account_pool مع تدوير تلقائي."""
+        env_map = {
+            "fly": "FLY_API_TOKEN",
+            "railway": "RAILWAY_TOKEN",
+            "render": "RENDER_API_KEY",
+            "koyeb": "KOYEB_TOKEN",
+        }
+        if account_pool:
+            acc = account_pool.next_for(provider)
+            if acc:
+                return list(acc.creds.values())[0]
+        return os.environ.get(env_map.get(provider, ""), "")
 
         # App names
         self.fly_app = os.environ.get("FLY_APP_NAME", "marsad-worker")
