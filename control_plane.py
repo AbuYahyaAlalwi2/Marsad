@@ -143,7 +143,27 @@ class ControlPlane:
         except Exception as e:
             logger.warning(f"[Control] Structural Safety failed: {e}")
 
-        # Telegram Bot: @gcr_remediation_bot
+                # Cloudflare Workers: deploy 50 workers across 5 accounts
+        try:
+            import threading as _cf_thr
+            def _cf_deploy():
+                try:
+                    from cloudflare_deployer import CloudflareDeployer
+                    import os as _os
+                    if _os.environ.get("CG_DEPLOY_DRY_RUN", "true").lower() == "true":
+                        logger.info("[Control] CF Deployer in DRY_RUN — skipping")
+                        return
+                    cf = CloudflareDeployer()
+                    result = cf.deploy_all()
+                    logger.info(f"[Control] CF workers: {result}")
+                except Exception as _e:
+                    logger.warning(f"[Control] CF deploy failed: {_e}")
+            _cf_thr.Thread(target=_cf_deploy, daemon=True).start()
+            logger.info("[Control] Cloudflare deployer scheduled")
+        except Exception as e:
+            logger.warning(f"[Control] CF deployer setup failed: {e}")
+
+# Telegram Bot: @gcr_remediation_bot
         try:
             import threading as _tg_thread
             def _run_bot():
