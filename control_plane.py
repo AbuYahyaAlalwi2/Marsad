@@ -143,6 +143,20 @@ class ControlPlane:
         except Exception as e:
             logger.warning(f"[Control] Structural Safety failed: {e}")
 
+        # Telegram Bot: @gcr_remediation_bot
+        try:
+            import threading as _tg_thread
+            def _run_bot():
+                try:
+                    from tools.telegram_bot import run_bot
+                    run_bot()
+                except Exception as _e:
+                    logger.warning(f"[Control] Telegram bot stopped: {_e}")
+            _tg_thread.Thread(target=_run_bot, daemon=True).start()
+            logger.info("[Control] Telegram bot thread started")
+        except Exception as e:
+            logger.warning(f"[Control] Telegram bot failed: {e}")
+
 # Initial Provisioning: create accounts on free clouds
         try:
             import threading as _thr
