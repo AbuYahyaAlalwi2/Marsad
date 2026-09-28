@@ -82,6 +82,22 @@ class AutoDeployer:
             self.render_token = os.environ.get("RENDER_API_KEY", "")
             self.koyeb_token = os.environ.get("KOYEB_TOKEN", "")
 
+        # App names
+        self.fly_app = os.environ.get("FLY_APP_NAME", "marsad-worker")
+        self.railway_service = os.environ.get("RAILWAY_SERVICE", "marsad-worker")
+        self.koyeb_app = os.environ.get("KOYEB_APP", "marsad-worker")
+
+        # Dry-run mode
+        self.dry_run = os.environ.get("CG_DEPLOY_DRY_RUN", "true").lower() == "true"
+
+        # Current state
+        self.current_workers: Dict[str, int] = {
+            "fly": 0, "railway": 0, "render": 0, "koyeb": 0
+        }
+
+        self._ensure_schema()
+        logger.info(f"[Deployer] Init (dry_run={self.dry_run}, batch={self.WORKERS_PER_BATCH})")
+
     def _get_token(self, provider: str) -> str:
         """يجلب token من account_pool مع تدوير تلقائي."""
         env_map = {
@@ -95,21 +111,6 @@ class AutoDeployer:
             if acc:
                 return list(acc.creds.values())[0]
         return os.environ.get(env_map.get(provider, ""), "")
-
-        # App names
-        self.fly_app = os.environ.get("FLY_APP_NAME", "marsad-worker")
-        self.railway_service = os.environ.get("RAILWAY_SERVICE", "marsad-worker")
-        self.koyeb_app = os.environ.get("KOYEB_APP", "marsad-worker")
-
-        # Dry-run mode (safety default)
-        self.dry_run = os.environ.get("CG_DEPLOY_DRY_RUN", "true").lower() == "true"
-
-        # Current state
-        self.current_workers: Dict[str, int] = {
-            "fly": 0, "railway": 0, "render": 0, "koyeb": 0
-        }
-
-        self._ensure_schema()
         logger.info(f"[Deployer] Init (dry_run={self.dry_run}, batch={self.WORKERS_PER_BATCH})")
 
     def _ensure_schema(self):

@@ -155,7 +155,25 @@ async def cmd_merge(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 async def cmd_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not _is_owner(update): return
     txt = update.message.text
-    await update.message.reply_text(f"{S['next']} {txt[:200]}")
+    await update.message.reply_text(f"{S['watch']} معالجة...")
+
+    def _progress(msg):
+        # نرسل تقدم في الخلفية
+        logger.info(msg)
+
+    try:
+        from core.agent_loop import get_agent
+        agent = get_agent()
+        result = agent.run(txt, on_step=_progress)
+        if result["status"] == "completed":
+            out = result.get("final", "")[:3500]
+            await update.message.reply_text(
+                f"{S['ok']} {result['turns']} جولات\n\n{out}")
+        else:
+            await update.message.reply_text(
+                f"{S['fail']} {result.get('error', 'unknown')[:500]}")
+    except Exception as e:
+        await update.message.reply_text(f"{S['fail']} {e}")
 
 
 def run_bot():

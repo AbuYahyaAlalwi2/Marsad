@@ -131,11 +131,8 @@ class EmailPool:
             logger.warning(f"[EmailPool] mail.tm failed: {e}")
             return None
 
-    def _create_1secmail(self) -> Optional[Dict[str, Any]]:
-        """Create a real 1secmail account."""
         try:
             r = requests.get(
-                "https://www.1secmail.com/api/v1/?action=genRandomMailbox&count=1",
                 timeout=15,
             )
             emails = r.json()
@@ -147,16 +144,13 @@ class EmailPool:
                 "email": address,
                 "login": login,
                 "domain": domain,
-                "service": "1secmail",
                 "real": True,
             }
         except Exception as e:
-            logger.warning(f"[EmailPool] 1secmail failed: {e}")
             return None
 
     def produce_one(self) -> Optional[Dict[str, Any]]:
         """Create one real email and add it to the pool."""
-        email_data = self._create_mail_tm() or self._create_1secmail()
         if not email_data:
             return None
 
