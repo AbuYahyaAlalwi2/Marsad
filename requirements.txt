@@ -48,3 +48,4 @@ mergekit
 kaggle>=1.6.0
 lightning-sdk>=0.0.0
 huggingface_hub>=0.24.0
+httpx==0.28.1
