@@ -302,6 +302,20 @@ def api_queue():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/accounts/status")
+def api_accounts_status():
+    """حالة مجموعة الحسابات (Cloudflare/Kaggle/Saturn/Fly/Railway...)."""
+    try:
+        from core.account_pool import account_pool
+        return jsonify({
+            "stats": account_pool.stats(),
+            "total": len(account_pool.accounts),
+            "accounts": [a.name() for a in account_pool.accounts],
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/providers")
 def api_providers():
     try:
