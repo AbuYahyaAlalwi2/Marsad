@@ -322,7 +322,7 @@ def api_saturn_test():
                     "account": acc.name(),
                     "status": r.status_code,
                     "ok": r.status_code == 200,
-                    "preview": r.text[:120] if not r.ok else "authenticated",
+                    "preview": r.text[:120] if r.status_code != 200 else "authenticated",
                 })
             except Exception as e:
                 results.append({
