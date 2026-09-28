@@ -12,12 +12,12 @@ logger = logging.getLogger(__name__)
 class SaturnDeployer:
     """يشغّل مهام على Saturn Cloud."""
 
-    BASE_URL = "https://app.compute.studio/api"
+    BASE_URL = os.environ.get("SATURN_BASE_URL", "https://app.community.saturnenterprise.io")
 
     def run(self, provider, task_type: str, payload: Dict) -> Dict:
         """يشغّل مهمة على ساتورن."""
         headers = {
-            "Authorization": f"Bearer {provider.token}",
+            "Authorization": f"token {provider.token}",
             "Content-Type": "application/json",
         }
 
@@ -45,7 +45,7 @@ class SaturnDeployer:
             # 3. أرسل المهمة
             job_name = f"marsad-{task_type}-{int(time.time())}"
             r = requests.post(
-                f"{self.BASE_URL}/jobs",
+                f"{self.BASE_URL}/api/recipes",
                 headers=headers,
                 json={"name": job_name, "config": job_config},
                 timeout=60,
@@ -105,6 +105,31 @@ class SaturnDeployer:
             "gpu": "a10g",
             "image": "python:3.11",
         }
+
+
+
+
+    def start_job(self, provider, job_id: str) -> Dict:
+        """يبدأ وظيفة مُعرَّفة مسبقاً."""
+        headers = {"Authorization": f"token {provider.token}"}
+        try:
+            r = requests.post(
+                f"{self.BASE_URL}/api/jobs/{job_id}/start",
+                headers=headers, timeout=30)
+            return {"status": "started" if r.status_code < 400 else "failed",
+                    "http": r.status_code, "job_id": job_id}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+
+    def list_jobs(self, provider) -> Dict:
+        """يعرض كل الوظائف."""
+        headers = {"Authorization": f"token {provider.token}"}
+        try:
+            r = requests.get(f"{self.BASE_URL}/api/jobs",
+                             headers=headers, timeout=30)
+            return {"status": "ok", "jobs": r.json() if r.ok else []}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
 
 
 saturn_deployer = SaturnDeployer()
