@@ -777,6 +777,53 @@ def api_cf_deploy():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/cf/deploy_now", methods=["POST"])
+def api_cf_deploy_now():
+    """ينشر Workers فوراً على كل حسابات Cloudflare."""
+    import os
+    import requests as _req
+    try:
+        from core.account_pool import account_pool
+        from cloudflare_deployer import deploy_worker, verify_token
+
+        dry = os.environ.get("CG_DEPLOY_DRY_RUN", "true").lower() == "true"
+        results = []
+        for acc in account_pool.accounts:
+            if acc.platform != "cloudflare":
+                continue
+            token = acc.creds.get("token", "")
+            account_id = acc.creds.get("account", "")
+            if not token or not account_id:
+                results.append({"acc": acc.name(), "error": "missing creds"})
+                continue
+
+            # 1) تحقق من التوكن
+            v = verify_token(token, account_id)
+            if not v.get("valid"):
+                results.append({
+                    "acc": acc.name(),
+                    "step": "verify",
+                    "error": v.get("output", "invalid token")[:200],
+                })
+                continue
+
+            # 2) انشر Worker
+            name = f"marsad-{acc.idx}"
+            r = deploy_worker(token, account_id, name, dry_run=False)
+            results.append({
+                "acc": acc.name(),
+                "step": "deploy",
+                "name": name,
+                "ok": r.get("ok"),
+                "status": r.get("status"),
+                "output": (r.get("output") or "")[:250],
+            })
+        return jsonify({"dry_run": dry, "count": len(results), "results": results})
+    except Exception as e:
+        import traceback
+        return jsonify({"error": str(e), "tb": traceback.format_exc()[:800]}), 500
+
+
 @app.route("/api/cf/diagnose")
 def api_cf_diagnose():
     """Show subdomain status + raw errors for each account."""
