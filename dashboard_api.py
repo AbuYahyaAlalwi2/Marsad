@@ -807,32 +807,43 @@ def api_cf_deploy_now():
                 })
                 continue
 
-            # 2) انشر Worker
-            name = f"marsad-{acc.idx}"
-            r = deploy_worker(token, account_id, name, dry_run=False)
+            # 2) انشر N Workers لكل حساب
+            n = int(os.environ.get("CF_WORKERS_PER_ACCOUNT", "10"))
+            deployed = 0
+            worker_names = []
+            for i in range(1, n + 1):
+                name = f"marsad-{acc.idx}-{i}"
+                r = deploy_worker(token, account_id, name, dry_run=False)
+                if r.get("ok"):
+                    deployed += 1
+                    worker_names.append(name)
+                else:
+                    # لو فشل، توقف وانتقل للحساب التالي
+                    break
+                import time as _t; _t.sleep(0.3)
+
             results.append({
                 "acc": acc.name(),
                 "step": "deploy",
-                "name": name,
-                "ok": r.get("ok"),
-                "status": r.get("status"),
-                "output": (r.get("output") or "")[:250],
+                "ok": deployed == n,
+                "workers_deployed": deployed,
+                "workers_total": n,
+                "sample_names": worker_names[:3],
             })
 
-            # 3) حدّث قاعدة البيانات عند النجاح
-            if r.get("ok"):
-                try:
-                    from db import get_conn
-                    import time as _t
-                    with get_conn() as conn:
-                        conn.execute(
-                            "UPDATE cf_accounts SET workers_count = 1, "
-                            "agents_capacity = 10000, last_check = ?, "
-                            "status = 'active' WHERE account_id = ?",
-                            (_t.time(), account_id))
-                        conn.commit()
-                except Exception as _e:
-                    pass
+            # 3) حدّث قاعدة البيانات
+            try:
+                from db import get_conn
+                import time as _t
+                with get_conn() as conn:
+                    conn.execute(
+                        "UPDATE cf_accounts SET workers_count = ?, "
+                        "agents_capacity = ?, last_check = ?, "
+                        "status = 'active' WHERE account_id = ?",
+                        (deployed, deployed * 10000, _t.time(), account_id))
+                    conn.commit()
+            except Exception:
+                pass
 
         return jsonify({"dry_run": dry, "count": len(results), "results": results})
     except Exception as e:
