@@ -1,51 +1,12 @@
-# ============================================================
-# CYBERGUARD OS / MARSAD - Requirements
-# ============================================================
-
-# --- Core Framework ---
-streamlit>=1.38.0
+# ═══════════════════════════════════════════════
+# MARSAD — Dashboard Requirements (Railway/Render)
+# خفيف — بدون ML
+# ═══════════════════════════════════════════════
 flask>=3.0.0
 flask-cors>=4.0.0
-gunicorn>=21.0.0
-
-# --- HTTP & APIs ---
-requests>=2.32.0
-huggingface_hub>=0.24.0
-
-# --- System Monitoring ---
-psutil>=5.9.0
-
-# --- Data ---
-plotly>=5.18.0
-pandas>=2.0.0
-beautifulsoup4>=4.12.0
-lxml>=4.9.0
-pyyaml>=6.0.0
-
-# --- Task Queue (no Redis required) ---
-huey>=2.6.0
-flashq>=0.2.2
-
-# --- Cloud Abstraction ---
-apache-libcloud>=3.9.1
-
-# --- Security (Termux-friendly) ---
-pycryptodome>=3.20.0
-python-dotenv>=1.0.0
-
-# --- Browser Automation (optional) ---
-playwright>=1.40.0
-selenium>=4.15.0
-fake-useragent>=1.4.0
-
-# --- Code Quality (optional) ---
-pylint>=3.0.0
-black>=24.0.0
-isort>=5.13.0
-mergekit
-
-# GPU SDKs
-kaggle>=1.6.0
-lightning-sdk>=0.0.0
-huggingface_hub>=0.24.0
+requests>=2.31.0
 httpx==0.28.1
+python-telegram-bot>=21.0
+arabic-reshaper>=3.0.0
+python-bidi==0.4.2
+reportlab>=4.0.0

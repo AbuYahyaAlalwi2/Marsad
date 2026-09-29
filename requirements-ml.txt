@@ -1,0 +1,13 @@
+# ═══════════════════════════════════════════════
+# MARSAD — ML/GPU Requirements (Kaggle/Saturn)
+# ثقيل — يحتاج Rust أو wheels مبنية
+# ═══════════════════════════════════════════════
+mergekit>=0.1.0
+transformers>=4.40.0
+torch>=2.2.0
+safetensors>=0.4.0
+pydantic>=2.0.0
+pydantic-core>=2.14.0
+huggingface_hub>=0.24.0
+datasets>=2.19.0
+accelerate>=0.30.0
