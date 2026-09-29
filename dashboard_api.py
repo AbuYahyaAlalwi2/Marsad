@@ -818,6 +818,22 @@ def api_cf_deploy_now():
                 "status": r.get("status"),
                 "output": (r.get("output") or "")[:250],
             })
+
+            # 3) حدّث قاعدة البيانات عند النجاح
+            if r.get("ok"):
+                try:
+                    from db import get_conn
+                    import time as _t
+                    with get_conn() as conn:
+                        conn.execute(
+                            "UPDATE cf_accounts SET workers_count = 1, "
+                            "agents_capacity = 10000, last_check = ?, "
+                            "status = 'active' WHERE account_id = ?",
+                            (_t.time(), account_id))
+                        conn.commit()
+                except Exception as _e:
+                    pass
+
         return jsonify({"dry_run": dry, "count": len(results), "results": results})
     except Exception as e:
         import traceback
