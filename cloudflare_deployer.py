@@ -246,8 +246,8 @@ def deploy_worker(token: str, account_id: str, worker_name: str,
     # Metadata part (JSON) - REQUIRED
     metadata = {
         "main_module": "worker.js",
-        "compatibility_date": "2024-01-01",
-        "compatibility_flags": [],
+        "compatibility_date": "2025-08-25",
+        "compatibility_flags": ["global_fetch_strictly_public"],
     }
 
     # Multipart with correct content-type for ES module
