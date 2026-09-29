@@ -777,6 +777,62 @@ def api_cf_deploy():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/cf/enable_all", methods=["POST"])
+def api_cf_enable_all():
+    """يفعّل workers.dev لكل Workers الموجودة (يصلح خطأ 1042)."""
+    import requests as _r
+    try:
+        from core.account_pool import account_pool
+        results = []
+        for acc in account_pool.accounts:
+            if acc.platform != "cloudflare":
+                continue
+            token = acc.creds.get("token", "")
+            account_id = acc.creds.get("account", "")
+            if not token or not account_id:
+                continue
+
+            # 1) اجلب كل Workers
+            try:
+                r = _r.get(
+                    f"https://api.cloudflare.com/client/v4/accounts/{account_id}/workers/scripts",
+                    headers={"Authorization": f"Bearer {token}"},
+                    timeout=30)
+                scripts = [s.get("id") for s in r.json().get("result", [])]
+            except Exception as e:
+                results.append({"acc": acc.name(), "error": str(e)[:120]})
+                continue
+
+            # 2) فعّل subdomain لكل واحد
+            enabled = 0
+            failed = 0
+            for name in scripts:
+                try:
+                    e = _r.post(
+                        f"https://api.cloudflare.com/client/v4/accounts/{account_id}/workers/scripts/{name}/subdomain",
+                        headers={"Authorization": f"Bearer {token}",
+                                 "Content-Type": "application/json"},
+                        json={"enabled": True, "previews_enabled": False},
+                        timeout=15)
+                    if e.status_code in (200, 201):
+                        enabled += 1
+                    else:
+                        failed += 1
+                except Exception:
+                    failed += 1
+
+            results.append({
+                "acc": acc.name(),
+                "total_scripts": len(scripts),
+                "enabled": enabled,
+                "failed": failed,
+            })
+        return jsonify({"count": len(results), "results": results})
+    except Exception as e:
+        import traceback
+        return jsonify({"error": str(e), "tb": traceback.format_exc()[:500]}), 500
+
+
 @app.route("/api/cf/deploy_now", methods=["POST"])
 def api_cf_deploy_now():
     """ينشر Workers فوراً على كل حسابات Cloudflare."""

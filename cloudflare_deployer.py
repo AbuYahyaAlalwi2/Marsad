@@ -259,6 +259,18 @@ def deploy_worker(token: str, account_id: str, worker_name: str,
     try:
         r = requests.put(url, headers=headers, files=files, timeout=60)
         if r.status_code in (200, 201):
+            # تفعيل workers.dev subdomain (يمنع خطأ 1042 لاحقاً)
+            try:
+                requests.post(
+                    f"https://api.cloudflare.com/client/v4/accounts/"
+                    f"{account_id}/workers/scripts/{worker_name}/subdomain",
+                    headers={"Authorization": f"Bearer {token}",
+                             "Content-Type": "application/json"},
+                    json={"enabled": True, "previews_enabled": False},
+                    timeout=20,
+                )
+            except Exception:
+                pass
             return {"ok": True, "status": "success",
                     "output": f"Worker '{worker_name}' deployed to {account_id[:8]}..."}
 
