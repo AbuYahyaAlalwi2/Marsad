@@ -51,46 +51,39 @@ export default {
 
 
 def verify_token(token: str, account_id: str = None) -> Dict[str, Any]:
-    """
-    Verify Cloudflare API token.
-    Tries BOTH user-owned AND account-owned endpoints.
-    """
-    headers = {"Authorization": f"Bearer {token}"}
+    """يتحقق من التوكن عبر account endpoint (يدعم Account-scoped tokens)."""
+    if not token:
+        return {"valid": False, "output": "no token"}
 
-    # 1. Try user-owned endpoint first
-    try:
-        r = requests.get(
-            "https://api.cloudflare.com/client/v4/user/tokens/verify",
-            headers=headers, timeout=10,
-        )
-        data = r.json()
-        if data.get("success") and data.get("result", {}).get("status") == "active":
-            return {
-                "ok": True,
-                "status": "active",
-                "type": "user_owned",
-            }
-    except Exception:
-        pass
-
-    # 2. Try account-owned endpoint (requires account_id)
+    # 1) لو عندنا account_id → افحص /accounts/{id}
     if account_id:
         try:
             r = requests.get(
-                f"https://api.cloudflare.com/client/v4/accounts/{account_id}/tokens/verify",
-                headers=headers, timeout=10,
-            )
-            data = r.json()
-            if data.get("success"):
-                return {
-                    "ok": True,
-                    "status": "active",
-                    "type": "account_owned",
-                }
-        except Exception:
+                f"https://api.cloudflare.com/client/v4/accounts/{account_id}",
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=15)
+            if r.status_code == 200:
+                data = r.json()
+                return {"valid": True, "account": data.get("result", {}).get("name", ""),
+                        "output": "account-scoped token ok"}
+            # فشل → جرّب user
+        except Exception as e:
             pass
 
-    return {"ok": False, "status": "unknown", "type": "invalid"}
+    # 2) جرّب user endpoint (للـ User tokens)
+    try:
+        r = requests.get(
+            "https://api.cloudflare.com/client/v4/user/tokens/verify",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=15)
+        if r.status_code == 200 and r.json().get("success"):
+            return {"valid": True, "output": "user token ok"}
+        err = r.json().get("errors", [{}])
+        msg = err[0].get("message", "") if err else f"HTTP {r.status_code}"
+        return {"valid": False, "output": msg[:200]}
+    except Exception as e:
+        return {"valid": False, "output": str(e)[:200]}
+
 
 
 def list_accounts(token: str) -> Dict[str, Any]:
