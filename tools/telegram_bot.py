@@ -155,25 +155,30 @@ async def cmd_merge(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 async def cmd_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not _is_owner(update): return
     txt = update.message.text
-    await update.message.reply_text(f"{S['watch']} معالجة...")
+    msg = await update.message.reply_text(f"{S['watch']} معالجة...")
 
-    def _progress(msg):
-        # نرسل تقدم في الخلفية
-        logger.info(msg)
+    # اجلب الإعدادات من البيئة
+    import os
+    llm_url = os.environ.get("MARSAD_LLM_URL", "")
+    llm_key = os.environ.get("MARSAD_LLM_KEY", "")
+    llm_model = os.environ.get("MARSAD_LLM_MODEL", "deepseek-marsad-v2")
+
+    if not llm_url:
+        await msg.edit_text(f"{S['fail']} Kaggle URL غير مهيأ")
+        return
 
     try:
-        from core.agent_loop import get_agent
-        agent = get_agent()
-        result = agent.run(txt, on_step=_progress)
+        from core.agent_loop import AgentLoop
+        agent = AgentLoop(base_url=llm_url, model=llm_model, api_key=llm_key)
+        result = agent.run(txt)
+
         if result["status"] == "completed":
-            out = result.get("final", "")[:3500]
-            await update.message.reply_text(
-                f"{S['ok']} {result['turns']} جولات\n\n{out}")
+            out = (result.get("final") or "")[:3500]
+            await msg.edit_text(f"{S['ok']} {result.get('turns',0)} جولات\n\n{out}")
         else:
-            await update.message.reply_text(
-                f"{S['fail']} {result.get('error', 'unknown')[:500]}")
+            await msg.edit_text(f"{S['fail']} {(result.get('error') or 'unknown')[:400]}")
     except Exception as e:
-        await update.message.reply_text(f"{S['fail']} {e}")
+        await msg.edit_text(f"{S['fail']} {str(e)[:400]}")
 
 
 def run_bot():

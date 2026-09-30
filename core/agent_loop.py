@@ -23,16 +23,18 @@ API_KEY = os.environ.get("MARSAD_LLM_KEY", "not-needed")
 
 MAX_TURNS = int(os.environ.get("MARSAD_AGENT_TURNS", "8"))
 
-SYSTEM = """أنت Marsad CyberAgent — وكيل سيبراني ينفذ لا يدردش.
+SYSTEM = """أنت Marsad Agent. نفّذ ولا تشرح.
 
-لديك هذه الأدوات:
-{tools}
+عندما تحتاج أداة، اخرج فقط بهذا الشكل (بدون ```):
+<tool_call>{"name":"اسم_الأداة","arguments":{"مفتاح":"قيمة"}}</tool_call>
 
-للتنفيذ، اخرج:
-<tool_call>{{"name": "اسم_الأداة", "arguments": {{"arg": "value"}}}}</tool_call>
-
-ستستلم النتيجة. أكمل حتى تحل الطلب بالكامل.
-عندما تنتهي، اكتب [DONE] في السطر الأخير."""
+قواعد صارمة:
+1. لا تستخدم ```python``` أبداً
+2. لا تشرح خطواتك
+3. لا تكتب "سأستخدم" أو "دعنا"
+4. بعد نتيجة الأداة، إن انتهت المهمة اكتب إجابتك النهائية فقط (بدون أدوات)
+5. الأدوات المتاحة: run_python, run_shell, read_file, write_file, cve_lookup, threat_summary, generate_pdf_report, http_get
+"""
 
 
 class AgentLoop:
@@ -44,7 +46,7 @@ class AgentLoop:
         self.max_turns = max_turns
 
     # ─── استدعاء النموذج ─────────────────────────────────
-    def _chat(self, messages: List[Dict]) -> str:
+    def _chat(self, messages):
         url = f"{self.base_url}/chat/completions"
         headers = {"Content-Type": "application/json"}
         if self.api_key and self.api_key != "not-needed":
@@ -52,15 +54,14 @@ class AgentLoop:
         payload = {
             "model": self.model,
             "messages": messages,
-            "temperature": 0.3,
-            "max_tokens": 2048,
+            "temperature": 0.2,
+            "max_tokens": 1024,
             "stream": False,
         }
         try:
-            r = httpx.post(url, json=payload, headers=headers, timeout=120)
+            r = httpx.post(url, json=payload, headers=headers, timeout=180)
             r.raise_for_status()
-            data = r.json()
-            return data["choices"][0]["message"]["content"]
+            return r.json()["choices"][0]["message"].get("content", "") or ""
         except httpx.HTTPStatusError as e:
             raise RuntimeError(f"LLM HTTP {e.response.status_code}: {e.response.text[:200]}")
         except httpx.RequestError as e:
@@ -76,7 +77,7 @@ class AgentLoop:
             if on_step: on_step(msg)
             else: print(msg)
 
-        system_msg = SYSTEM.format(tools=registry.schemas())
+        system_msg = SYSTEM
         messages = [
             {"role": "system", "content": system_msg},
             {"role": "user", "content": user_request},
@@ -90,34 +91,26 @@ class AgentLoop:
             try:
                 response = self._chat(messages)
             except Exception as e:
-                return {"status": "llm_error", "error": str(e),
-                        "history": history}
+                return {"status": "llm_error", "error": str(e), "history": history}
 
             messages.append({"role": "assistant", "content": response})
-            _log(f"⊞ نموذج: {response[:150]}...")
+            _log(f"⊞ نموذج: {response[:150]}")
 
-            # ─── نفّذ أي tool_calls ────────────────────
+            # نفّذ tool_calls
             results = parse_and_execute(response)
             if results:
                 for r in results:
-                    tool_result = json.dumps(r.get("result", r),
-                                             ensure_ascii=False)[:1500]
+                    tool_result = json.dumps(r.get("result", r), ensure_ascii=False)[:1500]
                     messages.append({
                         "role": "user",
                         "content": f"نتيجة الأداة:\n{tool_result}"
                     })
                     history.append({"turn": turn, **r})
-                continue  # جولة أخرى
+                continue
 
-            # ─── لا أداة = إجابة نهائية ────────────────
+            # إجابة نهائية
             final_text = response
-            if "[DONE]" in response or turn == self.max_turns:
-                break
-            # لو قال شيئاً بدون أداة، نطلب منه الاستمرار
-            messages.append({
-                "role": "user",
-                "content": "أكمل التنفيذ. استخدم أداة إن لزم، أو اكتب [DONE]."
-            })
+            break
 
         return {
             "status": "completed",

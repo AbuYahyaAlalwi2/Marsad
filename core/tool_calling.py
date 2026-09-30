@@ -63,14 +63,14 @@ def _tool_write_file(path: str, content: str) -> Dict:
         return {"error": str(e)}
 
 
-def _tool_cve_lookup(cve: str) -> Dict:
+def _tool_cve_lookup(cve: str = "", cve_id: str = "") -> Dict:
     from tools.cyber_senses import cve_lookup
-    return cve_lookup(cve)
+    return cve_lookup(cve or cve_id)
 
 
-def _tool_threat_summary(cve: str) -> Dict:
+def _tool_threat_summary(cve: str = "", cve_id: str = "") -> Dict:
     from tools.cyber_senses import threat_summary
-    return threat_summary(cve)
+    return threat_summary(cve or cve_id)
 
 
 def _tool_gen_pdf(cve: str, client: str = "الفرقدان") -> Dict:
