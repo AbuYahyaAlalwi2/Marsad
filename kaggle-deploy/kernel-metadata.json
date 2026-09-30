@@ -1,0 +1,13 @@
+{
+  "id": "apwpkralalwwi/marsad-serve-v2",
+  "title": "Marsad Serve v2",
+  "code_file": "serve_v2.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": ["joshuagompert/llama-cpp-bin"],
+  "competition_sources": [],
+  "kernel_sources": []
+}

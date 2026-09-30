@@ -11,3 +11,6 @@ arabic-reshaper>=3.0.0
 python-bidi==0.4.2
 reportlab>=4.0.0
 huey>=2.5.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+huggingface_hub>=0.24.0
