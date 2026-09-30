@@ -192,17 +192,15 @@ class ControlPlane:
         except Exception as e:
             logger.warning(f"[Control] CF deployer setup failed: {e}")
 
-# Telegram Bot: @gcr_remediation_bot
+        # Telegram Bot: separate process (run_polling needs main thread)
         try:
-            import threading as _tg_thread
-            def _run_bot():
-                try:
-                    from tools.telegram_bot import run_bot
-                    run_bot()
-                except Exception as _e:
-                    logger.warning(f"[Control] Telegram bot stopped: {_e}")
-            _tg_thread.Thread(target=_run_bot, daemon=True).start()
-            logger.info("[Control] Telegram bot thread started")
+            import subprocess as _sp
+            import sys as _sys
+            _bot_proc = _sp.Popen(
+                [_sys.executable, "-m", "tools.telegram_bot"],
+                stdout=_sp.DEVNULL, stderr=_sp.DEVNULL,
+            )
+            logger.info(f"[Control] Telegram bot spawned (pid={_bot_proc.pid})")
         except Exception as e:
             logger.warning(f"[Control] Telegram bot failed: {e}")
 
