@@ -1,0 +1,13 @@
+{
+  "name": "cve_analysis",
+  "description": "تحليل CVE والحصول على CVSS + exploits",
+  "keywords": [
+    "cve",
+    "ثغرة",
+    "log4shell",
+    "log4j",
+    "تحليل ثغرة"
+  ],
+  "content": "from tools.cyber_senses import threat_summary\nresult = threat_summary(\"CVE-XXXX-YYYY\")\n# result = {\"nvd\": {...}, \"cisa_exploited\": bool, \"exploits\": [...]}",
+  "category": "cyber"
+}

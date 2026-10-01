@@ -1,0 +1,13 @@
+{
+  "name": "code_execution",
+  "description": "تنفيذ كود Python بأمان في sandbox",
+  "keywords": [
+    "نفذ",
+    "احسب",
+    "run",
+    "execute",
+    "python"
+  ],
+  "content": "from core.tool_calling import registry\nresult = registry.execute(\"run_python\", {\"code\": \"print(2+2)\"})",
+  "category": "execution"
+}

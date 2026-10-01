@@ -1,0 +1,13 @@
+{
+  "name": "network_probe",
+  "description": "فحص شبكة أو خدمة",
+  "keywords": [
+    "فحص",
+    "network",
+    "probe",
+    "ping",
+    "curl"
+  ],
+  "content": "from core.tool_calling import registry\nresult = registry.execute(\"http_get\", {\"url\": \"https://example.com\"})",
+  "category": "cyber"
+}

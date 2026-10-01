@@ -14,6 +14,17 @@ import httpx
 
 from core.tool_calling import registry, parse_and_execute
 
+try:
+    from core.skill_loader import loader as skill_loader
+except Exception:
+    skill_loader = None
+
+try:
+    from core.memory_vault import MemoryVault
+except Exception:
+    MemoryVault = None
+
+
 logger = logging.getLogger(__name__)
 
 # ─── إعداد النموذج (OpenAI-compatible) ──────────────────────
@@ -77,7 +88,18 @@ class AgentLoop:
             if on_step: on_step(msg)
             else: print(msg)
 
+        # حقن المهارات المطابقة
+        skill_ctx = ""
+        if skill_loader:
+            try:
+                skill_ctx = skill_loader.load_context_for(user_request)
+            except Exception:
+                pass
+
         system_msg = SYSTEM
+        if skill_ctx:
+            system_msg += f"\n\n{skill_ctx}"
+
         messages = [
             {"role": "system", "content": system_msg},
             {"role": "user", "content": user_request},

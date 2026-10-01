@@ -1,0 +1,12 @@
+{
+  "name": "pdf_report",
+  "description": "توليد تقرير PDF عربي للعميل",
+  "keywords": [
+    "تقرير",
+    "pdf",
+    "report",
+    "تقرير ثغرة"
+  ],
+  "content": "from tools.cyber_senses import threat_summary\nfrom tools.report_pdf import build_vulnerability_report\nv = threat_summary(\"CVE-XXXX-YYYY\")\npath = build_vulnerability_report(v, client_name=\"العميل\")",
+  "category": "report"
+}

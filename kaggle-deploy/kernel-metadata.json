@@ -1,7 +1,7 @@
 {
-  "id": "apwpkralalwwi/marsad-serve-v2",
-  "title": "Marsad Serve v2",
-  "code_file": "serve_v2.py",
+  "id": "apwpkralalwwi/marsad-unified",
+  "title": "Marsad Unified",
+  "code_file": "serve_and_train.py",
   "language": "python",
   "kernel_type": "script",
   "is_private": true,

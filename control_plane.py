@@ -192,7 +192,15 @@ class ControlPlane:
         except Exception as e:
             logger.warning(f"[Control] CF deployer setup failed: {e}")
 
-        # Telegram Bot: separate process (run_polling needs main thread)
+                # Scheduler: hourly + daily notifications
+        try:
+            from tools.scheduler import scheduler
+            scheduler.start()
+            logger.info("[Control] Scheduler started")
+        except Exception as e:
+            logger.warning(f"[Control] Scheduler failed: {e}")
+
+# Telegram Bot: separate process (run_polling needs main thread)
         try:
             import subprocess as _sp
             import sys as _sys
