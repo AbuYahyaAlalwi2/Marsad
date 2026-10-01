@@ -61,11 +61,16 @@ class Scheduler:
                     "marsad-endpoints/raw/main/status.json",
                     timeout=15)
                 if r.status_code == 200:
-                    notify_hourly(r.json())
+                    data = r.json()
+                    # أرسل فقط إن كان فيه بيانات حقيقية
+                    if data.get("state") == "running":
+                        notify_hourly(data)
+                    else:
+                        logger.info("[scheduler] Self-Play not running — skip")
                 else:
-                    notify_hourly({"round": "?", "tier": "?", "last_score": "?"})
-            except Exception:
-                notify_hourly({"round": "?", "tier": "?", "last_score": "?"})
+                    logger.info("[scheduler] no status.json yet — skip")
+            except Exception as e:
+                logger.info(f"[scheduler] hourly check failed: {e}")
         except Exception as e:
             logger.warning(f"[scheduler] hourly failed: {e}")
 
