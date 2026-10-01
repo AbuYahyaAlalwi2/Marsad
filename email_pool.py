@@ -151,6 +151,7 @@ class EmailPool:
 
     def produce_one(self) -> Optional[Dict[str, Any]]:
         """Create one real email and add it to the pool."""
+        email_data = self._create_mail_tm()
         if not email_data:
             return None
 
