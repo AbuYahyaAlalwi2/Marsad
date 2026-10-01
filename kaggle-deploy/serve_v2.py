@@ -1,7 +1,7 @@
 import os, sys, subprocess, shutil, glob, json, re, time, io
 from pathlib import Path
 
-HF_TOKEN = "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"
+HF_TOKEN = os.environ.get("HF_TOKEN", "")
 API_KEY = "marsad-" + os.urandom(16).hex()
 print(f"✓ API key: {API_KEY[:20]}...")
 

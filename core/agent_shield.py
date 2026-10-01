@@ -153,9 +153,14 @@ class AgentShield:
         skip_dirs = {".git", "__pycache__", "node_modules", ".venv",
                      "venv", "env", ".marsad_secrets"}
 
+        # تجاهل الملفات التي تحتوي تعريفات الأنماط نفسها
+        skip_files = {"agent_shield.py"}
+
         for dirpath, dirnames, filenames in os.walk(root):
             dirnames[:] = [d for d in dirnames if d not in skip_dirs]
             for fname in filenames:
+                if fname in skip_files:
+                    continue
                 f = Path(dirpath) / fname
                 if f.suffix not in extensions and f.name != ".env":
                     continue
