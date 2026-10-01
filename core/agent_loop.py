@@ -14,6 +14,12 @@ import httpx
 
 from core.tool_calling import registry, parse_and_execute
 
+# أدوات إضافية
+try:
+    import core.tools_extended  # noqa: F401
+except Exception:
+    pass
+
 try:
     from core.instincts import to_prompt_block as _instincts_block
 except Exception:

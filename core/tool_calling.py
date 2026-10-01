@@ -33,20 +33,37 @@ registry = ToolRegistry()
 
 
 # ─── الأدوات الأساسية ─────────────────────────────────────────
+import os as _os
+try:
+    from core._handoff.sandbox_client import RemoteSandbox
+    _tok_file = Path.home() / ".marsad_secrets" / "sandbox_token.txt"
+    _token = _os.environ.get("MARSAD_SANDBOX_TOKEN", "")
+    if not _token and _tok_file.exists():
+        _token = _tok_file.read_text().strip()
+    _sandbox = RemoteSandbox(
+        "https://marsad-sandbox-production.up.railway.app", _token) if _token else None
+except Exception:
+    _sandbox = None
+
+
 def _tool_run_python(code: str) -> Dict:
-    import subprocess, sys
-    r = subprocess.run([sys.executable, "-c", code],
-                       capture_output=True, text=True, timeout=30)
-    return {"stdout": r.stdout[:2000], "stderr": r.stderr[:1000],
-            "returncode": r.returncode}
+    """ينفذ Python في sandbox معزول (Deno+Pyodide على Railway)."""
+    if _sandbox is None:
+        return {"stdout": "", "stderr": "sandbox not configured",
+                "returncode": -1, "isolated": False}
+    r = _sandbox.run_python(code, timeout=10)
+    return {
+        "stdout": r.get("stdout", "")[:2000],
+        "stderr": r.get("stderr", "")[:1000],
+        "returncode": 0 if r.get("status") == "ok" else 1,
+        "isolated": True,
+    }
 
 
 def _tool_run_shell(cmd: str) -> Dict:
-    import subprocess
-    r = subprocess.run(cmd, shell=True, capture_output=True,
-                       text=True, timeout=30)
-    return {"stdout": r.stdout[:2000], "stderr": r.stderr[:1000],
-            "returncode": r.returncode}
+    """معطل — sandbox بعيد لا يدعم shell، والتنفيذ المباشر خطر."""
+    return {"stdout": "", "stderr": "run_shell disabled",
+            "returncode": -1, "isolated": True}
 
 
 def _tool_read_file(path: str) -> Dict:

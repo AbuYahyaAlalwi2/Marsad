@@ -1,0 +1,13 @@
+{
+  "id": "goldletter/marsad-selfplay-unified",
+  "title": "Marsad Self-Play Unified",
+  "code_file": "marsad_kaggle_notebook.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "kernel_sources": [],
+  "competition_sources": []
+}

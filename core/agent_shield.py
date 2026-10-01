@@ -153,10 +153,14 @@ class AgentShield:
         skip_dirs = {".git", "__pycache__", "node_modules", ".venv",
                      "venv", "env", ".marsad_secrets"}
 
-        # تجاهل الملفات التي تحتوي تعريفات الأنماط نفسها
-        skip_files = {"agent_shield.py"}
+        # تخطَّ ملفات ومجلدات الاختبار
+        skip_files = {"agent_shield.py", "test_security.py",
+                      "test_safety_gate.py", "test_key_manager.py"}
 
         for dirpath, dirnames, filenames in os.walk(root):
+            # تخطَّ مجلد tests (لا يحذف)
+            if "/tests" in dirpath or dirpath.endswith("/tests"):
+                continue
             dirnames[:] = [d for d in dirnames if d not in skip_dirs]
             for fname in filenames:
                 if fname in skip_files:
