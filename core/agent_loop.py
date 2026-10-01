@@ -15,6 +15,11 @@ import httpx
 from core.tool_calling import registry, parse_and_execute
 
 try:
+    from core.instincts import to_prompt_block as _instincts_block
+except Exception:
+    _instincts_block = None
+
+try:
     from core.skill_loader import loader as skill_loader
 except Exception:
     skill_loader = None
@@ -97,6 +102,14 @@ class AgentLoop:
                 pass
 
         system_msg = SYSTEM
+
+        # حقن القواعد الدائمة
+        if _instincts_block:
+            try:
+                system_msg += f"\n\n{_instincts_block()}"
+            except Exception:
+                pass
+
         if skill_ctx:
             system_msg += f"\n\n{skill_ctx}"
 
