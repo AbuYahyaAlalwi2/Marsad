@@ -192,7 +192,28 @@ class ControlPlane:
         except Exception as e:
             logger.warning(f"[Control] CF deployer setup failed: {e}")
 
-                # Scheduler: hourly + daily notifications
+                        # AgentShield: pre-flight security scan
+        try:
+            from core.agent_shield import AgentShield
+            r = AgentShield.pre_commit_gate()
+            logger.info(f"[Control] AgentShield: allowed={r['allowed']} "
+                        f"critical={len(r['critical'])} high={len(r['high'])}")
+            if not r['allowed']:
+                logger.error("[Control] SECURITY: critical secrets found!")
+        except Exception as e:
+            logger.warning(f"[Control] AgentShield failed: {e}")
+
+        # Memory Vault: record boot
+        try:
+            from core.memory_vault import MemoryVault
+            MemoryVault.save("project", "last_boot",
+                             f"control_plane started at {__import__('time').time()}",
+                             ["boot"])
+            logger.info("[Control] Memory Vault: boot recorded")
+        except Exception as e:
+            logger.warning(f"[Control] Memory Vault failed: {e}")
+
+# Scheduler: hourly + daily notifications
         try:
             from tools.scheduler import scheduler
             scheduler.start()
