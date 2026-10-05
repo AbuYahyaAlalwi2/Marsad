@@ -186,3 +186,53 @@ if __name__ == "__main__":
     print("Tools registered:", len(registry._tools))
     for t in registry._tools:
         print(f"  - {t}")
+
+# ═══ verify_and_fix + ربط self_verify ═══
+_default_llm = None
+
+def set_llm_for_tools(llm):
+    """يُستدعى من agent_loop مرة واحدة لتمرير النموذج الحقيقي."""
+    global _default_llm
+    _default_llm = llm
+
+def _load_self_verify():
+    for path in ("core._handoff.self_verify", "_handoff.self_verify", "self_verify"):
+        try:
+            return __import__(path, fromlist=["verify_and_fix"]).verify_and_fix
+        except Exception:
+            continue
+    raise ImportError("self_verify not found in any known path")
+
+class _LLMAdapter:
+    def __init__(self, inner): self.inner = inner
+    def chat(self, messages, max_tokens=1200, temperature=0.2):
+        for m in ("chat", "generate", "complete", "invoke", "__call__"):
+            fn = getattr(self.inner, m, None)
+            if callable(fn):
+                try:
+                    r = fn(messages, max_tokens=max_tokens, temperature=temperature)
+                except TypeError:
+                    r = fn(messages)
+                if isinstance(r, dict) and "content" in r:
+                    return r
+                return {"content": str(getattr(r, "content", r))}
+        raise RuntimeError("LLM adapter: no callable method")
+
+def _tool_verify_and_fix(task: str, language: str = "python", max_attempts: int = 3):
+    if _sandbox is None:
+        return {"ok": False, "error": "sandbox not configured"}
+    if _default_llm is None:
+        return {"ok": False, "error": "call set_llm_for_tools(llm) before using this tool"}
+    vf = _load_self_verify()
+    return vf(_LLMAdapter(_default_llm), _sandbox, task,
+              language=language, max_attempts=max_attempts, timeout=15)
+
+registry.register("verify_and_fix", {
+    "description": "يولّد كوداً، ينفّذه في sandbox، ويصلحه ذاتياً حتى النجاح",
+    "params": {"task": "string",
+               "language": "python|javascript|typescript",
+               "max_attempts": "int (افتراضي 3)"}
+}, _tool_verify_and_fix)
+
+registry._tools.pop("run_shell", None)
+registry._schemas = [s for s in registry._schemas if s["name"] != "run_shell"]

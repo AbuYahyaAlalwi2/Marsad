@@ -1,8 +1,20 @@
 """عزل التنفيذ (الطبقة 1.4).
 
 تحذير أمني مهم: LocalSandbox ليس عزلاً حقيقياً. العملية الفرعية ترى كل ملفات
-المستخدم (ومنها ~/.marsad_secrets في Termux). لذلك هو مقفل افتراضياً ولا يعمل
-إلا بـ dev_mode=True للتجارب. التنفيذ الحقيقي يكون عبر RemoteSandbox أو حاوية."""
+المستخدم. لذلك هو مقفل افتراضياً ولا يعمل إلا بـ dev_mode=True للتجارب.
+
+RemoteSandbox هنا مطابق لـ src/server.ts الفعلي في ~/marsad-sandbox (Deno):
+- POST /run مع هيدر authorization: Bearer <SANDBOX_TOKEN>
+- body: {"language": "python"|"javascript"|"typescript", "code": str,
+         "stdin"?: str, "timeoutMs"?: int}
+- 200: {"stdout", "stderr", "exitCode", "timedOut", "durationMs"}
+- 400: جسم غير صالح أو لغة غير مدعومة أو كود فارغ
+- 401: توكن خاطئ أو غائب
+- 413: الكود أطول من config.maxCodeBytes
+- 503: الصندوق مشغول (تجاوز config.maxConcurrency)
+- GET /health: {"status","running","capacity"}
+الشبكة مقطوعة والقرص مغلق من جهة الخادم نفسه (مذكور في صفحته الرئيسية)،
+فهذا عزل حقيقي على عكس LocalSandbox."""
 import json
 import os
 import resource
@@ -12,6 +24,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import urllib.error
 import urllib.request
 
 _ENV = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONIOENCODING": "utf-8",
@@ -36,7 +49,6 @@ def _setrlimit(kind, value):
 
 
 def _rss(pid):
-    """الذاكرة الفعلية للعملية بالبايت، أو None إن لم يتوفر /proc."""
     try:
         with open(f"/proc/{pid}/statm") as f:
             return int(f.read().split()[1]) * os.sysconf("SC_PAGE_SIZE")
@@ -45,8 +57,6 @@ def _rss(pid):
 
 
 def _probe_mem_limit(python, mem):
-    """أي نوع حد ذاكرة يعمل فعلاً هنا؟ على Android يُجهض RLIMIT_AS حتى عند 2GB (مخصّص الذاكرة يحجز عناوين ضخمة).
-    نجرّب النوع: هل يقلع بايثون به؟ وهل يمنع فعلاً تخصيص ضعف الحد؟"""
     for name, kind in (("AS", resource.RLIMIT_AS), ("DATA", resource.RLIMIT_DATA)):
         pre = lambda k=kind: resource.setrlimit(k, (mem, mem))
         try:
@@ -119,7 +129,7 @@ class LocalSandbox:
                 except (ProcessLookupError, PermissionError):
                     pass
 
-            def watch():                       # يقيس الذاكرة الفعلية ويقتل عند التجاوز
+            def watch():
                 while not done.is_set() and p.poll() is None:
                     r = _rss(p.pid)
                     if r is not None and r > mem:
@@ -151,23 +161,61 @@ class LocalSandbox:
 
 
 class RemoteSandbox:
-    """عميل لصندوق بعيد (مثل Deno على Railway).
-    غير مُتحقَّق منه: مسار الطلب وشكل الرد افتراضان يجب مطابقتهما مع main.ts الفعلي."""
+    """عميل لـ src/server.ts (Deno) — مطابق لما يقرؤه الخادم فعلياً، لا افتراضاً.
+    اللغات المدعومة هناك: javascript, typescript, python."""
 
-    def __init__(self, url, token, path="/run", timeout=30):
+    LANGUAGES = ("javascript", "typescript", "python")
+
+    def __init__(self, url, token, timeout=30):
         if not url.startswith("https://"):
             raise ValueError("يجب أن يكون الرابط https")
-        self.url, self.token, self.path, self.timeout = url.rstrip("/"), token, path, timeout
+        if not token:
+            raise ValueError("التوكن مطلوب (SANDBOX_TOKEN)")
+        self.url, self.token, self.timeout = url.rstrip("/"), token, timeout
 
-    def run_python(self, code, timeout=10):
+    def health(self):
+        req = urllib.request.Request(self.url + "/health", method="GET")
+        with urllib.request.urlopen(req, timeout=self.timeout) as r:
+            return json.loads(r.read(10_000))
+
+    def _call(self, language, code, timeout, stdin=None):
+        if language not in self.LANGUAGES:
+            raise ValueError(f"اللغة يجب أن تكون إحدى: {', '.join(self.LANGUAGES)}")
+        body = {"language": language, "code": code}
+        if stdin is not None:
+            body["stdin"] = stdin
+        if timeout is not None:
+            body["timeoutMs"] = int(timeout * 1000)
         req = urllib.request.Request(
-            self.url + self.path, method="POST",
-            data=json.dumps({"code": code, "timeout_ms": int(timeout * 1000)}).encode(),
-            headers={"Authorization": f"Bearer {self.token}", "Content-Type": "application/json"})
+            self.url + "/run", method="POST", data=json.dumps(body).encode(),
+            headers={"authorization": f"Bearer {self.token}", "content-type": "application/json"})
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as r:
                 d = json.loads(r.read(200_000))
+        except urllib.error.HTTPError as e:
+            try:
+                msg = json.loads(e.read(5000)).get("error", "")
+            except Exception:
+                msg = ""
+            if e.code == 401:
+                return {"status": "refused", "stdout": "", "stderr": "رفض الصندوق: توكن غير صالح", "isolated": True}
+            if e.code == 413:
+                return {"status": "refused", "stdout": "", "stderr": "رفض الصندوق: الكود أطول من الحد", "isolated": True}
+            if e.code == 503:
+                return {"status": "busy", "stdout": "", "stderr": "الصندوق مشغول حالياً", "isolated": True}
+            return {"status": "error", "stdout": "", "stderr": f"فشل الصندوق ({e.code}): {msg}"[:400], "isolated": True}
         except Exception as e:
             return {"status": "error", "stdout": "", "stderr": f"فشل الاتصال: {type(e).__name__}", "isolated": True}
-        return {"status": d.get("status", "ok"), "stdout": str(d.get("stdout", ""))[:20000],
-                "stderr": str(d.get("stderr", ""))[:20000], "isolated": True}
+        status = "timeout" if d.get("timedOut") else ("ok" if d.get("exitCode") == 0 else "error")
+        return {"status": status, "exit": d.get("exitCode"), "duration_ms": d.get("durationMs"),
+                "stdout": str(d.get("stdout", ""))[:20000], "stderr": str(d.get("stderr", ""))[:20000],
+                "isolated": True}
+
+    def run_python(self, code, timeout=10):
+        return self._call("python", code, timeout)
+
+    def run_javascript(self, code, timeout=10):
+        return self._call("javascript", code, timeout)
+
+    def run_typescript(self, code, timeout=10):
+        return self._call("typescript", code, timeout)

@@ -1,7 +1,16 @@
 import os, sys, subprocess, shutil, glob, json, re, time, io
 from pathlib import Path
 
-HF_TOKEN = os.environ.get("HF_TOKEN", "")
+try:
+    from kaggle_secrets import UserSecretsClient
+    HF_TOKEN = UserSecretsClient().get_secret("HF_TOKEN")
+except Exception:
+    HF_TOKEN = os.environ.get("HF_TOKEN", "")
+if not HF_TOKEN:
+    HF_TOKEN = "os.environ.get("HF_TOKEN","YOUR_TOKEN_HERE")QLJhOXFiHMnRhkxKP"   # fallback: kernel is private
+assert HF_TOKEN, "no HF token anywhere"
+os.environ["HF_TOKEN"] = HF_TOKEN
+os.environ["HUGGING_FACE_HUB_TOKEN"] = HF_TOKEN
 API_KEY = "marsad-" + os.urandom(16).hex()
 print(f"✓ API key: {API_KEY[:20]}...")
 

@@ -14,7 +14,7 @@ CWE_WORDS = {
     "CWE-787": ["bounds", "overflow", "buffer"], "CWE-125": ["bounds", "out-of-bounds", "buffer"],
     "CWE-416": ["use-after-free", "use after free"], "CWE-200": ["leak", "disclos", "expos"],
 }
-_FENCE = re.compile(r"```[a-zA-Z0-9_+-]*\n(.*?)```", re.S)
+_FENCE = re.compile(r"```[a-zA-Z0-9_+\-./ ]*\n(.*?)```", re.S)
 
 
 def _norm(line):
@@ -31,9 +31,19 @@ def added_lines(before, after):
     return [_norm(x) for x in after.splitlines() if _meaningful(x) and _norm(x) not in b]
 
 
+_CODE_HINTS = re.compile(r"^(<\?php|<?|def |class |function |#include|import |from |public |private |const |let |var |fn |func )")
+
 def code_lines(answer):
     blocks = _FENCE.findall(answer or "")
-    return [_norm(x) for blk in blocks for x in blk.splitlines() if _meaningful(x)]
+    if blocks:
+        return [_norm(x) for blk in blocks for x in blk.splitlines() if _meaningful(x)]
+    # fallback: كود عاري بدون backticks
+    out = []
+    for line in (answer or "").splitlines():
+        n = _norm(line)
+        if _meaningful(n) and _CODE_HINTS.match(n):
+            out.append(n)
+    return out
 
 
 def judge(task, answer):

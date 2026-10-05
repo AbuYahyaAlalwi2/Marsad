@@ -1,7 +1,7 @@
 {
-  "id": "apwpkralalwwi/marsad-unified",
+  "id": "goldletter/marsad-unified",
   "title": "Marsad Unified",
-  "code_file": "serve_and_train.py",
+  "code_file": "serve_v2.py",
   "language": "python",
   "kernel_type": "script",
   "is_private": true,

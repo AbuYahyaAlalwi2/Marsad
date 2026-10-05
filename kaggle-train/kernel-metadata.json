@@ -1,0 +1,13 @@
+{
+  "id": "goldletter/marsad-grpo-train",
+  "title": "Marsad GRPO Train",
+  "code_file": "train_grpo.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": []
+}
