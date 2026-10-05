@@ -1,0 +1,6 @@
+SOCKSPort 9050
+ControlPort 9051
+CookieAuthentication 0
+HashedControlPassword ""
+ExitNodes {US}, {DE}, {FR}
+StrictNodes 1

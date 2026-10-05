@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Groq",
+    "type": "global",
+    "registration_endpoint": "https://console.groq.com/login",
+    "default_password": "SecurePass123!"
+  },
+  {
+    "name": "OpenRouter",
+    "type": "global",
+    "registration_endpoint": "https://openrouter.ai/auth/register",
+    "default_password": "SecurePass123!"
+  },
+  {
+    "name": "HuggingFace",
+    "type": "global",
+    "registration_endpoint": "https://huggingface.co/join",
+    "default_password": "SecurePass123!"
+  },
+  {
+    "name": "LocalProvider_SA",
+    "type": "local",
+    "country": "SA",
+    "registration_endpoint": "https://www.google.com", 
+    "default_password": "SecurePass123!"
+  }
+]

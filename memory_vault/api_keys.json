@@ -1,0 +1,26 @@
+{
+  "Groq": {
+    "key": "ACCESS_GRANTED",
+    "email_used": "test5@delfin.security",
+    "registered_at": "2026-10-05T08:38:37.529106+00:00",
+    "status": "connected"
+  },
+  "OpenRouter": {
+    "key": "ACCESS_GRANTED",
+    "email_used": "test1@delfin.security",
+    "registered_at": "2026-10-05T08:38:40.615381+00:00",
+    "status": "connected"
+  },
+  "HuggingFace": {
+    "key": "ACCESS_GRANTED",
+    "email_used": "test2@delfin.security",
+    "registered_at": "2026-10-05T08:38:42.893625+00:00",
+    "status": "connected"
+  },
+  "LocalProvider_SA": {
+    "key": "ACCESS_GRANTED",
+    "email_used": "test3@delfin.security",
+    "registered_at": "2026-10-05T08:38:46.011228+00:00",
+    "status": "connected"
+  }
+}

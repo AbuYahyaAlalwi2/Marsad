@@ -1,0 +1,15 @@
+# مكتبات التحكم في المتصفح والأتمتة
+playwright==1.44.0
+beautifulsoup4==4.12.3
+
+# مكتبات الذكاء الاصطناعي البصري (VL) والنموذج
+torch==2.3.0
+transformers==4.42.0
+accelerate==0.31.0
+bitsandbytes==0.43.1 # لدعم التكميم 4-bit
+qwen-vl-utils==0.0.8
+Pillow==10.3.0
+
+# مكتبات مساعدة
+requests==2.32.3
+numpy==1.26.4

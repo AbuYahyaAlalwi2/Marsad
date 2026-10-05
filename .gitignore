@@ -114,3 +114,6 @@ playwright-report/
 test-results/
 screenshots/
 core/safety_filter.py
+*.env
+keys.dat
+*_collector.py

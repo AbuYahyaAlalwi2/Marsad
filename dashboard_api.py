@@ -1663,3 +1663,80 @@ def api_diag_saturn():
     return jsonify(results)
 
 
+
+# ─── [NEW] Real Ingestion Endpoint for 500K Cloudflare Agents ──────────────────
+@app.route("/api/ingest", methods=["POST"])
+def api_ingest():
+    """
+    يستقبل البيانات الحقيقية من وكلاء Cloudflare.
+    يقوم بالفلترة الأولية ثم الإرسال لـ Hugging Face.
+    """
+    try:
+        data = request.json
+        if not data or "payload" not in data:
+            return jsonify({"status": "rejected", "reason": "empty_payload"}), 400
+            
+        # فلترة أمان إضافية عبر AgentShield إذا لزم الأمر
+        # if not agent_shield.verify(data): return jsonify({"status": "blocked"}), 403
+
+        # تحضير السجل للتخزين المؤقت أو الرفع المباشر
+        entry = {
+            "timestamp": time.time(),
+            "source": data.get("agent_id", "cf_worker"),
+            "task_type": data.get("type", "unknown"),
+            "content": data["payload"]
+        }
+        
+        # هنا يمكن إضافة منطق التخزين في DB أو الرفع لـ HF
+        # مثال بسيط للرفع المباشر (يمكن تحسينه بـ Batch لاحقاً)
+        try:
+            from huggingface_hub import HfApi
+            hf_token = os.environ.get("HF_TOKEN")
+            if hf_token:
+                api = HfApi(token=hf_token)
+                content_line = json.dumps(entry, ensure_ascii=False) + "\n"
+                api.upload_file(
+                    path_or_fileobj=content_line.encode(),
+                    path_in_repo="data/cf_real_ingestion.jsonl",
+                    repo_id="AbuYahyaAlalwi2/marsad-security-dataset-v1",
+                    repo_type="dataset"
+                )
+                print(f"✅ تم استقبال ورفع بيانات من وكيل: {entry['source']}")
+        except Exception as e:
+            print(f"⚠️ فشل الرفع لـ HF: {e}")
+
+        return jsonify({"status": "accepted", "buffer_size": 1}), 200
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route("/api/ingest", methods=["POST"])
+def api_ingest():
+    try:
+        data = request.json
+        if not data or "payload" not in data:
+            return jsonify({"status": "rejected"}), 400
+            
+        entry = {
+            "timestamp": time.time(),
+            "source": data.get("agent_id", "cf_worker"),
+            "type": data.get("task_type", "unknown"),
+            "content": data["payload"]
+        }
+        
+        # رفع مباشر لـ Hugging Face
+        from huggingface_hub import HfApi
+        hf_token = os.environ.get("HF_TOKEN")
+        if hf_token:
+            api = HfApi(token=hf_token)
+            content_line = json.dumps(entry, ensure_ascii=False) + "\n"
+            api.upload_file(
+                path_or_fileobj=content_line.encode(),
+                path_in_repo="data/cf_real_ingestion.jsonl",
+                repo_id="AbuYahyaAlalwi2/marsad-security-dataset-v1",
+                repo_type="dataset"
+            )
+            
+        return jsonify({"status": "accepted"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "msg": str(e)}), 500
