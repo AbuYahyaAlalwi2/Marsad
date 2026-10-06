@@ -352,9 +352,47 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     <!-- Training -->
     <div id="tab-training" style="display:none">
       <h2>التدريب والتقييم</h2>
+
+      <!-- pipeline -->
       <div class="panel">
-        <h3>تصدير بيانات التدريب</h3>
-        <p style="color:#666;font-size:13px;margin-bottom:12px">تصدير السجلات المتحقق منها بصيغة JSONL للتدريب</p>
+        <h3>🔄 خط أنابيب الوكلاء</h3>
+        <p style="color:#666;font-size:13px;margin-bottom:12px">
+          يشغّل agent_output_pipeline — يعالج مخرجات الوكلاء ويحفظها في قاعدة المعرفة
+        </p>
+        <button class="btn" onclick="runPipeline()">▶ تشغيل Pipeline الآن</button>
+        <div class="response-box" id="pipeline-result"></div>
+      </div>
+
+      <!-- provider -->
+      <div class="panel">
+        <h3>🌐 تسجيل مزود جديد</h3>
+        <p style="color:#666;font-size:13px;margin-bottom:8px">
+          أضف مزود API لبدء التقطير التلقائي
+        </p>
+        <input type="text"  id="provider-name" placeholder="اسم المزود (groq / together / deepseek)">
+        <input type="text"  id="provider-key"  placeholder="مفتاح API" style="margin-top:8px;width:100%;margin-left:0">
+        <br>
+        <button class="btn" onclick="registerProvider()">➕ تسجيل المزود</button>
+        <div class="response-box" id="provider-result"></div>
+      </div>
+
+      <!-- distillation -->
+      <div class="panel">
+        <h3>🧠 بدء التقطير</h3>
+        <p style="color:#666;font-size:13px;margin-bottom:8px">
+          أرسل أسئلة أمنية للمزود واحفظ الإجابات لبيانات التدريب
+        </p>
+        <input type="text"  id="distill-provider" placeholder="المزود (groq)">
+        <input type="text"  id="distill-count"    placeholder="عدد الأسئلة (20)" style="margin-top:8px;width:100%;margin-left:0">
+        <br>
+        <button class="btn" onclick="startDistillation()">🚀 بدء التقطير</button>
+        <div class="response-box" id="distill-result"></div>
+      </div>
+
+      <!-- export -->
+      <div class="panel">
+        <h3>📦 تصدير بيانات التدريب</h3>
+        <p style="color:#666;font-size:13px;margin-bottom:12px">تصدير السجلات المتحقق منها بصيغة JSONL</p>
         <button class="btn" onclick="exportTraining()">📦 تصدير JSONL</button>
         <div class="response-box" id="training-result"></div>
       </div>
@@ -447,6 +485,35 @@ async function exportTraining() {
   const box = document.getElementById('training-result');
   box.style.display = 'block';
   box.textContent = d.message;
+}
+
+function showBox(id, text) {
+  const box = document.getElementById(id);
+  box.style.display = 'block';
+  box.textContent = text;
+}
+
+async function runPipeline() {
+  showBox('pipeline-result', 'جاري المعالجة...');
+  const d = await api('/pipeline/run', {});
+  showBox('pipeline-result', d.message || JSON.stringify(d, null, 2));
+}
+
+async function registerProvider() {
+  const name = document.getElementById('provider-name').value.trim();
+  const key  = document.getElementById('provider-key').value.trim();
+  if (!name || !key) { showBox('provider-result', '✗ أدخل اسم المزود والمفتاح'); return; }
+  const d = await api('/provider/register', {name, key});
+  document.getElementById('provider-key').value = '';   // لا نُبقي المفتاح في الصفحة
+  showBox('provider-result', d.message || JSON.stringify(d));
+}
+
+async function startDistillation() {
+  const provider = document.getElementById('distill-provider').value.trim();
+  const count    = parseInt(document.getElementById('distill-count').value || '20', 10);
+  if (!provider) { showBox('distill-result', '✗ أدخل اسم المزود'); return; }
+  const d = await api('/provider/distill', {provider, count});
+  showBox('distill-result', d.message || JSON.stringify(d));
 }
 
 async function loadLogs() {
@@ -578,6 +645,45 @@ def create_app():
         errors = store.get_errors_for_context(limit=20)
         return web.json_response({"errors": errors})
 
+    async def api_pipeline_run(request):
+        if not _check_token(request):
+            return web.json_response({"error": "غير مصرح"}, status=401)
+        try:
+            from agent_output_pipeline import AgentOutputPipeline
+            stats = await AgentOutputPipeline().run_once()
+            return web.json_response({"message": f"✓ اكتملت المعالجة: {json.dumps(stats, ensure_ascii=False)}"})
+        except Exception as e:
+            return web.json_response({"message": f"✗ فشل: {e}"})
+
+    async def api_provider_register(request):
+        if not _check_token(request):
+            return web.json_response({"error": "غير مصرح"}, status=401)
+        data = await request.json()
+        name = data.get("name", "").strip()
+        key  = data.get("key", "").strip()
+        try:
+            from provider_registry import ProviderRegistry
+            ok = ProviderRegistry().register(name, key, auto_distill=False)
+            msg = f"✓ تم تسجيل '{name}'" if ok else f"✗ مزود غير مدعوم: {name}"
+            return web.json_response({"message": msg})
+        except Exception as e:
+            return web.json_response({"message": f"✗ فشل: {e}"})
+
+    async def api_provider_distill(request):
+        if not _check_token(request):
+            return web.json_response({"error": "غير مصرح"}, status=401)
+        data     = await request.json()
+        provider = data.get("provider", "").strip()
+        count    = max(1, min(int(data.get("count", 20)), 200))
+        try:
+            from provider_registry import ProviderRegistry
+            reg = ProviderRegistry()
+            # تشغيل في الخلفية — التقطير طويل
+            asyncio.create_task(reg.start_distillation(provider, count))
+            return web.json_response({"message": f"🚀 بدأ التقطير في الخلفية: {provider} × {count}"})
+        except Exception as e:
+            return web.json_response({"message": f"✗ فشل: {e}"})
+
     # ── تسجيل المسارات ────────────────────────────────────────────────────────
 
     app.router.add_get  ("/admin",              handle_login_page)
@@ -592,6 +698,9 @@ def create_app():
     app.router.add_get  ("/admin/api/users",    api_users)
     app.router.add_post ("/admin/api/export",   api_export)
     app.router.add_get  ("/admin/api/logs",     api_logs)
+    app.router.add_post ("/admin/api/pipeline/run",      api_pipeline_run)
+    app.router.add_post ("/admin/api/provider/register", api_provider_register)
+    app.router.add_post ("/admin/api/provider/distill",  api_provider_distill)
 
     return app
 
@@ -620,4 +729,8 @@ def run_admin_server(host: str = "127.0.0.1", port: int = 7860):
 
 
 if __name__ == "__main__":
-    run_admin_server()
+    import os
+    run_admin_server(
+        host=os.getenv("MARSAD_ADMIN_HOST", "127.0.0.1"),
+        port=int(os.getenv("MARSAD_ADMIN_PORT", "7860")),
+    )
