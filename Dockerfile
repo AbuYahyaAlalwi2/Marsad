@@ -1,17 +1,15 @@
-# Dockerfile — نشر admin_server على HuggingFace Spaces (المنفذ 7860)
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 WORKDIR /app
-RUN pip install --no-cache-dir aiohttp python-dotenv requests
 
-# بنية مستودع ~/Marsad: core/ agents/ database/ ...
-COPY . /app
+# تثبيت المكتبات الأساسية فقط (بدون بناء محلي)
+RUN pip install --no-cache-dir \
+    fastapi uvicorn requests huggingface_hub==0.26.5 \
+    --only-binary=:all: || \
+    pip install --no-cache-dir fastapi uvicorn requests huggingface_hub==0.26.5
 
-RUN mkdir -p /app/database/jsonl /app/output/codes /app/output/cves \
-             /app/output/fixes /app/output/filtered /app/output/advisories /app/logs
+# نسخ الكود والبوابات
+COPY . .
 
-ENV MARSAD_ADMIN_HOST=0.0.0.0
-ENV MARSAD_ADMIN_PORT=7860
-EXPOSE 7860
-
-CMD ["python", "core/admin_server.py"]
+# تشغيل المنسق المركزي (المنقّب يُشغل لاحقاً عبر Cron أو API)
+CMD ["python3", "adversarial_orchestrator.py"]

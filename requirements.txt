@@ -1,4 +1,4 @@
 fastapi
 uvicorn
-huggingface_hub
 requests
+huggingface_hub==0.26.5
