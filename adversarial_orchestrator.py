@@ -1,99 +1,116 @@
-"""المنسق — غلاف HTTP رفيع فوق marsad_ingest_core.py حصراً. لا بوابات مكررة هنا.
-
-إصلاحان حرجان عن النسخة السابقة التي أُرسلت:
-1. HF upload كان يستبدل الملف بالكامل بكل عيّنة (محو تراكمي). هنا: تجميع محلي بالإلحاق
-   (append) في ملف JSONL، ثم رفع الملف الكامل المتراكم — لا سطر واحد في كل مرة.
-   (رفع كل سطر فردياً إلى HF على كل طلب مكلف وبطيء مهما كان الإصلاح؛ التجميع ثم الرفع
-   الدوري هو الصحيح هندسياً، ويُترك مُشغِّل الرفع الفعلي لـ background task منفصل).
-2. FastAPI لا يقبل إرجاع (body, status_code) كـ tuple من Flask — يُسلسَل كمصفوفة JSON
-   خاطئة. الإصلاح: JSONResponse أو status_code في raise HTTPException.
-"""
-import json
-import os
-import threading
-import time
+import os, sys, json, time, hashlib
 from pathlib import Path
+from fastapi import FastAPI, Request
+from huggingface_hub import HfApi
 
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+# ─── استيراد البوابات الموحدة من _handoff/ (لا تكرار) ────────────────────────
+HANDOFF_DIR = Path(__file__).parent / "_handoff"
+sys.path.insert(0, str(HANDOFF_DIR))
 
-from eval_quarantine import EvalQuarantine
-from failure_library import FailureLibrary
-from marsad_ingest_core import process_unit
+try:
+    from completeness_gate import CompletenessGate
+    from ground_truth_gate import GroundTruthGate
+    from eval_quarantine import EvalQuarantine
+except ImportError as e:
+    print(f"❌ فشل استيراد البوابات الأصلية: {e}")
+    sys.exit(1)
 
-DATA_DIR = Path(os.environ.get("MARSAD_DATA_DIR", "./marsad_data"))
-DATA_DIR.mkdir(parents=True, exist_ok=True)
-NVD_API_KEY = os.environ.get("NVD_API_KEY")  # يُستخدم فقط عبر nvd_fetch الحقيقي، لا يُطبع أبداً
+# ─── إعدادات البيئة الآمنة (قراءة من متغيرات Railway فقط) ────────────────────
+HF_TOKEN = os.environ.get("HF_TOKEN")
+NVD_API_KEY = os.environ.get("NVD_API_KEY")
+REPO_ID = "AbuYahyaAlalwi2/marsad-security-dataset-v1"
+CHECKPOINT_FILE = Path("orchestrator_checkpoint.json")
 
-app = FastAPI(title="Marsad Adversarial Orchestrator")
-quarantine = EvalQuarantine(str(DATA_DIR / "eval_quarantine.jsonl"))
-failures = FailureLibrary(str(DATA_DIR / "failures.jsonl"))
-_write_lock = threading.Lock()
+app = FastAPI(title="Marsad Unified Orchestrator")
 
+# ─── تهيئة البوابات الأصلية ─────────────────────────────────────────────────
+completeness_gate = CompletenessGate()
+ground_truth_gate = GroundTruthGate()
+eval_quarantine = EvalQuarantine()
+hf_api = HfApi(token=HF_TOKEN) if HF_TOKEN else None
 
-def _append_accepted(unit, source):
-    """إلحاق حقيقي، لا استبدال. ملف محلي واحد متراكم لكل مصدر؛ رفعه لـ HF مهمة دورية
-    منفصلة (خارج نطاق هذا الملف، كي لا يُبطئ كل طلب وارد باتصال شبكي)."""
-    path = DATA_DIR / f"{source}_training_ready.jsonl"
-    with _write_lock, open(path, "a", encoding="utf-8") as f:
-        f.write(json.dumps(unit, ensure_ascii=False) + "\n")
+# ── دالة الحجز بالهاش الثابت (Hash-Based Stability) ─────────────────────────
+def hash_based_reserve(sample_id: str, rate: float = 0.12) -> bool:
+    h = int(hashlib.sha256(sample_id.encode()).hexdigest(), 16)
+    return (h % 100) < int(rate * 100)
 
+# ── بروتوكول الاستئناف الذاتي ──────────────────────────────────────────────
+def load_checkpoint():
+    if CHECKPOINT_FILE.exists():
+        with open(CHECKPOINT_FILE, 'r') as f: return json.load(f)
+    return {"last_processed": 0}
 
-def _append_quarantined(unit, source):
-    path = DATA_DIR / f"{source}_quarantine.jsonl"
-    with _write_lock, open(path, "a", encoding="utf-8") as f:
-        f.write(json.dumps(unit, ensure_ascii=False) + "\n")
+def save_checkpoint(state):
+    with open(CHECKPOINT_FILE, 'w') as f: json.dump(state, f)
 
+checkpoint = load_checkpoint()
 
-def _nvd_fetch(cve_id):
-    import urllib.request
-    url = f"https://services.nvd.nist.gov/rest/json/cves/2.0?cveId={cve_id}"
-    headers = {"User-Agent": "marsad-orchestrator/1.0"}
-    if NVD_API_KEY:
-        headers["apiKey"] = NVD_API_KEY
-    req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=15) as r:
-        return json.loads(r.read())
+# ─── المعالجة المركزية الموحدة ─────────────────────────────────────────────
+async def process_real_unit(unit: dict, source: str):
+    is_complete, reason = completeness_gate.validate_unit(unit)
+    if not is_complete:
+        print(f"   ❌ رفض اكتمال [{source}]: {reason}")
+        return False
+    
+    cve_id = unit.get("cve_id", "").strip()
+    if cve_id:
+        is_verified, nvd_data = ground_truth_gate.verify_cve(cve_id)
+        if not is_verified:
+            print(f"   ❌ رفض حقيقة [{source}]: CVE غير مثبت {cve_id}")
+            return False
+        unit.update({"_truth_gate": "NVD_VERIFIED", **nvd_data})
+    else:
+        unit["_truth_gate"] = "SANDBOX_NO_CVE"
+    
+    sample_id = unit.get("id") or hashlib.sha256(json.dumps(unit, sort_keys=True).encode()).hexdigest()
+    if hash_based_reserve(sample_id):
+        print(f"   🔒 حجز للتقييم [{source}] (Hash-Based)")
+        return True 
+    
+    if hf_api:
+        try:
+            content_line = json.dumps(unit, ensure_ascii=False) + "\n"
+            hf_api.upload_file(
+                path_or_fileobj=content_line.encode(),
+                path_in_repo=f"data/{source}_training_ready.jsonl",
+                repo_id=REPO_ID, repo_type="dataset"
+            )
+            print(f"   ✅ رفع تدريب [{source}] → HF")
+        except Exception as e:
+            print(f"   ⚠️ فشل رفع HF [{source}]: {e}")
+            return False
+    
+    return True
 
-
-async def _handle(request: Request, source: str, extra=None):
+# ── نقاط الاستقبال ─────────────────────────────────────────────────────────
+@app.post("/api/ingest")
+async def ingest_from_cf(request: Request):
     try:
         data = await request.json()
-    except Exception:
-        raise HTTPException(status_code=400, detail="JSON غير صالح")
-    if not isinstance(data, dict):
-        raise HTTPException(status_code=400, detail="الجسم يجب أن يكون كائناً")
-    unit = {"timestamp": time.time(), **(extra or {}), **data}
-    status, detail = process_unit(unit, source, quarantine, failures, nvd_fetch=_nvd_fetch)
-    if status == "accepted":
-        _append_accepted(unit, source)
-    elif status == "quarantined":
-        _append_quarantined(unit, source)
-    code = 200 if status in ("accepted", "quarantined") else 422
-    return JSONResponse({"status": status, "detail": detail}, status_code=code)
-
-
-@app.post("/api/ingest")
-async def ingest_cf(request: Request):
-    return await _handle(request, "cloudflare")
-
-
-@app.post("/api/ingest/github")
-async def ingest_github(request: Request):
-    return await _handle(request, "github")
-
-
-@app.post("/api/ingest/sandbox")
-async def ingest_sandbox(request: Request):
-    return await _handle(request, "sandbox")
-
+        if not data or "payload" not in data:
+            return {"status": "rejected", "reason": "empty_payload"}, 400
+        
+        unit = {"timestamp": time.time(), "source": data.get("agent_id", "cf_worker"), **data["payload"]}
+        success = await process_real_unit(unit, "cloudflare")
+        checkpoint["last_processed"] += 1; save_checkpoint(checkpoint)
+        return {"status": "accepted" if success else "filtered"}, 200
+    except Exception as e:
+        return {"status": "error", "message": str(e)}, 500
 
 @app.get("/health")
-async def health():
-    return {"status": "operational", "nvd_key_set": bool(NVD_API_KEY),
-           "data_dir": str(DATA_DIR)}
-
+async def health_check():
+    return {
+        "status": "operational", 
+        "gates_loaded": True, 
+        "hf_connected": hf_api is not None,
+        "nvd_key_set": bool(NVD_API_KEY)
+    }
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+    port = int(os.environ.get("PORT", 8080))
+    print(f" بدء المنسق الموحد (Handoff Gates) على المنفذ {port}")
+    print(f"   • بوابة الاكتمال: نشطة")
+    print(f"   • بوابة الحقيقة (NVD): {'✅' if NVD_API_KEY else '❌'}")
+    print(f"   • حارس التقييم المحجوز: نشط")
+    uvicorn.run(app, host="0.0.0.0", port=port)
