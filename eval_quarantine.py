@@ -1,7 +1,7 @@
 import json, sys, os, random, time
 from pathlib import Path
 
-class ReservedEvaluationGuard:
+class EvalQuarantine:
     def __init__(self, eval_dir="reserved_eval_set"):
         self.eval_dir = Path(eval_dir)
         self.eval_dir.mkdir(parents=True, exist_ok=True)
@@ -64,7 +64,7 @@ class ReservedEvaluationGuard:
             for line in fin:
                 try:
                     sample = json.loads(line)
-                    if self.reserve_sample(sample, source):
+                    if self.assign_split(sample, source):
                         reserved_count += 1
                     else:
                         sample["_training_eligible"] = True

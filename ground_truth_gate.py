@@ -1,7 +1,7 @@
 import json, sys, os, time
 from typing import Tuple, Dict, Any, Optional
 
-class NVDTruthGate:
+class GroundTruthGate:
     def __init__(self):
         self.api_key = os.environ.get("NVD_API_KEY")
         self.base_url = "https://services.nvd.nist.gov/rest/json/cves/2.0"
@@ -79,7 +79,7 @@ class NVDTruthGate:
                         fout.write(json.dumps(unit, ensure_ascii=False) + "\n")
                         continue
                         
-                    is_valid, cve_data = self.verify_cve(cve_id)
+                    is_valid, cve_data = self.verify(cve_id)
                     
                     if is_valid and cve_data:
                         unit["_truth_gate"] = "NVD_VERIFIED"
