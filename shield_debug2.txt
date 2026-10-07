@@ -1,0 +1,24 @@
+=== السياق الكامل حول سطر الاستدعاء (لمعرفة من أين يأتي user_id) ===
+86-            self.dar_pipeline = None
+87-
+88-        # خط أنابيب مخرجات الوكلاء
+89-        if _pipeline_out and hasattr(_pipeline_out, "AgentOutputSink"):
+90-            self.output_sink = _pipeline_out.AgentOutputSink()
+91-        else:
+92-            self.output_sink = None
+93-
+94-    async def analyze(self, code: str, user_token: str = "", language: str = "auto") -> dict:
+95-        """
+96-        التحليل الأمني الكامل
+97-        يعيد: {"report": str, "patches": list, "tier": str}
+98-        """
+99-
+100-        # ── تحديد مستوى المستخدم ──
+101-        user_tier = self._get_tier(user_token)
+102-
+103-        # ── الطبقة 1: فحص المدخلات (eleven_layers) ──
+104-        if self.shield:
+105-            try:
+106:                shield_result = self.shield.process(code)
+
+=== تعريف ShieldResult ===

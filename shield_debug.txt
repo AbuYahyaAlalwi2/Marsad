@@ -1,0 +1,41 @@
+=== تعريف process في eleven_layers_merged.py ===
+94:    def process(
+95-        self,
+96-        user_id:     str,
+97-        user_input:  str,
+98-        owner_token: Optional[dict] = None,
+99-    ) -> ShieldResult:
+100-        """
+101-        يمرر المدخل عبر كل الطبقات بالترتيب الموحد.
+102-        """
+103-
+104-        # ── الطبقات L1–L4 (نصي) ──
+105-        result = self._shield._L1_sanitize(user_input, ShieldResult(allowed=False, cleaned_input=user_input))
+106-        if not result.allowed:
+107-            return result
+108-
+109-        result = self._shield._L2_intent(result)
+
+=== سطر استدعاء process في marsad_main.py ===
+103-        # ── الطبقة 1: فحص المدخلات (eleven_layers) ──
+104-        if self.shield:
+105-            try:
+106:                shield_result = self.shield.process(code)
+107-                if not shield_result.get("allowed", True):
+108-                    return {
+109-                        "report": "⛔ المدخل رُفض بواسطة نظام الحماية.",
+110-                        "patches": [],
+111-                        "tier": user_tier,
+
+=== تعريف get_shield (إن وجد) ===
+core/eleven_layers_merged.py:246:def get_shield() -> "MergedShield | ElevenLayerShield":
+core/eleven_layers_merged.py-247-    """
+core/eleven_layers_merged.py-248-    يعيد MergedShield إذا كان structural_safety_11layers موجوداً،
+core/eleven_layers_merged.py-249-    وإلا ElevenLayerShield العادي.
+core/eleven_layers_merged.py-250-    """
+core/eleven_layers_merged.py-251-    if _STRUCTURAL_AVAILABLE:
+core/eleven_layers_merged.py-252-        return MergedShield()
+core/eleven_layers_merged.py-253-    return ElevenLayerShield()
+core/eleven_layers_merged.py-254-
+core/eleven_layers_merged.py-255-
+core/eleven_layers_merged.py-256-# ─── اختبار ───────────────────────────────────────────────────────────────────

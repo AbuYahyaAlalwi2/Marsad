@@ -1,0 +1,78 @@
+=== الكلاسات والدوال الرئيسية ===
+45:class Layer(str, Enum):
+50:class SourceType(str, Enum):
+56:class Status(str, Enum):
+64:class Taxonomy:
+70:class Provenance:
+77:class TrainingRecord:
+100:    def compute_hash(self) -> str:
+107:class LegalGateway:
+117:    def check(self, record: TrainingRecord) -> tuple[bool, str]:
+148:class StructuralFilter:
+154:    def __init__(self):
+157:    def check(self, record: TrainingRecord) -> tuple[bool, str]:
+172:    def load_existing(self, db_path: Path):
+189:class SecurityFilter:
+206:    def sanitize_exploit(self, code: str) -> str:
+221:    def check(self, record: TrainingRecord) -> tuple[bool, str]:
+241:class TriadValidator:
+248:    def check(self, record: TrainingRecord) -> tuple[bool, str]:
+278:class DiversityTracker:
+287:    def __init__(self):
+292:    def check(self, record: TrainingRecord) -> tuple[bool, str]:
+303:    def record(self, rec: TrainingRecord):
+309:    def stats(self) -> dict:
+319:class CanaryManager:
+324:    def __init__(self, path: Path = CANARY_PATH):
+330:    def generate(self, client_id: str) -> str:
+340:    def check_triggered(self, model_output: str) -> list[str]:
+351:    def _save(self):
+357:class DarDataPipeline:
+363:    def __init__(self, db_path: Path = DB_PATH):
+381:    def process(self, record: TrainingRecord) -> tuple[bool, str]:
+429:    def process_batch(self, records: list[TrainingRecord]) -> dict:
+435:    def load_from_jsonl(self, path: Path) -> list[TrainingRecord]:
+457:    def _convert_from_qwen(self, data: dict) -> Optional[TrainingRecord]:
+484:    def _reject(self, record: TrainingRecord, reason: str) -> tuple[bool, str]:
+497:    def _save(self, record: TrainingRecord):
+501:    def stats(self) -> dict:
+508:    def print_stats(self):
+528:def main():
+
+=== قسم CLI/argparse (إن وجد) ===
+586-
+587-
+588:if __name__ == "__main__":
+589-    main()
+
+=== أول 30 سطر (imports + البوابات الست) ===
+"""
+dar_data_pipeline.py — خط أنابيب بيانات التدريب
+يطبق دستور بيانات التدريب v1.2 كاملاً
+
+المبدأ الحاكم:
+- بروتوكول التثليث الإلزامي (vulnerable_code + exploit_poc + remediation_patch)
+- البوابة القانونية (robots.txt, ToS, ترخيص على مستوى الملف)
+- فلترة الطبقات الأربع (بنية، أمان، تشغيل، تنويع)
+- عزل بيانات العملاء
+"""
+
+import json
+import hashlib
+import uuid
+import re
+import logging
+from datetime import datetime, timezone
+from pathlib import Path
+from dataclasses import dataclass, field, asdict
+from typing import Optional, Literal
+from enum import Enum
+
+# ─── إعداد التسجيل ───────────────────────────────────────────────────────────
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
+log = logging.getLogger("dar.pipeline")
+

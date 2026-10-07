@@ -1,0 +1,140 @@
+=== __init__ (363-381) ===
+    def __init__(self, db_path: Path = DB_PATH):
+        self.db_path      = db_path
+        self.rejected_path = REJECTED_PATH
+
+        # تهيئة الفلاتر
+        self.legal     = LegalGateway()
+        self.structural = StructuralFilter()
+        self.security  = SecurityFilter()
+        self.triad     = TriadValidator()
+        self.diversity = DiversityTracker()
+        self.canary    = CanaryManager()
+
+        # تحميل الهاشات الموجودة
+        self.structural.load_existing(db_path)
+
+        # إحصاءات
+        self._stats = {"processed": 0, "approved": 0, "rejected": 0, "reasons": {}}
+
+    def process(self, record: TrainingRecord) -> tuple[bool, str]:
+
+=== process + process_batch (381-435) ===
+    def process(self, record: TrainingRecord) -> tuple[bool, str]:
+        """
+        يمرر السجل عبر كل الطبقات
+        يعيد (True, "") إذا اجتاز أو (False, "سبب")
+        """
+        self._stats["processed"] += 1
+
+        # حساب الهاش
+        record.content_hash = record.compute_hash()
+
+        # ── البوابة القانونية (أولاً دائماً) ──
+        ok, reason = self.legal.check(record)
+        if not ok:
+            return self._reject(record, f"[قانوني] {reason}")
+
+        # ── عزل بيانات العملاء ──
+        if record.client_id:
+            log.warning(f"سجل عميل {record.client_id} — لا يدخل التدريب المشترك")
+            return self._reject(record, "[عميل] بيانات العميل لا تدخل التدريب المشترك")
+
+        # ── الطبقة 1: بنية ولغة ──
+        ok, reason = self.structural.check(record)
+        if not ok:
+            return self._reject(record, f"[بنية] {reason}")
+
+        # ── الطبقة 2: أمان ──
+        ok, reason = self.security.check(record)
+        if not ok:
+            return self._reject(record, f"[أمان] {reason}")
+
+        # ── بروتوكول التثليث (للطبقة 3) ──
+        ok, reason = self.triad.check(record)
+        if not ok:
+            return self._reject(record, f"[تثليث] {reason}")
+
+        # ── الطبقة 4: تنويع ──
+        ok, reason = self.diversity.check(record)
+        if not ok:
+            return self._reject(record, f"[تنويع] {reason}")
+
+        # ── اجتاز كل الفلاتر ──
+        record.status = Status.APPROVED
+        self._save(record)
+        self.diversity.record(record)
+        self._stats["approved"] += 1
+        log.info(f"✓ مقبول: {record.id} [{record.layer}] {record.taxonomy.cwe or ''}")
+        return True, ""
+
+    def process_batch(self, records: list[TrainingRecord]) -> dict:
+        """يعالج مجموعة من السجلات"""
+        for r in records:
+            self.process(r)
+        return self.stats()
+
+    def load_from_jsonl(self, path: Path) -> list[TrainingRecord]:
+
+=== main() كاملة (528-588) ===
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="dar_data_pipeline — خط أنابيب بيانات دار")
+    sub = parser.add_subparsers(dest="cmd")
+
+    # استيراد من ملف Qwen
+    p_import = sub.add_parser("import", help="استيراد من cleaned_data.jsonl")
+    p_import.add_argument("path", help="مسار الملف")
+
+    # إضافة سجل يدوياً
+    p_add = sub.add_parser("add", help="إضافة سجل اختبار")
+
+    # إحصاءات
+    sub.add_parser("stats", help="عرض الإحصاءات")
+
+    # توليد canary token
+    p_canary = sub.add_parser("canary", help="توليد canary token لعميل")
+    p_canary.add_argument("client_id", help="معرف العميل")
+
+    args = parser.parse_args()
+    pipeline = DarDataPipeline()
+
+    if args.cmd == "import":
+        records = pipeline.load_from_jsonl(Path(args.path))
+        pipeline.process_batch(records)
+        pipeline.print_stats()
+
+    elif args.cmd == "add":
+        # سجل اختبار
+        rec = TrainingRecord(
+            layer       = Layer.SAST,
+            source_type = SourceType.DIFF_PATCH,
+            taxonomy    = Taxonomy(cwe="CWE-89", cve="CVE-2024-00001"),
+            provenance  = Provenance(
+                repo_url    = "https://github.com/test/repo",
+                commit_hash = "abc123",
+                license     = "MIT",
+            ),
+            vulnerable_code   = "query = f\"SELECT * FROM users WHERE id={user_input}\"",
+            remediation_patch = "query = \"SELECT * FROM users WHERE id=?\"\ncursor.execute(query, (user_input,))",
+            description       = "SQL Injection في استعلام مباشر",
+        )
+        ok, reason = pipeline.process(rec)
+        print(f"النتيجة: {'✓ مقبول' if ok else f'✗ مرفوض: {reason}'}")
+        pipeline.print_stats()
+
+    elif args.cmd == "stats":
+        pipeline = DarDataPipeline()
+        pipeline.structural.load_existing(DB_PATH)
+        pipeline.print_stats()
+
+    elif args.cmd == "canary":
+        token = pipeline.canary.generate(args.client_id)
+        print(f"Canary token للعميل {args.client_id}: {token}")
+
+    else:
+        parser.print_help()
+
+
+if __name__ == "__main__":

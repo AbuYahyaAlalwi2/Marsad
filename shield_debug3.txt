@@ -1,0 +1,56 @@
+=== تعريف ShieldResult أينما كان ===
+core/eleven_layers.py:50:class ShieldResult:
+
+=== دالة _get_tier كاملة (لمعرفة هل فيها معرّف مستخدم) ===
+101:        user_tier = self._get_tier(user_token)
+102-
+103-        # ── الطبقة 1: فحص المدخلات (eleven_layers) ──
+104-        if self.shield:
+105-            try:
+106-                shield_result = self.shield.process(code)
+107-                if not shield_result.get("allowed", True):
+108-                    return {
+109-                        "report": "⛔ المدخل رُفض بواسطة نظام الحماية.",
+110-                        "patches": [],
+111-                        "tier": user_tier,
+112-                        "blocked": True,
+113-                    }
+114-            except Exception as e:
+115-                pass  # eleven_layers اختياري
+116-
+--
+155:    def _get_tier(self, token: str) -> str:
+156-        """يحدد مستوى المستخدم من التوكن"""
+157-        if not token:
+158-            return "FREE"
+159-        if token.startswith("dlf_") and _owner and hasattr(_owner, "verify_owner"):
+160-            try:
+161-                if _owner.verify_owner(token):
+162-                    return "OWNER"
+163-            except Exception:
+164-                pass
+165-        if len(token) > 20:
+166-            return "SUBSCRIBER"
+167-        return "FREE"
+
+=== أول 10 أسطر من eleven_layers_merged.py (imports) ===
+"""
+eleven_layers_merged.py — الـ 11 طبقة موحدة
+=============================================
+يدمج:
+  1. eleven_layers.py       (الغلاف الخارجي — 11 طبقة نصية/تنظيمية)
+  2. structural_safety_11layers.py (الخاص بك — KnowledgeRepository,
+                                    ReasoningEngine, HardConstraintLayer)
+
+القاعدة: ملف المستخدم لا يُلمس — هذا الملف يستورده ويكمّله.
+
+الترتيب النهائي:
+    L1-L4  : ElevenLayerShield (نصي / heuristic)
+    L4-HC  : HardConstraintLayer (PyTorch cosine similarity) — اختياري
+    L5-L11 : ElevenLayerShield (باقي الطبقات)
+    +KR    : KnowledgeRepository يُحدَّث بكل طلب
+    +RE    : ReasoningEngine يُعالج النتيجة النهائية
+
+الاستخدام:
+    shield = MergedShield()
+    result = shield.process(user_id, user_input, owner_token=None)
