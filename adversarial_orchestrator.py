@@ -2,6 +2,7 @@ import os, sys, json, time, hashlib
 from pathlib import Path
 from fastapi import FastAPI, Request
 from huggingface_hub import HfApi
+from fastapi.responses import JSONResponse
 
 # استيراد البوابات الموحدة
 HANDOFF_DIR = Path(__file__).parent / "_handoff"
@@ -72,7 +73,7 @@ async def process_real_unit(unit: dict, source: str):
             content_line = json.dumps(unit, ensure_ascii=False) + "\n"
             hf_api.upload_file(
                 path_or_fileobj=content_line.encode(),
-                path_in_repo=f"data/{source}_training_ready.jsonl",
+                path_in_repo=f"data/{source}/{sample_id}.jsonl",
                 repo_id=REPO_ID, repo_type="dataset"
             )
             print(f"   ✅ رفع تدريب [{source}] → HF")
@@ -86,7 +87,7 @@ async def ingest_data(request: Request):
     try:
         data = await request.json()
         if not data or "payload" not in data:
-            return {"status": "rejected", "reason": "empty_payload"}, 400
+            return JSONResponse({"status": "rejected", "reason": "empty_payload"}, status_code=400)
         
         payload = data["payload"]
         source = "e2b_agent" if ("exploit_code" in payload or "patch_code" in payload) else data.get("agent_id", "cloudflare")
@@ -94,9 +95,9 @@ async def ingest_data(request: Request):
         unit = {"timestamp": time.time(), "source": source, **payload}
         success = await process_real_unit(unit, source)
         checkpoint["last_processed"] += 1; save_checkpoint(checkpoint)
-        return {"status": "accepted" if success else "filtered"}, 200
+        return JSONResponse({"status": "accepted" if success else "filtered"}, status_code=200)
     except Exception as e:
-        return {"status": "error", "message": str(e)}, 500
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 @app.get("/health")
 async def health_check():
