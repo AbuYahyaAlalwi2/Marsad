@@ -103,16 +103,17 @@ class MarsadSystem:
         # ── الطبقة 1: فحص المدخلات (eleven_layers) ──
         if self.shield:
             try:
-                shield_result = self.shield.process(code)
-                if not shield_result.get("allowed", True):
+                user_id = user_token if user_token else "anonymous"
+                shield_result = self.shield.process(user_id, code)
+                if not shield_result.allowed:
                     return {
-                        "report": "⛔ المدخل رُفض بواسطة نظام الحماية.",
+                        "report": shield_result.block_message or "⛔ المدخل رُفض بواسطة نظام الحماية.",
                         "patches": [],
                         "tier": user_tier,
                         "blocked": True,
                     }
             except Exception as e:
-                pass  # eleven_layers اختياري
+                print(f"[SHIELD ERROR] eleven_layers فشل فعلياً: {e}")
 
         # ── الطبقة 2: تحليل الوكلاء الأربعة ──
         result = None

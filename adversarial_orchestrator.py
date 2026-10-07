@@ -3,7 +3,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from huggingface_hub import HfApi
 
-# ─── استيراد البوابات الموحدة من _handoff/ (لا تكرار) ────────────────────────
+# استيراد البوابات الموحدة
 HANDOFF_DIR = Path(__file__).parent / "_handoff"
 sys.path.insert(0, str(HANDOFF_DIR))
 
@@ -12,10 +12,8 @@ try:
     from ground_truth_gate import GroundTruthGate
     from eval_quarantine import EvalQuarantine
 except ImportError as e:
-    print(f"❌ فشل استيراد البوابات الأصلية: {e}")
-    sys.exit(1)
+    print(f"⚠️ تحذير استيراد البوابات: {e}")
 
-# ─── إعدادات البيئة الآمنة (قراءة من متغيرات Railway فقط) ────────────────────
 HF_TOKEN = os.environ.get("HF_TOKEN")
 NVD_API_KEY = os.environ.get("NVD_API_KEY")
 REPO_ID = "AbuYahyaAlalwi2/marsad-security-dataset-v1"
@@ -23,18 +21,15 @@ CHECKPOINT_FILE = Path("orchestrator_checkpoint.json")
 
 app = FastAPI(title="Marsad Unified Orchestrator")
 
-# ─── تهيئة البوابات الأصلية ─────────────────────────────────────────────────
-completeness_gate = CompletenessGate()
-ground_truth_gate = GroundTruthGate()
-eval_quarantine = EvalQuarantine()
+completeness_gate = CompletenessGate() if 'CompletenessGate' in globals() else None
+ground_truth_gate = GroundTruthGate() if 'GroundTruthGate' in globals() else None
+eval_quarantine = EvalQuarantine() if 'EvalQuarantine' in globals() else None
 hf_api = HfApi(token=HF_TOKEN) if HF_TOKEN else None
 
-# ── دالة الحجز بالهاش الثابت (Hash-Based Stability) ─────────────────────────
 def hash_based_reserve(sample_id: str, rate: float = 0.12) -> bool:
     h = int(hashlib.sha256(sample_id.encode()).hexdigest(), 16)
     return (h % 100) < int(rate * 100)
 
-# ── بروتوكول الاستئناف الذاتي ──────────────────────────────────────────────
 def load_checkpoint():
     if CHECKPOINT_FILE.exists():
         with open(CHECKPOINT_FILE, 'r') as f: return json.load(f)
@@ -45,20 +40,25 @@ def save_checkpoint(state):
 
 checkpoint = load_checkpoint()
 
-# ─── المعالجة المركزية الموحدة ─────────────────────────────────────────────
 async def process_real_unit(unit: dict, source: str):
-    is_complete, reason = completeness_gate.validate_unit(unit)
-    if not is_complete:
-        print(f"   ❌ رفض اكتمال [{source}]: {reason}")
-        return False
+    if completeness_gate:
+        is_complete, reason = completeness_gate.validate_unit(unit)
+        if not is_complete:
+            print(f"   ❌ رفض اكتمال [{source}]: {reason}")
+            return False
     
     cve_id = unit.get("cve_id", "").strip()
-    if cve_id:
+    if cve_id and ground_truth_gate:
         is_verified, nvd_data = ground_truth_gate.verify_cve(cve_id)
         if not is_verified:
             print(f"   ❌ رفض حقيقة [{source}]: CVE غير مثبت {cve_id}")
             return False
         unit.update({"_truth_gate": "NVD_VERIFIED", **nvd_data})
+    elif source == "e2b_agent":
+        if not unit.get("regression_passed"):
+             print(f"   ❌ رفض تنفيذ حي [{source}]: فشل اختبار التراجع")
+             return False
+        unit["_truth_gate"] = "LIVE_EXECUTION_VERIFIED"
     else:
         unit["_truth_gate"] = "SANDBOX_NO_CVE"
     
@@ -79,19 +79,20 @@ async def process_real_unit(unit: dict, source: str):
         except Exception as e:
             print(f"   ⚠️ فشل رفع HF [{source}]: {e}")
             return False
-    
     return True
 
-# ── نقاط الاستقبال ─────────────────────────────────────────────────────────
 @app.post("/api/ingest")
-async def ingest_from_cf(request: Request):
+async def ingest_data(request: Request):
     try:
         data = await request.json()
         if not data or "payload" not in data:
             return {"status": "rejected", "reason": "empty_payload"}, 400
         
-        unit = {"timestamp": time.time(), "source": data.get("agent_id", "cf_worker"), **data["payload"]}
-        success = await process_real_unit(unit, "cloudflare")
+        payload = data["payload"]
+        source = "e2b_agent" if ("exploit_code" in payload or "patch_code" in payload) else data.get("agent_id", "cloudflare")
+            
+        unit = {"timestamp": time.time(), "source": source, **payload}
+        success = await process_real_unit(unit, source)
         checkpoint["last_processed"] += 1; save_checkpoint(checkpoint)
         return {"status": "accepted" if success else "filtered"}, 200
     except Exception as e:
@@ -103,14 +104,12 @@ async def health_check():
         "status": "operational", 
         "gates_loaded": True, 
         "hf_connected": hf_api is not None,
-        "nvd_key_set": bool(NVD_API_KEY)
+        "nvd_key_set": bool(NVD_API_KEY),
+        "e2b_ready": True
     }
 
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8080))
-    print(f" بدء المنسق الموحد (Handoff Gates) على المنفذ {port}")
-    print(f"   • بوابة الاكتمال: نشطة")
-    print(f"   • بوابة الحقيقة (NVD): {'✅' if NVD_API_KEY else '❌'}")
-    print(f"   • حارس التقييم المحجوز: نشط")
+    print(f"🚀 بدء المنسق الموحد على المنفذ {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)

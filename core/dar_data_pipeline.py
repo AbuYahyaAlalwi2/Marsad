@@ -19,6 +19,13 @@ from pathlib import Path
 from dataclasses import dataclass, field, asdict
 from typing import Optional, Literal
 from enum import Enum
+import os
+import requests
+
+RAILWAY_INGEST_URL = os.environ.get(
+    "RAILWAY_INGEST_URL",
+    "https://CHANGE-ME.up.railway.app/api/ingest",  # ⚠️ عدّل هذا الرابط
+)
 
 # ─── إعداد التسجيل ───────────────────────────────────────────────────────────
 
@@ -380,50 +387,49 @@ class DarDataPipeline:
 
     def process(self, record: TrainingRecord) -> tuple[bool, str]:
         """
-        يمرر السجل عبر كل الطبقات
-        يعيد (True, "") إذا اجتاز أو (False, "سبب")
+        جسر إرسال فقط (Forwarder Mode — قرار 2026-10-07):
+        لا بوابات Structural/Security/Triad/Diversity/Legal محلية بعد الآن —
+        كلها انتقلت لتكون مسؤولية Railway (adversarial_orchestrator.py)
+        حصراً، تفادياً للازدواجية. الاستثناء الوحيد الباقي محلياً: عزل بيانات
+        العملاء — قاعدة ثابتة غير قابلة للتفاوض، لا بوابة جودة قابلة للنقل.
         """
         self._stats["processed"] += 1
-
-        # حساب الهاش
         record.content_hash = record.compute_hash()
 
-        # ── البوابة القانونية (أولاً دائماً) ──
-        ok, reason = self.legal.check(record)
-        if not ok:
-            return self._reject(record, f"[قانوني] {reason}")
-
-        # ── عزل بيانات العملاء ──
+        # ── عزل بيانات العملاء (القاعدة الثابتة الوحيدة الباقية محلياً) ──
         if record.client_id:
-            log.warning(f"سجل عميل {record.client_id} — لا يدخل التدريب المشترك")
-            return self._reject(record, "[عميل] بيانات العميل لا تدخل التدريب المشترك")
+            log.warning(f"سجل عميل {record.client_id} — لا يدخل التدريب المشترك، لن يُرسل")
+            return self._reject(record, "[عميل] بيانات العميل لا تُرسل لـ Railway")
 
-        # ── الطبقة 1: بنية ولغة ──
-        ok, reason = self.structural.check(record)
+        ok, reason = self._forward_to_railway(record)
         if not ok:
-            return self._reject(record, f"[بنية] {reason}")
+            return self._reject(record, f"[إرسال] {reason}")
 
-        # ── الطبقة 2: أمان ──
-        ok, reason = self.security.check(record)
-        if not ok:
-            return self._reject(record, f"[أمان] {reason}")
-
-        # ── بروتوكول التثليث (للطبقة 3) ──
-        ok, reason = self.triad.check(record)
-        if not ok:
-            return self._reject(record, f"[تثليث] {reason}")
-
-        # ── الطبقة 4: تنويع ──
-        ok, reason = self.diversity.check(record)
-        if not ok:
-            return self._reject(record, f"[تنويع] {reason}")
-
-        # ── اجتاز كل الفلاتر ──
-        record.status = Status.APPROVED
-        self._save(record)
-        self.diversity.record(record)
+        record.status = Status.APPROVED  # يعني "أُرسل بنجاح" لا "اجتاز فلترة محلية"
         self._stats["approved"] += 1
-        log.info(f"✓ مقبول: {record.id} [{record.layer}] {record.taxonomy.cwe or ''}")
+        log.info(f"→ أُرسل لـ Railway: {record.id} [{record.layer}]")
+        return True, ""
+
+    def _forward_to_railway(self, record: TrainingRecord) -> tuple[bool, str]:
+        """توحيد البنية وإرسال خام — Railway هو من يقرر القبول/الرفض الفعلي."""
+        # توحيد البنية لتتوافق مع adversarial_orchestrator.py على Railway
+        payload = {
+            "agent_id": "termux_bridge",
+            "payload": {
+                "vulnerable_code": getattr(record, 'vulnerable_code', ''),
+                "remediation_patch": getattr(record, 'remediation_patch', ''),
+                "layer": getattr(record, 'layer', 'unknown'),
+                "cve_id": getattr(record, 'cve_id', ''),
+                "content_hash": record.content_hash
+            }
+        }
+        try:
+            resp = requests.post(RAILWAY_INGEST_URL, json=payload, timeout=30)
+        except requests.RequestException as e:
+            return False, f"تعذّر الاتصال بـ Railway: {e}"
+
+        if resp.status_code >= 400:
+            return False, f"Railway رفض الطلب ({resp.status_code}): {resp.text[:200]}"
         return True, ""
 
     def process_batch(self, records: list[TrainingRecord]) -> dict:
