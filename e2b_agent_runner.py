@@ -26,13 +26,11 @@ def translate_to_railway_schema(round_data: dict, blueprint) -> dict:
     """
     ترجمة حقولنا إلى المخطط الذي يتوقعه CompletenessGate في Railway.
     """
-    # استخراج محتوى الكود كنص واحد
     base_code_text = "\n".join(round_data["base_code"].values()) if isinstance(round_data["base_code"], dict) else str(round_data["base_code"])
     patched_code_text = "\n".join(round_data["patched_code"].values()) if isinstance(round_data["patched_code"], dict) else str(round_data["patched_code"])
     verification_test = round_data["verification_test"]
     defect_class = round_data["defect_class"]
     
-    # بناء technical_description (يجب أن يكون ≥200 حرف)
     technical_description = (
         f"سيناريو دفاعي لفئة خطأ منطقي: {defect_class}. "
         f"المستوى: T{blueprint.tier.value}. "
@@ -44,7 +42,6 @@ def translate_to_railway_schema(round_data: dict, blueprint) -> dict:
         f"التصليح: {patched_code_text[:300]}"
     )
     
-    # بناء defensive_mechanism (يجب أن يحتوي "implement" ويكون ≥50 حرف)
     defensive_mechanism = (
         f"We implement a defensive fix by adding the missing validation check. "
         f"The patched code ensures proper role verification before executing sensitive operations. "
@@ -106,7 +103,6 @@ async def run_one_cycle(agent_id: str) -> dict:
         fix_verified=round_data["fix_verified"],
     )
     
-    # ترجمة الحقول قبل الإرسال
     translated_payload = translate_to_railway_schema(round_data, blueprint)
     railway_response = _send_to_railway(agent_id, translated_payload)
     
