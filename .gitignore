@@ -118,3 +118,6 @@ core/safety_filter.py
 keys.dat
 *_collector.py
 database/admin_sessions.json
+.env
+.env
+.env

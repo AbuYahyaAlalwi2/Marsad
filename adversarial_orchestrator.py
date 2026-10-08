@@ -17,7 +17,7 @@ except ImportError as e:
 
 HF_TOKEN = os.environ.get("HF_TOKEN")
 NVD_API_KEY = os.environ.get("NVD_API_KEY")
-REPO_ID = "AbuYahyaAlalwi2/marsad-security-dataset-v1"
+REPO_ID = "AbuYahya2/Marsad"
 CHECKPOINT_FILE = Path("orchestrator_checkpoint.json")
 
 app = FastAPI(title="Marsad Unified Orchestrator")
