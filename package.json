@@ -1,0 +1,19 @@
+{
+  "name": "marsad-cf-worker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "مرصد — حلقة توليد بيانات دفاعية (negative test case) تعمل على Cloudflare Workers بدل Kaggle، عبر Cron Trigger، لتفادي خطر الحظر من استخدام حوسبة Kaggle المجانية كخادم دائم.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "wrangler": "^3.90.0",
+    "@cloudflare/workers-types": "^4.20241022.0"
+  },
+  "dependencies": {
+    "e2b": "^1.0.5"
+  }
+}

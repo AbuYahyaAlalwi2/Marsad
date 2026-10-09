@@ -1,0 +1,25 @@
+name = "marsad-agent-loop"
+main = "src/index.ts"
+compatibility_date = "2024-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+# كل دقيقة — دورة واحدة فقط لكل تشغيل، لتبقى بأمان ضمن حد مدة تنفيذ Workers.
+# عدّل التكرار من هنا (مثال: "*/2 * * * *" لكل دقيقتين) لو أردت وتيرة أبطأ.
+[triggers]
+crons = ["* * * * *"]
+
+# مساحة تخزين KV لحفظ حالة محرك التصعيد (ComplexityEscalator) بين كل تشغيل —
+# Workers عديمة الحالة بين الاستدعاءات، هذا يحل محل القاموس في الذاكرة بالنسخة
+# الأصلية. أنشئ المساحة أولاً بالأمر الموضح في DEPLOY.md ثم ضع الـ id هنا.
+[[kv_namespaces]]
+binding = "MARSAD_KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# الأسرار (لا تُكتب هنا أبداً) — تُضبط عبر:
+#   wrangler secret put DEEPSEEK_API_KEY
+#   wrangler secret put GROQ_API_KEY
+#   wrangler secret put OPENROUTER_API_KEY
+#   wrangler secret put GOOGLE_API_KEY
+#   wrangler secret put HF_API_KEY
+#   wrangler secret put E2B_API_KEY
+#   wrangler secret put RAILWAY_INGEST_URL
