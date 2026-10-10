@@ -1,0 +1,38 @@
+name: Deploy marsad-cf-worker
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Set secrets
+        run: |
+          echo "${{ secrets.E2B_API_KEY }}" | npx wrangler secret put E2B_API_KEY
+          echo "${{ secrets.GROQ_API_KEY }}" | npx wrangler secret put GROQ_API_KEY
+          echo "${{ secrets.DEEPSEEK_API_KEY }}" | npx wrangler secret put DEEPSEEK_API_KEY || true
+          echo "${{ secrets.OPENROUTER_API_KEY }}" | npx wrangler secret put OPENROUTER_API_KEY || true
+          echo "${{ secrets.GOOGLE_API_KEY }}" | npx wrangler secret put GOOGLE_API_KEY || true
+          echo "${{ secrets.HF_API_KEY }}" | npx wrangler secret put HF_API_KEY || true
+          echo "${{ secrets.RAILWAY_INGEST_URL }}" | npx wrangler secret put RAILWAY_INGEST_URL
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
