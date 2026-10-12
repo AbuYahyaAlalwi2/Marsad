@@ -1,0 +1,19 @@
+name: Marsad CF Probe
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install pyarrow huggingface_hub
+      - name: فحص قراءة فقط (لا تنفيذ أي كود)
+        run: python3 probe_cf_join_v1.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cf-probe
+          path: probe_report.json
+          retention-days: 14
