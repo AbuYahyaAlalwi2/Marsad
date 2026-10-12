@@ -52,4 +52,12 @@ P3.update({
         "n=int(input())\na=list(map(int,input().split()))\nm=0\nfor x in a:\n    if x>m:\n        m=x\nprint(m)\n",
         "import sys\nd=sys.stdin.read().split()\nd=d[1:]\nd.sort()\nprint(d[-1])\n"]),
 })
-ROWS = [P1, P2, P3]
+# مسألة تقبل أكثر من جواب: الحلان صحيحان لكن مخرجاتهما تختلف => يجب تخطي المسألة كلها
+P4 = {
+    "name": "fx_multi_answer", "difficulty": 1, "description": "Print the two numbers in any order.",
+    "public_tests": T([("1 2\n", "1 2\n"), ("3 4\n", "3 4\n"), ("5 6\n", "5 6\n")]),
+    "private_tests": T([]), "generated_tests": T([]),
+    "solutions": sol(py3=["a,b=input().split()\nprint(a,b)\n", "a,b=input().split()\nprint(b,a)\n"]),
+    "incorrect_solutions": sol(py3=["a,b=input().split()\nprint(a,a)\n"]),
+}
+ROWS = [P1, P2, P3, P4]

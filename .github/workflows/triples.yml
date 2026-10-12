@@ -15,6 +15,12 @@ on:
       publish:
         description: "ارفع إلى HF؟ (true/false)"
         default: "false"
+      max_tests:
+        description: "عدد الاختبارات لكل مسألة (أكثر = رفض أقل للحلول الخاطئة الضعيفة الكشف)"
+        default: "30"
+      max_pairs:
+        description: "أقصى ثلاثيات لكل مسألة"
+        default: "3"
 
 permissions:
   contents: read
@@ -51,7 +57,8 @@ jobs:
         run: |
           python3 marsad_triples.py --split "${{ inputs.split }}" \
             --shard ${{ matrix.shard }} --num-shards ${{ inputs.num_shards }} \
-            --limit-problems ${{ inputs.limit_problems }} --out out
+            --limit-problems ${{ inputs.limit_problems }} \
+            --max-tests ${{ inputs.max_tests }} --max-pairs ${{ inputs.max_pairs }} --out out
       - uses: actions/upload-artifact@v4
         with:
           name: triples-${{ matrix.shard }}

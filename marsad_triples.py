@@ -75,10 +75,10 @@ def run_py(code_path, in_path, out_path, timeout=3.0, mem_mb=512):
     t0 = time.perf_counter()
     cwd = os.path.dirname(code_path)
     status = None
-    with open(in_path, "rb") as fin, open(out_path, "wb") as fout:
+    with open(in_path, "rb") as fin, open(out_path, "wb") as fout, open(out_path + ".err", "wb") as ferr:
         p = subprocess.Popen(
             NET_PREFIX + [sys.executable, "-I", code_path],
-            stdin=fin, stdout=fout, stderr=subprocess.DEVNULL, cwd=cwd,
+            stdin=fin, stdout=fout, stderr=ferr, cwd=cwd,
             env={"PATH": "/usr/bin:/bin", "PYTHONHASHSEED": "0", "PYTHONIOENCODING": "utf-8"},
             preexec_fn=_limits(mem_mb, int(timeout) + 1), start_new_session=True)
         try:
@@ -135,7 +135,15 @@ class Problem:
             st, _ = run_py(cp, ip, op, timeout)
             self.execs += 1
             if st != "OK":
-                return False, {"k": k, "type": st, "actual": ""}
+                err = ""
+                if st == "RE":  # آخر سطر من الخطأ (مثل IndexError: ...) يُحفظ كسبب الفشل
+                    try:
+                        with open(op + ".err", "rb") as f:
+                            lines = [l for l in f.read(4000).decode("utf-8", "replace").splitlines() if l.strip()]
+                        err = lines[-1][:200] if lines else ""
+                    except Exception:
+                        pass
+                return False, {"k": k, "type": st, "actual": err}
             with open(op, "r", encoding="utf-8", errors="replace") as f:
                 actual = f.read(1_000_001)
             if actual.split() != self.exp[k]:
@@ -191,16 +199,21 @@ def process_problem(row, opts):
         return recs, st, 0
     with tempfile.TemporaryDirectory(prefix="mt_") as tmp:
         P = Problem(tmp, tests)
-        good = []
+        good, correct_wa = [], 0
         for c in good_src:
             if static_reject(c):
                 st["correct_static_reject"] += 1
                 continue
-            ok, _ = P.evaluate(c)
+            ok, cf = P.evaluate(c)
             if ok:
                 good.append((c, toks(c)))
             else:
                 st["correct_fails_tests"] += 1
+                if cf["type"] == "WA":
+                    correct_wa += 1
+        if correct_wa:  # حل صحيح رسمياً يعطي جواباً مختلفاً => المسألة تقبل أكثر من جواب، فحكم WA غير موثوق
+            st["skip_problem_possible_multi_answer"] += 1
+            return recs, st, P.execs
         if not good:
             st["skip_no_verified_correct"] += 1
             return recs, st, P.execs
@@ -219,8 +232,11 @@ def process_problem(row, opts):
                 st["bad_passes_selected_tests"] += 1
                 continue
             if fail["type"] != "WA":
-                if not opts["allow_nonwa"]:
-                    st["bad_nonwa_skipped_" + fail["type"]] += 1
+                if fail["type"] == "TLE" and not opts["allow_tle"]:
+                    st["bad_tle_skipped"] += 1  # يعتمد على سرعة الجهاز
+                    continue
+                if fail["type"] == "RE" and fail["actual"].startswith("MemoryError"):
+                    st["bad_re_memory_skipped"] += 1  # يعتمد على حد الذاكرة عندنا
                     continue
                 ok2, _ = P.evaluate(b)
                 if ok2:
@@ -298,18 +314,18 @@ def main():
     ap.add_argument("--num-shards", type=int, default=1)
     ap.add_argument("--procs", type=int, default=os.cpu_count() or 2)
     ap.add_argument("--limit-problems", type=int, default=0)
-    ap.add_argument("--max-tests", type=int, default=15)
+    ap.add_argument("--max-tests", type=int, default=30)
     ap.add_argument("--max-correct", type=int, default=12)
     ap.add_argument("--max-incorrect", type=int, default=40)
     ap.add_argument("--max-pairs", type=int, default=3)
     ap.add_argument("--min-sim", type=float, default=0.55)
     ap.add_argument("--out", default="out")
     ap.add_argument("--fixture", action="store_true")
-    ap.add_argument("--allow-nonwa", action="store_true")
+    ap.add_argument("--allow-tle", action="store_true")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
     opts = dict(max_tests=args.max_tests, max_correct=args.max_correct, max_incorrect=args.max_incorrect,
-                max_pairs=args.max_pairs, min_sim=args.min_sim, allow_nonwa=args.allow_nonwa)
+                max_pairs=args.max_pairs, min_sim=args.min_sim, allow_tle=args.allow_tle)
     print(f"عزل الشبكة عبر unshare: {'نعم' if NET_PREFIX else 'لا (مستوى أضعف)'} | عمليات: {args.procs}")
     out_path = os.path.join(args.out, f"triples_{args.split}_shard{args.shard:03d}of{args.num_shards:03d}.jsonl.gz")
     stats, execs, problems, t0 = collections.Counter(), 0, 0, time.perf_counter()
