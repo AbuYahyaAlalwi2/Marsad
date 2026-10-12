@@ -1,0 +1,117 @@
+name: Marsad Triples (code_contests)
+
+on:
+  workflow_dispatch:
+    inputs:
+      num_shards:
+        description: "عدد الشرائح (matrix jobs)"
+        default: "4"
+      limit_problems:
+        description: "حد المسائل لكل شريحة (0 = كل شيء). ابدأ بـ 30 للقياس"
+        default: "30"
+      split:
+        description: "train أو valid"
+        default: "train"
+      publish:
+        description: "ارفع إلى HF؟ (true/false)"
+        default: "false"
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-22.04
+    outputs:
+      shards: ${{ steps.m.outputs.shards }}
+    steps:
+      - id: m
+        run: |
+          N=${{ inputs.num_shards }}
+          echo "shards=$(python3 -c "import json;print(json.dumps(list(range($N))))")" >> "$GITHUB_OUTPUT"
+
+  mine:
+    needs: plan
+    runs-on: ubuntu-22.04
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJson(needs.plan.outputs.shards) }}
+    # لا أسرار هنا إطلاقاً: هذه الخطوة تنفّذ أكواد غير موثوقة من مجموعة بيانات عامة
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pyarrow huggingface_hub
+      - name: السماح بعزل الشبكة عبر unshare (قد يفشل بلا ضرر)
+        run: sudo sysctl -w kernel.unprivileged_userns_clone=1 || true; sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+      - name: تشغيل المصنع
+        run: |
+          python3 marsad_triples.py --split "${{ inputs.split }}" \
+            --shard ${{ matrix.shard }} --num-shards ${{ inputs.num_shards }} \
+            --limit-problems ${{ inputs.limit_problems }} --out out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: triples-${{ matrix.shard }}
+          path: out/
+          retention-days: 14
+
+  report:
+    needs: mine
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: all
+          pattern: triples-*
+      - name: الأرقام الحقيقية (عدّ مباشر من الملفات، لا من ملخصات)
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_STEP_SUMMARY"
+          import glob, gzip, json, os, collections
+          files = sorted(glob.glob("all/*/triples_*.jsonl.gz"))
+          n = 0; ids = set(); problems = set(); split = collections.Counter(); size = 0
+          for f in files:
+              size += os.path.getsize(f)
+              for line in gzip.open(f, "rt"):
+                  r = json.loads(line); n += 1; ids.add(r["id"]); problems.add(r["problem"]); split[r["split"]] += 1
+          seen = 0; secs = 0.0; reasons = collections.Counter()
+          for f in glob.glob("all/*/stats_*.json"):
+              s = json.load(open(f)); seen += s["problems_seen"]; secs = max(secs, s["wall_seconds"])
+              reasons.update(s["reasons"])
+          print("## نتيجة التشغيل (مقيسة من الملفات)")
+          print(f"- ملفات: {len(files)} | حجم مضغوط: {size/1e6:.2f} MB")
+          print(f"- ثلاثيات مقبولة: **{n}** (فريدة: {len(ids)}) من **{len(problems)}** مسألة")
+          print(f"- مسائل مفحوصة: {seen} | أطول شريحة: {secs:.0f} ثانية")
+          print(f"- train/eval: {dict(split)}")
+          if seen: print(f"- متوسط الثلاثيات لكل مسألة مفحوصة: {n/seen:.2f}")
+          print("\n### أسباب الرفض\n```")
+          for k, v in reasons.most_common(): print(f"{k}: {v}")
+          print("```")
+          EOF
+          cat "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    needs: report
+    if: ${{ inputs.publish == 'true' }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: all
+          pattern: triples-*
+      - run: pip install huggingface_hub
+      - name: رفع إلى Hugging Face (لا ننفّذ أي كود من البيانات هنا)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python3 - <<'EOF'
+          import glob, os
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          for f in sorted(glob.glob("all/*/triples_*.jsonl.gz")):
+              api.upload_file(path_or_fileobj=f, path_in_repo=f"triples/{os.path.basename(f)}",
+                              repo_id="AbuYahya2/Marsad", repo_type="dataset")
+              print("uploaded", f)
+          EOF
