@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": "deepmind/code_contests",
+      "kind": "hf_dataset",
+      "status": "in_use",
+      "role": "ثلاثيات (حل خاطئ/صحيح + اختبارات) بتحقق بالتنفيذ، Python3 حالياً",
+      "license_seen": "cc-by-4.0",
+      "verified": [
+        "train ≈ 3.8K مسألة، ≈ 2.1GB parquet",
+        "أعمدة: solutions / incorrect_solutions / public,private,generated_tests"
+      ],
+      "unverified": [],
+      "notes": "يُستعمل في marsad_triples.py. المردود المقيس: 105 ثلاثيات من 120 مسألة (نسخة 1).",
+      "checked_at": "2026-10-12T19:19:07Z",
+      "http_status": 200,
+      "pinned_revision": "802411c3010cb00d1b05bad57ca77365a3c699d6",
+      "last_modified": "2023-06-11T12:22:30.000Z",
+      "gated": false,
+      "license_now": "cc-by-4.0",
+      "files": 44,
+      "total_bytes": 7624678799,
+      "flags": []
+    },
+    {
+      "id": "open-r1/codeforces",
+      "kind": "hf_dataset",
+      "status": "candidate",
+      "role": "مسائل Codeforces مع اختبارات رسمية ومدقّق (checker) للمسائل متعددة الأجوبة",
+      "license_seen": "cc-by-4.0",
+      "verified": [
+        "config verifiable: ≈ 8.3K train / 422 test",
+        "أعمدة: official_tests, official_tests_complete, generated_checker, executable, input_mode, editorial, rating, tags"
+      ],
+      "unverified": [
+        "كم مسألة official_tests_complete=True",
+        "صيغة generated_checker وكيف نُجمّعه ونشغّله بأمان"
+      ],
+      "notes": "مرشّح لحل مشكلة المسائل متعددة الأجوبة وللتحقق بالتنفيذ لتقديمات Codeforces.",
+      "checked_at": "2026-10-12T19:19:08Z",
+      "http_status": 200,
+      "pinned_revision": "fbe3f6e903ee854eec2e69e9d96d0306cde59baf",
+      "last_modified": "2025-05-19T15:18:01.000Z",
+      "gated": false,
+      "license_now": "cc-by-4.0",
+      "files": 2219,
+      "total_bytes": 243838668917,
+      "flags": []
+    },
+    {
+      "id": "open-r1/codeforces-submissions",
+      "kind": "hf_dataset",
+      "status": "candidate",
+      "role": "تقديمات حقيقية (كود المصدر + قرار الحكم) لتكوين أزواج خاطئ/صحيح لنفس المسألة",
+      "license_seen": "cc-by-4.0",
+      "verified": [
+        "default: ≈ 12.6M صف، ≈ 5.6GB",
+        "selected_accepted ≈ 42.5K، selected_incorrect ≈ 18.1K",
+        "أعمدة: submission_id, source, contestId, problem_index, programmingLanguage, verdict, passedTestCount, creationTimeSeconds, problem_id",
+        "لا يوجد عمود للمستخدم => لا يمكن إثبات أن نفس الشخص أخطأ ثم أصلح"
+      ],
+      "unverified": [
+        "تطابق مفتاح الربط مع open-r1/codeforces (contest_id+index مقابل contestId+problem_index)",
+        "توزيع اللغات",
+        "هل الكود كامل وقابل للتشغيل"
+      ],
+      "notes": "ابدأ بالنسختين selected_* الصغيرتين قبل الـ 12.6M.",
+      "checked_at": "2026-10-12T19:19:08Z",
+      "http_status": 200,
+      "pinned_revision": "07e7bf31f284b0e90e02dfc7ab675d5821e1c068",
+      "last_modified": "2025-05-14T13:49:02.000Z",
+      "gated": false,
+      "license_now": "cc-by-4.0",
+      "files": 40,
+      "total_bytes": 5636594672,
+      "flags": []
+    },
+    {
+      "id": "OSV (osv.dev) + commits الإصلاح على GitHub",
+      "kind": "external",
+      "status": "in_use",
+      "role": "إصلاحات ثغرات حقيقية (طبقة الأمن)",
+      "license_seen": null,
+      "verified": [],
+      "unverified": [
+        "ترخيص كل مصدر داخل OSV يُراجع على حدة",
+        "التحقق الحالي pattern_only وليس تنفيذاً"
+      ],
+      "notes": "historical_truth_miner_v1.py. القياس السابق: 270 عيّنة فريدة من جلسة واحدة.",
+      "flags": [
+        "MANUAL_CHECK"
+      ]
+    },
+    {
+      "id": "CVEfixes (Zenodo)",
+      "kind": "external",
+      "status": "planned",
+      "role": "دفعة أساس لطبقة الأمن",
+      "license_seen": null,
+      "verified": [
+        "≈ 5,495 commit / 5,365 CVE حتى يونيو 2021 (من الورقة البحثية)"
+      ],
+      "unverified": [
+        "الترخيص",
+        "توافر الأزواج قبل/بعد بالشكل المطلوب"
+      ],
+      "notes": "",
+      "flags": [
+        "MANUAL_CHECK"
+      ]
+    },
+    {
+      "id": "MegaVul",
+      "kind": "external",
+      "status": "planned",
+      "role": "دفعة أساس لطبقة الأمن (C/C++)",
+      "license_seen": null,
+      "verified": [
+        "≈ 9,019 commit و17,380 دالة ضعيفة حتى 2023 (من الورقة البحثية)"
+      ],
+      "unverified": [
+        "الترخيص",
+        "مكان التحميل الرسمي"
+      ],
+      "notes": "",
+      "flags": [
+        "MANUAL_CHECK"
+      ]
+    }
+  ]
+}
