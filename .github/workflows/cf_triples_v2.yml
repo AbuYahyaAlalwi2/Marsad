@@ -1,0 +1,110 @@
+name: Marsad CF Triples v2
+on:
+  workflow_dispatch:
+    inputs:
+      num_shards:
+        description: "عدد الشرائح"
+        default: "8"
+      limit_problems:
+        description: "حد المسائل لكل شريحة (0 = بلا حد)"
+        default: "0"
+      max_pairs:
+        description: "أقصى أزواج لكل مسألة"
+        default: "6"
+      allow_incomplete:
+        description: "اقبل مسائل اختباراتها غير كاملة (true/false)"
+        default: "true"
+permissions:
+  contents: read
+
+jobs:
+  prep:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install pyarrow huggingface_hub
+      - name: تحضير المرشّحات (قراءة فقط، لا تنفيذ كود)
+        run: python3 marsad_cf_prep_v2.py --out cf_candidates.jsonl.gz ${{ inputs.allow_incomplete == 'true' && '--allow-incomplete' || '' }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cf-candidates
+          path: |
+            cf_candidates.jsonl.gz
+            prep_stats.json
+          retention-days: 7
+          compression-level: 0
+
+  plan:
+    needs: prep
+    runs-on: ubuntu-22.04
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+      - id: m
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          n = int("${{ inputs.num_shards }}")
+          print("matrix=" + json.dumps({"shard": list(range(n))}))
+          PY
+
+  mine:
+    needs: plan
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
+    steps:
+      # لا أسرار في هذه المهمة: تنفّذ كوداً غير موثوق داخل الـ sandbox
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: cf-candidates
+          path: .
+      - name: تحقّق وتنفيذ
+        run: |
+          python3 marsad_cf_mine_v2.py --cand cf_candidates.jsonl.gz \
+            --shard ${{ matrix.shard }} --num-shards ${{ inputs.num_shards }} \
+            --limit-problems ${{ inputs.limit_problems }} --max-pairs ${{ inputs.max_pairs }} --out out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cftriples-${{ matrix.shard }}
+          path: out/
+          retention-days: 14
+
+  report:
+    needs: mine
+    if: ${{ always() }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cftriples-*
+          path: all
+      - uses: actions/download-artifact@v4
+        with:
+          name: cf-candidates
+          path: prep
+      - name: نتيجة التشغيل (مقيسة من الملفات)
+        run: |
+          python3 - <<'PY'
+          import glob, gzip, json, collections
+          fs = sorted(glob.glob("all/**/cftriples_*.jsonl.gz", recursive=True))
+          n, ft, sp, sz, probs = 0, collections.Counter(), collections.Counter(), 0, set()
+          for p in fs:
+              sz += __import__("os").path.getsize(p)
+              for l in gzip.open(p, "rt", encoding="utf-8"):
+                  try: r = json.loads(l)
+                  except Exception: continue
+                  n += 1; ft[r["failing_test"]["failure_type"]] += 1; sp[r["split"]] += 1; probs.add(r["problem"])
+          reasons = collections.Counter()
+          for p in glob.glob("all/**/stats_cf_*.json", recursive=True):
+              reasons.update(json.load(open(p))["reasons"])
+          print("## نتيجة التشغيل (مقيسة من الملفات)")
+          print("prep:", json.dumps(json.load(open("prep/prep_stats.json")), ensure_ascii=False))
+          print(f"ملفات: {len(fs)} | ثلاثيات: {n} | مسائل مميزة: {len(probs)} | الحجم: {sz/1024:.0f} KB")
+          print("نوع الفشل:", dict(ft)); print("split:", dict(sp))
+          print("أسباب الرفض:", json.dumps(dict(reasons.most_common()), ensure_ascii=False))
+          PY
