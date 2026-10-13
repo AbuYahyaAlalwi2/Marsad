@@ -1,0 +1,74 @@
+name: Marsad Publish Triples v3
+on:
+  workflow_dispatch:
+    inputs:
+      run_id_cc:
+        description: "run مصنع code_contests (مثل 38222108474)"
+        required: true
+      run_id_cf:
+        description: "run مصنع Codeforces (cf_triples_v3)"
+        required: true
+      dry_run:
+        description: "true = ابنِ الحزمة فقط ولا ترفع إلى HF"
+        default: "true"
+      hf_repo:
+        description: "مستودع HF (نوع dataset)"
+        default: "AbuYahya2/Marsad"
+      hf_path:
+        description: "المسار داخل المستودع"
+        default: "triples_v3"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.run_id_cc }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pattern: triples-*
+          path: all/cc
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.run_id_cf }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pattern: cftriples-*
+          path: all/cf
+      - name: بناء الحزمة (لا تنفيذ لأي كود من البيانات)
+        run: python3 build_publish_bundle_v4.py --in-dir all --out-dir bundle
+      - uses: actions/upload-artifact@v4
+        with:
+          name: publish-bundle-v3
+          path: bundle/
+          retention-days: 14
+
+  upload:
+    needs: build
+    if: ${{ inputs.dry_run != 'true' }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: publish-bundle-v3
+          path: bundle
+      - run: pip install huggingface_hub
+      - name: رفع إلى Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+          HF_REPO: ${{ inputs.hf_repo }}
+          HF_PATH: ${{ inputs.hf_path }}
+        run: |
+          python3 - <<'EOF'
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          api.upload_folder(folder_path="bundle", path_in_repo=os.environ["HF_PATH"],
+                            repo_id=os.environ["HF_REPO"], repo_type="dataset",
+                            commit_message="add merged verified triples bundle")
+          print("uploaded to", os.environ["HF_REPO"], "/", os.environ["HF_PATH"])
+          EOF
