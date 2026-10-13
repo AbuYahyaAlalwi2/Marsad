@@ -1,0 +1,24 @@
+name: mut-probe-v2
+on:
+  workflow_dispatch:
+    inputs:
+      mutants: {description: "mutants per repo", default: "40"}
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [cachetools, humanize, python-slugify, sortedcontainers, parse]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -q pytest pytest-timeout
+      - run: python marsad_mut_probe_v2.py --spec mut_repos_v2.json --name "${{ matrix.name }}" --mutants "${{ inputs.mutants }}" --budget-min 15
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: "mut-${{ matrix.name }}", path: "probe_*.json", retention-days: 14}
