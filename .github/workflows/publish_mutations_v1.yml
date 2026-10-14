@@ -1,0 +1,64 @@
+name: Marsad Publish Mutations v1
+on:
+  workflow_dispatch:
+    inputs:
+      run_ids:
+        description: "أرقام تشغيلات مصنع الطفرات مفصولة بفاصلة"
+        required: true
+      cap:
+        description: "سقف السجلات لكل مشروع"
+        default: "800"
+      dry_run:
+        description: "true = ابنِ الحزمة فقط ولا ترفع إلى HF"
+        default: "true"
+      hf_repo:
+        default: "AbuYahya2/Marsad"
+      hf_path:
+        default: "mutations_v1"
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: تنزيل نتائج كل التشغيلات
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for R in $(echo "${{ inputs.run_ids }}" | tr ',' ' '); do
+            gh run download "$R" -p 'mut-*' -D "all/$R" || echo "run $R: لا artifacts"
+          done
+          find all -name 'muttriples_*.jsonl.gz' | wc -l
+      - name: بناء الحزمة (لا تنفيذ لأي كود من البيانات)
+        run: python3 build_mut_bundle_v1.py --in-dir all --out-dir bundle --cap-per-repo "${{ inputs.cap }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mutations-bundle-v1
+          path: bundle/
+          retention-days: 14
+  upload:
+    needs: build
+    if: ${{ inputs.dry_run != 'true' }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: mutations-bundle-v1
+          path: bundle
+      - run: pip install huggingface_hub
+      - name: رفع إلى Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+          HF_REPO: ${{ inputs.hf_repo }}
+          HF_PATH: ${{ inputs.hf_path }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          api.upload_folder(folder_path="bundle", path_in_repo=os.environ["HF_PATH"], repo_id=os.environ["HF_REPO"],
+                            repo_type="dataset", commit_message="add mutation pairs bundle")
+          print("uploaded", os.environ["HF_REPO"], os.environ["HF_PATH"])
+          PY
