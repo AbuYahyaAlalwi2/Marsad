@@ -1,0 +1,215 @@
+[
+ {
+  "name": "h2",
+  "url": "https://github.com/python-hyper/h2",
+  "pkg": "src/h2",
+  "tests": "tests",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "hpack",
+  "url": "https://github.com/python-hyper/hpack",
+  "pkg": "src/hpack",
+  "tests": "tests",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "glom",
+  "url": "https://github.com/mahmoud/glom",
+  "pkg": "glom",
+  "tests": "glom/test",
+  "extras": [
+   "pprintpp",
+   "PyYAML"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "face",
+  "url": "https://github.com/mahmoud/face",
+  "pkg": "face",
+  "tests": "face/test",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "jmespath",
+  "url": "https://github.com/jmespath/jmespath.py",
+  "pkg": "jmespath",
+  "tests": "tests",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "mistune",
+  "url": "https://github.com/lepture/mistune",
+  "pkg": "src/mistune",
+  "tests": "tests",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "markdown",
+  "url": "https://github.com/Python-Markdown/markdown",
+  "pkg": "markdown",
+  "tests": "tests",
+  "extras": [
+   "PyYAML"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "markdown-it-py",
+  "url": "https://github.com/executablebooks/markdown-it-py",
+  "pkg": "markdown_it",
+  "tests": "tests",
+  "extras": [
+   "pytest-regressions",
+   "linkify-it-py",
+   "mdit-py-plugins"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "tomlkit",
+  "url": "https://github.com/python-poetry/tomlkit",
+  "pkg": "tomlkit",
+  "tests": "tests",
+  "extras": [],
+  "shards": 1,
+  "submodules": true
+ },
+ {
+  "name": "voluptuous",
+  "url": "https://github.com/alecthomas/voluptuous",
+  "pkg": "voluptuous",
+  "tests": "voluptuous/tests",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "pygments",
+  "url": "https://github.com/pygments/pygments",
+  "pkg": "pygments",
+  "tests": "tests",
+  "extras": [
+   "wcag-contrast-ratio"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "pyasn1",
+  "url": "https://github.com/pyasn1/pyasn1",
+  "pkg": "pyasn1",
+  "tests": "tests",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "installer",
+  "url": "https://github.com/pypa/installer",
+  "pkg": "src/installer",
+  "tests": "tests",
+  "extras": [
+   "build",
+   "flit_core",
+   "setuptools",
+   "wheel"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "tenacity",
+  "url": "https://github.com/jd/tenacity",
+  "pkg": "tenacity",
+  "tests": "tests",
+  "extras": [
+   "tornado",
+   "pytest-asyncio"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "wcmatch",
+  "url": "https://github.com/facelessuser/wcmatch",
+  "pkg": "wcmatch",
+  "tests": "tests",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "soupsieve",
+  "url": "https://github.com/facelessuser/soupsieve",
+  "pkg": "soupsieve",
+  "tests": "tests",
+  "extras": [
+   "beautifulsoup4",
+   "html5lib"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "radon",
+  "url": "https://github.com/rubik/radon",
+  "pkg": "radon",
+  "tests": "radon/tests",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "flake8",
+  "url": "https://github.com/PyCQA/flake8",
+  "pkg": "src/flake8",
+  "tests": "tests",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "typeguard",
+  "url": "https://github.com/agronholm/typeguard",
+  "pkg": "src/typeguard",
+  "tests": "tests",
+  "extras": [
+   "typing_extensions",
+   "mypy"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "pyparsing2",
+  "url": "https://github.com/pyparsing/pyparsing",
+  "pkg": "pyparsing",
+  "tests": "tests",
+  "extras": [
+   "railroad-diagrams",
+   "Jinja2"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "attrs2",
+  "url": "https://github.com/python-attrs/attrs",
+  "pkg": "src/attr",
+  "tests": "tests",
+  "extras": [
+   "cloudpickle",
+   "hypothesis"
+  ],
+  "shards": 1,
+  "full": true
+ },
+ {
+  "name": "rich2",
+  "url": "https://github.com/Textualize/rich",
+  "pkg": "rich",
+  "tests": "tests",
+  "extras": [
+   "attrs",
+   "typing_extensions",
+   "pygments==2.19.2"
+  ],
+  "shards": 1
+ }
+]

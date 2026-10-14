@@ -1,0 +1,69 @@
+name: mut-factory-v4
+on:
+  workflow_dispatch:
+    inputs:
+      max_sites: {description: "max mutation sites per repo (0 = all)", default: "1500"}
+permissions:
+  contents: read
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.p.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: p
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess
+          spec = json.load(open("mut_repos_v6.json"))
+          pins, inc = {}, []
+          for s in spec:
+              out = subprocess.run(["git", "ls-remote", s["url"], "HEAD"], capture_output=True, text=True).stdout.split()
+              if not out: continue
+              pins[s["name"]] = out[0]
+              inc += [{"name": s["name"], "shard": i, "n": s["shards"]} for i in range(s["shards"])]
+          json.dump(pins, open("pins.json", "w"), indent=1)
+          open(os.environ["GITHUB_OUTPUT"], "a").write("matrix=" + json.dumps({"include": inc}) + "\n")
+          PY
+          cat pins.json
+      - uses: actions/upload-artifact@v4
+        with: {name: pins, path: pins.json, retention-days: 14}
+  mine:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: {name: pins}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -q pytest pytest-timeout pytest-mock hypothesis
+      - run: |
+          MS="${{ inputs.max_sites }}"; [ "$MS" = "0" ] && MS=100000
+          python marsad_mut_mine_v4.py --spec mut_repos_v6.json --name "${{ matrix.name }}" --pins pins.json --shard ${{ matrix.shard }} --num-shards ${{ matrix.n }} --max-sites "$MS" --budget-min 330
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: "mut-${{ matrix.name }}-${{ matrix.shard }}", path: out/, retention-days: 14}
+  report:
+    needs: mine
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: {pattern: "mut-*", path: res, merge-multiple: true}
+      - run: |
+          python3 - <<'PY'
+          import glob, gzip, json, collections
+          tot = collections.Counter(); kinds = collections.Counter(); per = {}
+          for f in glob.glob("res/muttriples_*.jsonl.gz"):
+              for l in gzip.open(f, "rt"):
+                  r = json.loads(l); per[r["repo"]] = per.get(r["repo"], 0) + 1; kinds[r["mutation_type"]] += 1; tot[r["split"]] += 1
+          print("TRIPLES", sum(per.values()), dict(tot)); print("per repo", per); print("by kind", dict(kinds))
+          for f in sorted(glob.glob("res/mutstats_*.json")):
+              s = json.load(open(f)); print(s["repo"], s.get("error", ""), s.get("counts"), "kill", s.get("kill_rate"), "min", s.get("wall_minutes"))
+          PY
