@@ -1,0 +1,117 @@
+[
+ {
+  "name": "packaging",
+  "url": "https://github.com/pypa/packaging",
+  "pkg": "src/packaging",
+  "tests": "tests",
+  "extras": [
+   "pretend",
+   "tomli-w",
+   "hypothesis"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "cattrs",
+  "url": "https://github.com/python-attrs/cattrs",
+  "pkg": "src/cattrs",
+  "tests": "tests",
+  "extras": [
+   "hypothesis",
+   "immutables",
+   "pytest-benchmark",
+   "typing_extensions"
+  ],
+  "shards": 1,
+  "pytest_args": [
+   "--ignore=tests/preconf"
+  ]
+ },
+ {
+  "name": "isort",
+  "url": "https://github.com/PyCQA/isort",
+  "pkg": "isort",
+  "tests": "tests/unit",
+  "extras": [
+   "hypothesis",
+   "pytest-mock",
+   "black"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "jsonschema",
+  "url": "https://github.com/python-jsonschema/jsonschema",
+  "pkg": "jsonschema",
+  "tests": "jsonschema/tests",
+  "extras": [
+   "jsonpath-ng",
+   "rfc3339-validator",
+   "rfc3987",
+   "fqdn",
+   "idna",
+   "isoduration",
+   "jsonpointer",
+   "uri-template",
+   "webcolors"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "poetry-core",
+  "url": "https://github.com/python-poetry/poetry-core",
+  "pkg": "src/poetry/core",
+  "tests": "tests",
+  "extras": [
+   "build",
+   "pytest-mock",
+   "virtualenv",
+   "tomli-w"
+  ],
+  "shards": 1,
+  "pytest_args": [
+   "--ignore=tests/integration"
+  ]
+ },
+ {
+  "name": "pycodestyle",
+  "url": "https://github.com/PyCQA/pycodestyle",
+  "pkg": "pycodestyle.py",
+  "tests": ".",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "responses",
+  "url": "https://github.com/getsentry/responses",
+  "pkg": "responses",
+  "tests": "responses/tests",
+  "extras": [
+   "requests",
+   "pytest-asyncio",
+   "pytest-httpserver"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "validators",
+  "url": "https://github.com/python-validators/validators",
+  "pkg": "src/validators",
+  "tests": "tests",
+  "extras": [
+   "eth-hash[pycryptodome]"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "markdown",
+  "url": "https://github.com/Python-Markdown/markdown",
+  "pkg": "markdown",
+  "tests": "tests",
+  "extras": [
+   "PyYAML"
+  ],
+  "shards": 1,
+  "unittest": true
+ }
+]
