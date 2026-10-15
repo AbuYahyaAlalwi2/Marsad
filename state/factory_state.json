@@ -1,0 +1,705 @@
+{
+ "cursor": {
+  "combo": 0,
+  "page": 2
+ },
+ "cycles": 1,
+ "done": {
+  "AloneMonkey__frida-ios-dump": {
+   "error": "install_failed",
+   "sha": "91a74942d0a00402ce48fd0bb65c25425e987220",
+   "status": "rejected",
+   "ts": 1792057096
+  },
+  "AminBlg__SimpleEnglish": {
+   "error": "install_failed",
+   "sha": "a6fcb4fde098b33617cc1578d151ebf58774b883",
+   "status": "rejected",
+   "ts": 1792057096
+  },
+  "Blizzard__s2client-proto": {
+   "error": "license_unknown_rejected",
+   "sha": "4867bb9ede01e914c57a6fc9575dcc2f4bf0ca5a",
+   "status": "rejected",
+   "ts": 1792057096
+  },
+  "anmol098__waka-readme-stats": {
+   "error": "install_failed",
+   "sha": "4db28e08bfd8bac570125799fe1cfdcb23a8c871",
+   "status": "rejected",
+   "ts": 1792057096
+  },
+  "anthropics__anthropic-sdk-python": {
+   "error": "baseline_failed",
+   "sha": "2a53eaa6966b04560b6a72c28d3ace4389a9ac58",
+   "status": "rejected",
+   "ts": 1792057096
+  },
+  "arrow": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "attrs": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "boltons": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "boppreh__keyboard": {
+   "error": "baseline_failed",
+   "sha": "d232de09bda50ecb5211ebcc59b85bc6da6aaa24",
+   "status": "rejected",
+   "ts": 1792057096
+  },
+  "cachetools": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "cattrs": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "circlemind-ai__fast-graphrag": {
+   "kill_rate": 0.403,
+   "killed": 245,
+   "sha": "23b3a1bef64338faf9f35c521a20465dbd09419f",
+   "status": "mined",
+   "ts": 1792057096
+  },
+  "click": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "cornellius-gp__gpytorch": {
+   "kill_rate": 0.671,
+   "killed": 257,
+   "sha": "e1302d24cbd334649ada70608cbe98e903a47a83",
+   "status": "mined",
+   "ts": 1792057096
+  },
+  "croniter": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "danijar__dreamerv3": {
+   "error": "baseline_failed",
+   "sha": "e01491fad6434b2245a3b8ca201dd7faedcc458c",
+   "status": "rejected",
+   "ts": 1792057096
+  },
+  "dateutil": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "face": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "flake8": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "freezegun": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "glom": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "gusye1234__nano-graphrag": {
+   "error": "baseline_failed",
+   "sha": "acb35c065614eb5a2f5f1be9a56b235f5a2e0a7a",
+   "status": "rejected",
+   "ts": 1792057096
+  },
+  "h2": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "hkust-nlp__simpleRL-reason": {
+   "error": "install_failed",
+   "sha": "cf1c7858bfc145a27aa733e75d930d34f0d318a6",
+   "status": "rejected",
+   "ts": 1792057096
+  },
+  "hpack": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "humanize": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "installer": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "isodate": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "isort": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "jisaacks__GitGutter": {
+   "error": "install_failed",
+   "sha": "1eb072d98ceb4a1f079d7154b7d1916ce5e3f5cf",
+   "status": "rejected",
+   "ts": 1792057096
+  },
+  "jmespath": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "jsonschema": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "lemony-ai__cascadeflow": {
+   "error": "baseline_failed",
+   "sha": "280ac9728aae622be0f9892b7e9239786ee4e3c0",
+   "status": "rejected",
+   "ts": 1792057096
+  },
+  "markdown": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "markdown-it-py": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "marshmallow": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "masterking32__MasterHttpRelayVPN": {
+   "error": "install_failed",
+   "sha": "0a019e172472a9bb1829ca32639c824e77decf8c",
+   "status": "rejected",
+   "ts": 1792057096
+  },
+  "mistune": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "more-itertools": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "nowork-studio__notfair-plugin": {
+   "error": "install_failed",
+   "sha": "9afd332f421d58498ddac4fc3b41bbcd66ebe513",
+   "status": "rejected",
+   "ts": 1792057096
+  },
+  "packaging": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "parcadei__Continuous-Claude-v3": {
+   "error": "install_failed",
+   "sha": "d07ff4b06b62f43771bc0c927d0211b734d6149e",
+   "status": "rejected",
+   "ts": 1792057096
+  },
+  "parse": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "poetry-core": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "pyasn1": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "pycodestyle": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "pyflakes": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "pygments": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "pyparsing": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "python-slugify": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "radon": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "responses": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "rfc3986": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "rich": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "sortedcontainers": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "soupsieve": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "sqlparse": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "stanford-futuredata__ColBERT": {
+   "error": "baseline_failed",
+   "sha": "cc4f3dc91c0b45d2d08c251d9d95178285c65f1c",
+   "status": "rejected",
+   "ts": 1792057096
+  },
+  "tabulate": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "tenacity": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "thonny__thonny": {
+   "error": "baseline_failed",
+   "sha": "a0359c77bd8a158621d049c3f46fb42753d15dc1",
+   "status": "rejected",
+   "ts": 1792057096
+  },
+  "tomlkit": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "toolz": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "tox-dev__tox": {
+   "error": "baseline_failed",
+   "sha": "d947dd4e43388f727bb534c3f0ad7997d76b4767",
+   "status": "rejected",
+   "ts": 1792057096
+  },
+  "typeguard": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "validators": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "voluptuous": {
+   "status": "manual",
+   "ts": 1792037000
+  },
+  "wcmatch": {
+   "status": "manual",
+   "ts": 1792037000
+  }
+ },
+ "inflight": {},
+ "queue": [
+  {
+   "attempts": 1,
+   "name": "Stability-AI__stable-audio-tools",
+   "stars": 0,
+   "url": "https://github.com/Stability-AI/stable-audio-tools"
+  },
+  {
+   "name": "jordan-gibbs__hyperresearch",
+   "stars": 3856,
+   "url": "https://github.com/jordan-gibbs/hyperresearch"
+  },
+  {
+   "name": "shroominic__codeinterpreter-api",
+   "stars": 3842,
+   "url": "https://github.com/shroominic/codeinterpreter-api"
+  },
+  {
+   "name": "camelot-dev__camelot",
+   "stars": 3842,
+   "url": "https://github.com/camelot-dev/camelot"
+  },
+  {
+   "name": "HKUDS__Paper2Slides",
+   "stars": 3839,
+   "url": "https://github.com/HKUDS/Paper2Slides"
+  },
+  {
+   "name": "lanqian528__chat2api",
+   "stars": 3836,
+   "url": "https://github.com/lanqian528/chat2api"
+  },
+  {
+   "name": "aiming-lab__SimpleMem",
+   "stars": 3832,
+   "url": "https://github.com/aiming-lab/SimpleMem"
+  },
+  {
+   "name": "newpanjing__simpleui",
+   "stars": 3830,
+   "url": "https://github.com/newpanjing/simpleui"
+  },
+  {
+   "name": "benfred__implicit",
+   "stars": 3829,
+   "url": "https://github.com/benfred/implicit"
+  },
+  {
+   "name": "the-moonwitch__Cozette",
+   "stars": 3812,
+   "url": "https://github.com/the-moonwitch/Cozette"
+  },
+  {
+   "name": "FactoryBoy__factory_boy",
+   "stars": 3811,
+   "url": "https://github.com/FactoryBoy/factory_boy"
+  },
+  {
+   "name": "swar__nba_api",
+   "stars": 3802,
+   "url": "https://github.com/swar/nba_api"
+  },
+  {
+   "name": "vocodedev__vocode-core",
+   "stars": 3802,
+   "url": "https://github.com/vocodedev/vocode-core"
+  },
+  {
+   "name": "jmiao24__Paper2Agent",
+   "stars": 3800,
+   "url": "https://github.com/jmiao24/Paper2Agent"
+  },
+  {
+   "name": "opengeos__leafmap",
+   "stars": 3784,
+   "url": "https://github.com/opengeos/leafmap"
+  },
+  {
+   "name": "lucidrains__stylegan2-pytorch",
+   "stars": 3780,
+   "url": "https://github.com/lucidrains/stylegan2-pytorch"
+  },
+  {
+   "name": "insanum__gcalcli",
+   "stars": 3777,
+   "url": "https://github.com/insanum/gcalcli"
+  },
+  {
+   "name": "octodns__octodns",
+   "stars": 3774,
+   "url": "https://github.com/octodns/octodns"
+  },
+  {
+   "name": "Textualize__rich-cli",
+   "stars": 3766,
+   "url": "https://github.com/Textualize/rich-cli"
+  },
+  {
+   "name": "zou-group__textgrad",
+   "stars": 3761,
+   "url": "https://github.com/zou-group/textgrad"
+  },
+  {
+   "name": "sukeesh__Jarvis",
+   "stars": 3759,
+   "url": "https://github.com/sukeesh/Jarvis"
+  },
+  {
+   "name": "fudan-generative-vision__hallo2",
+   "stars": 3748,
+   "url": "https://github.com/fudan-generative-vision/hallo2"
+  },
+  {
+   "name": "unfoldadmin__django-unfold",
+   "stars": 3721,
+   "url": "https://github.com/unfoldadmin/django-unfold"
+  },
+  {
+   "name": "llm-workflow-engine__llm-workflow-engine",
+   "stars": 3717,
+   "url": "https://github.com/llm-workflow-engine/llm-workflow-engine"
+  },
+  {
+   "name": "speaches-ai__speaches",
+   "stars": 3716,
+   "url": "https://github.com/speaches-ai/speaches"
+  },
+  {
+   "name": "mikedh__trimesh",
+   "stars": 3700,
+   "url": "https://github.com/mikedh/trimesh"
+  },
+  {
+   "name": "zappa__Zappa",
+   "stars": 3698,
+   "url": "https://github.com/zappa/Zappa"
+  },
+  {
+   "name": "ly4k__Certipy",
+   "stars": 3698,
+   "url": "https://github.com/ly4k/Certipy"
+  },
+  {
+   "name": "Netw0rkNoob__VulnClaw",
+   "stars": 3695,
+   "url": "https://github.com/Netw0rkNoob/VulnClaw"
+  },
+  {
+   "name": "AvdLee__SwiftUI-Agent-Skill",
+   "stars": 3692,
+   "url": "https://github.com/AvdLee/SwiftUI-Agent-Skill"
+  },
+  {
+   "name": "maxcountryman__flask-login",
+   "stars": 3677,
+   "url": "https://github.com/maxcountryman/flask-login"
+  },
+  {
+   "name": "pallets__quart",
+   "stars": 3673,
+   "url": "https://github.com/pallets/quart"
+  },
+  {
+   "name": "davepoon__buildwithclaude",
+   "stars": 3637,
+   "url": "https://github.com/davepoon/buildwithclaude"
+  },
+  {
+   "name": "swisskyrepo__SSRFmap",
+   "stars": 3636,
+   "url": "https://github.com/swisskyrepo/SSRFmap"
+  },
+  {
+   "name": "ericosiu__ai-marketing-skills",
+   "stars": 3635,
+   "url": "https://github.com/ericosiu/ai-marketing-skills"
+  },
+  {
+   "name": "SamurAIGPT__llm-wiki-agent",
+   "stars": 3626,
+   "url": "https://github.com/SamurAIGPT/llm-wiki-agent"
+  },
+  {
+   "name": "mustbeperfect__definitive-opensource",
+   "stars": 3611,
+   "url": "https://github.com/mustbeperfect/definitive-opensource"
+  },
+  {
+   "name": "AiuniAI__Unique3D",
+   "stars": 3596,
+   "url": "https://github.com/AiuniAI/Unique3D"
+  },
+  {
+   "name": "ZhaoJ9014__face.evoLVe",
+   "stars": 3595,
+   "url": "https://github.com/ZhaoJ9014/face.evoLVe"
+  },
+  {
+   "name": "wang2122__sprix-sage-router",
+   "stars": 3594,
+   "url": "https://github.com/wang2122/sprix-sage-router"
+  },
+  {
+   "name": "gpt-omni__mini-omni",
+   "stars": 3581,
+   "url": "https://github.com/gpt-omni/mini-omni"
+  },
+  {
+   "name": "sloria__doitlive",
+   "stars": 3580,
+   "url": "https://github.com/sloria/doitlive"
+  },
+  {
+   "name": "pathwaycom__bdh",
+   "stars": 3579,
+   "url": "https://github.com/pathwaycom/bdh"
+  },
+  {
+   "name": "PenglongHuang__chinese-novelist-skill",
+   "stars": 3578,
+   "url": "https://github.com/PenglongHuang/chinese-novelist-skill"
+  },
+  {
+   "name": "ShawnPana__phone-harness",
+   "stars": 3577,
+   "url": "https://github.com/ShawnPana/phone-harness"
+  },
+  {
+   "name": "Ar9av__obsidian-wiki",
+   "stars": 3572,
+   "url": "https://github.com/Ar9av/obsidian-wiki"
+  },
+  {
+   "name": "CosmosShadow__gptpdf",
+   "stars": 3557,
+   "url": "https://github.com/CosmosShadow/gptpdf"
+  },
+  {
+   "name": "elliotgao2__toapi",
+   "stars": 3557,
+   "url": "https://github.com/elliotgao2/toapi"
+  },
+  {
+   "name": "foolwood__SiamMask",
+   "stars": 3553,
+   "url": "https://github.com/foolwood/SiamMask"
+  },
+  {
+   "name": "microsoft__hummingbird",
+   "stars": 3551,
+   "url": "https://github.com/microsoft/hummingbird"
+  },
+  {
+   "name": "make-all__tuya-local",
+   "stars": 3551,
+   "url": "https://github.com/make-all/tuya-local"
+  },
+  {
+   "name": "samuelgursky__davinci-resolve-mcp",
+   "stars": 3550,
+   "url": "https://github.com/samuelgursky/davinci-resolve-mcp"
+  },
+  {
+   "name": "ArtifexSoftware__pdf2docx",
+   "stars": 3538,
+   "url": "https://github.com/ArtifexSoftware/pdf2docx"
+  },
+  {
+   "name": "DeepSourceCorp__good-first-issue",
+   "stars": 3535,
+   "url": "https://github.com/DeepSourceCorp/good-first-issue"
+  },
+  {
+   "name": "Gerapy__Gerapy",
+   "stars": 3515,
+   "url": "https://github.com/Gerapy/Gerapy"
+  },
+  {
+   "name": "beartype__beartype",
+   "stars": 3505,
+   "url": "https://github.com/beartype/beartype"
+  },
+  {
+   "name": "white0dew__XiaohongshuSkills",
+   "stars": 3500,
+   "url": "https://github.com/white0dew/XiaohongshuSkills"
+  },
+  {
+   "name": "nagadomi__nunif",
+   "stars": 3499,
+   "url": "https://github.com/nagadomi/nunif"
+  },
+  {
+   "name": "commaai__opendbc",
+   "stars": 3487,
+   "url": "https://github.com/commaai/opendbc"
+  },
+  {
+   "name": "tiny-pilot__tinypilot",
+   "stars": 3481,
+   "url": "https://github.com/tiny-pilot/tinypilot"
+  },
+  {
+   "name": "QData__TextAttack",
+   "stars": 3477,
+   "url": "https://github.com/QData/TextAttack"
+  },
+  {
+   "name": "coleam00__ai-agents-masterclass",
+   "stars": 3474,
+   "url": "https://github.com/coleam00/ai-agents-masterclass"
+  },
+  {
+   "name": "MiniMax-AI__MiniMax-01",
+   "stars": 3465,
+   "url": "https://github.com/MiniMax-AI/MiniMax-01"
+  },
+  {
+   "name": "piskvorky__smart_open",
+   "stars": 3464,
+   "url": "https://github.com/piskvorky/smart_open"
+  },
+  {
+   "name": "imraywang__wewrite",
+   "stars": 3463,
+   "url": "https://github.com/imraywang/wewrite"
+  },
+  {
+   "name": "realiti4__claude-swap",
+   "stars": 3452,
+   "url": "https://github.com/realiti4/claude-swap"
+  },
+  {
+   "name": "ljagiello__ctf-skills",
+   "stars": 3451,
+   "url": "https://github.com/ljagiello/ctf-skills"
+  },
+  {
+   "name": "Sophomoresty__gemini-web2api",
+   "stars": 3442,
+   "url": "https://github.com/Sophomoresty/gemini-web2api"
+  },
+  {
+   "name": "lynote-ai__humanize-text",
+   "stars": 3435,
+   "url": "https://github.com/lynote-ai/humanize-text"
+  },
+  {
+   "name": "EntySec__Ghost",
+   "stars": 3427,
+   "url": "https://github.com/EntySec/Ghost"
+  },
+  {
+   "name": "Norman-bury__research-writing-skill",
+   "stars": 3426,
+   "url": "https://github.com/Norman-bury/research-writing-skill"
+  },
+  {
+   "name": "opengeos__geoai",
+   "stars": 3425,
+   "url": "https://github.com/opengeos/geoai"
+  },
+  {
+   "name": "sc0tfree__updog",
+   "stars": 3424,
+   "url": "https://github.com/sc0tfree/updog"
+  },
+  {
+   "name": "mnemosyne-oss__mnemosyne",
+   "stars": 3419,
+   "url": "https://github.com/mnemosyne-oss/mnemosyne"
+  },
+  {
+   "name": "crystaldba__postgres-mcp",
+   "stars": 3396,
+   "url": "https://github.com/crystaldba/postgres-mcp"
+  },
+  {
+   "name": "AlphaGBM__skills",
+   "stars": 3392,
+   "url": "https://github.com/AlphaGBM/skills"
+  }
+ ]
+}
