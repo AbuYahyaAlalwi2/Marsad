@@ -1,0 +1,121 @@
+name: marsad-factory-cycle-v3
+# دورة المصنع المستقل: اكتشاف -> طابور -> تعدين معزول -> تحديث الحالة -> حزمة -> نشر (بلا تدخل)
+# مفتاح التشغيل/الإيقاف: متغير المستودع FACTORY_ENABLED (true/false) للتشغيل المجدول فقط.
+on:
+  workflow_dispatch:
+    inputs:
+      batch: {description: "عدد المشاريع في الدورة", default: "20"}
+      max_sites: {description: "سقف مواقع الطفرات لكل مشروع", default: "1500"}
+      publish: {description: "انشر إلى HF بعد الدورة؟", default: "false"}
+  schedule:
+    - cron: "17 */6 * * *"
+permissions:
+  contents: read
+concurrency:
+  group: marsad-factory-v3
+  cancel-in-progress: false
+jobs:
+  plan:
+    if: ${{ github.event_name != 'schedule' || vars.FACTORY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.p.outputs.matrix }}
+      count: ${{ steps.p.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: p
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 marsad_factory_state_v2.py plan --batch "${{ inputs.batch || '20' }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cycle
+          path: |
+            cycle_spec.json
+            pins.json
+            state/factory_state.json
+          retention-days: 7
+  mine:
+    needs: plan
+    if: ${{ needs.plan.result == 'success' && needs.plan.outputs.count != '0' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with: {name: cycle, path: cycle}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -q pytest pytest-timeout pytest-mock hypothesis pytest-asyncio
+      - name: تعدين معزول (بلا أسرار)
+        run: |
+          MS="${{ inputs.max_sites || '1500' }}"; [ "$MS" = "0" ] && MS=100000
+          python marsad_mut_mine_v8.py --spec cycle/cycle_spec.json --name "${{ matrix.name }}" --pins cycle/pins.json --shard 0 --num-shards 1 --max-sites "$MS" --budget-min 330
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: "mut-${{ matrix.name }}-0", path: out/, retention-days: 7}
+  report:
+    needs: [plan, mine]
+    if: ${{ always() && needs.plan.result == 'success' && needs.plan.outputs.count != '0' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      actions: read
+    outputs:
+      pairs: ${{ steps.u.outputs.pairs }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: {name: cycle, path: cycle}
+      - uses: actions/download-artifact@v4
+        with: {pattern: "mut-*", path: res, merge-multiple: true}
+        continue-on-error: true
+      - id: u
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p state res && cp cycle/state/factory_state.json state/factory_state.json
+          python3 marsad_factory_state_v2.py update
+          echo "pairs=$(python3 -c "import json;print(json.load(open('cycle_report.json'))['pairs'])")" >> "$GITHUB_OUTPUT"
+          python3 build_mut_bundle_v1.py --in-dir res --out-dir bundle --cap-per-repo 800 --specs cycle/cycle_spec.json || true
+          python3 - <<'PY'
+          import json, subprocess
+          r = json.load(open("cycle_report.json"))
+          if r["anomaly"]:
+              body = "شذوذ في دورة المصنع:\n- " + "\n- ".join(r["anomaly"]) + "\n\n```\n" + json.dumps(r, ensure_ascii=False, indent=1) + "\n```"
+              subprocess.run(["gh", "issue", "create", "--title", "Marsad factory: anomaly", "--body", body])
+          PY
+          git config user.name "marsad-factory"; git config user.email "factory@users.noreply.github.com"
+          git add state/factory_state.json && git commit -qm "factory state: cycle ${{ github.run_id }}" || true
+          git push -q || true
+      - uses: actions/upload-artifact@v4
+        with: {name: cycle-bundle, path: "bundle/\ncycle_report.json", retention-days: 14}
+  publish:
+    needs: report
+    if: ${{ needs.report.outputs.pairs != '0' && (github.event_name == 'schedule' || inputs.publish == 'true') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: {name: cycle-bundle, path: out}
+      - run: pip install -q huggingface_hub
+      - name: رفع إلى Hugging Face (خاص)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          api.upload_folder(folder_path="out/bundle", path_in_repo="mutations_stream/${{ github.run_id }}",
+                            repo_id="AbuYahya2/Marsad", repo_type="dataset", commit_message="factory cycle ${{ github.run_id }}")
+          print("uploaded cycle", "${{ github.run_id }}")
+          PY
