@@ -1,0 +1,38 @@
+{
+  "repo": "pmorissette__bt",
+  "commit": "819cd9d3ba612bc29563201417d0bf5c6cc7dda1",
+  "license": "MIT",
+  "shard": 0,
+  "num_shards": 1,
+  "auto_excluded": [],
+  "auto_installed": [],
+  "baseline_ok": true,
+  "fix": {
+    "repo": "pmorissette__bt",
+    "commits_scanned": 608,
+    "candidates": 165,
+    "accepted_commits": 0,
+    "pairs": 0,
+    "rej": {
+      "fixed_fails": 165,
+      "parent_passes": 0,
+      "timeout": 0,
+      "no_func_change": 0
+    }
+  },
+  "sites_total": 1696,
+  "sites_assigned": 1500,
+  "noname_samples": [],
+  "counts": {
+    "killed": 196,
+    "survived": 186,
+    "timeout": 0,
+    "no_function": 0,
+    "equivalent": 0,
+    "broken": 0,
+    "unprocessed": 1118
+  },
+  "tried": 382,
+  "kill_rate": 0.513,
+  "wall_minutes": 85.2
+}

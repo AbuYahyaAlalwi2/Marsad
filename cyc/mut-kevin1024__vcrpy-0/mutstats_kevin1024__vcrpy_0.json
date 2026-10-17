@@ -1,0 +1,47 @@
+{
+  "repo": "kevin1024__vcrpy",
+  "commit": "13904ec42934d610d05fd6af9a0f44a58934d71d",
+  "license": "MIT",
+  "shard": 0,
+  "num_shards": 1,
+  "auto_excluded": [],
+  "auto_installed": [
+    "pytest_httpbin",
+    "urllib3",
+    "yarl"
+  ],
+  "baseline_ok": true,
+  "fix": {
+    "repo": "kevin1024__vcrpy",
+    "commits_scanned": 1000,
+    "candidates": 171,
+    "accepted_commits": 11,
+    "pairs": 17,
+    "rej": {
+      "fixed_fails": 157,
+      "parent_passes": 3,
+      "timeout": 0,
+      "no_func_change": 0
+    }
+  },
+  "sites_total": 731,
+  "sites_assigned": 731,
+  "noname_samples": [
+    "        ^^^^^^^^^^^^^^^^^^^^\nE       TypeError: 'NoneType' object is not subscriptable\n\nvcr/serialize.py:54: TypeError\n=========================== short test summary info ============================\nFAILED tests/unit/test_persist.py::test_load_cassette_with_old_cassettes[tests/fixtures/migration/old_cassette.json-vcr.serializers.jsonserializer-run the migration script] - TypeError: 'NoneType' object is not subscriptable\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 178 passed, 10 skipped in 3.54s\n\n[2026-10-16 23:04:18,949] WARNING in core: flasgger is not installed; serving the static landing page at / and skipping the Swagger UI and /spec.json.\n",
+    " consumed.\\n\" == \"Can't overwr...led : query\\n\"\n  \n  Skipping 146 identical leading characters in diff, use -v to show\n    .\n  + Found 1 recorded request(s) matching ('request') but they have already been consumed.\n  - Found 1 similar requests with 1 different matcher(s) :\n  - \n  - 1 - ('similar request').\n  - Matchers succeeded : ['method', 'path']\n  - Matchers failed :\n  - query - assertion failure :\n  - failed : query\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 118 passed, 10 skipped in 3.69s\n\n[2026-10-16 23:07:47,147] WARNING in core: flasgger is not installed; serving the static landing page at / and skipping the Swagger UI and /spec.json.\n",
+    "^^^^^^^^\nE       TypeError: list indices must be integers or slices, not str\n\nvcr/serialize.py:22: TypeError\n=========================== short test summary info ============================\nFAILED tests/unit/test_persist.py::test_load_cassette_with_old_cassettes[tests/fixtures/migration/old_cassette.json-vcr.serializers.jsonserializer-run the migration script] - TypeError: list indices must be integers or slices, not str\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 178 passed, 10 skipped in 3.57s\n\n[2026-10-16 23:07:54,020] WARNING in core: flasgger is not installed; serving the static landing page at / and skipping the Swagger UI and /spec.json.\n"
+  ],
+  "counts": {
+    "killed": 487,
+    "survived": 220,
+    "timeout": 3,
+    "no_function": 14,
+    "equivalent": 0,
+    "broken": 0,
+    "unprocessed": 0,
+    "broken_noname": 7
+  },
+  "tried": 710,
+  "kill_rate": 0.686,
+  "wall_minutes": 38.0
+}

@@ -1,0 +1,50 @@
+=== حجم وتاريخ آخر تعديل لكل نسخة ===
+-rw-------. 1 u0_a144 u0_a144 4246 Oct  6 21:35 _handoff/adversarial_orchestrator.py
+-rw-------. 1 u0_a144 u0_a144 4459 Oct  7 09:34 adversarial_orchestrator.py
+
+=== الفرق بينهما ===
+1c1,14
+< import os, sys, json, time, hashlib
+---
+> """المنسق — غلاف HTTP رفيع فوق marsad_ingest_core.py حصراً. لا بوابات مكررة هنا.
+> 
+> إصلاحان حرجان عن النسخة السابقة التي أُرسلت:
+> 1. HF upload كان يستبدل الملف بالكامل بكل عيّنة (محو تراكمي). هنا: تجميع محلي بالإلحاق
+>    (append) في ملف JSONL، ثم رفع الملف الكامل المتراكم — لا سطر واحد في كل مرة.
+>    (رفع كل سطر فردياً إلى HF على كل طلب مكلف وبطيء مهما كان الإصلاح؛ التجميع ثم الرفع
+>    الدوري هو الصحيح هندسياً، ويُترك مُشغِّل الرفع الفعلي لـ background task منفصل).
+> 2. FastAPI لا يقبل إرجاع (body, status_code) كـ tuple من Flask — يُسلسَل كمصفوفة JSON
+>    خاطئة. الإصلاح: JSONResponse أو status_code في raise HTTPException.
+> """
+> import json
+> import os
+> import threading
+> import time
+3,4d15
+< from fastapi import FastAPI, Request
+< from huggingface_hub import HfApi
+6,82c17,18
+< # استيراد البوابات الموحدة
+< HANDOFF_DIR = Path(__file__).parent / "_handoff"
+< sys.path.insert(0, str(HANDOFF_DIR))
+< 
+< try:
+<     from completeness_gate import CompletenessGate
+<     from ground_truth_gate import GroundTruthGate
+<     from eval_quarantine import EvalQuarantine
+< except ImportError as e:
+<     print(f"⚠️ تحذير استيراد البوابات: {e}")
+< 
+< HF_TOKEN = os.environ.get("HF_TOKEN")
+< NVD_API_KEY = os.environ.get("NVD_API_KEY")
+< REPO_ID = "AbuYahyaAlalwi2/marsad-security-dataset-v1"
+< CHECKPOINT_FILE = Path("orchestrator_checkpoint.json")
+< 
+< app = FastAPI(title="Marsad Unified Orchestrator")
+< 
+< completeness_gate = CompletenessGate() if 'CompletenessGate' in globals() else None
+
+=== أمر التشغيل الذي يستخدمه Railway (Procfile/railway.json/railway.toml) ===
+web: python3 adversarial_orchestrator.py
+./deploy/railway.json
+./Procfile

@@ -1,0 +1,28 @@
+name: Marsad Streaming Producer
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  produce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: pip install datasets huggingface_hub requests
+      - name: Run producer
+        env:
+          HF_TOKEN_1: ${{ secrets.HF_TOKEN_1 }}
+          HF_TOKEN_2: ${{ secrets.HF_TOKEN_2 }}
+          HF_TOKEN_3: ${{ secrets.HF_TOKEN_3 }}
+          HF_TOKEN_4: ${{ secrets.HF_TOKEN_4 }}
+          HF_TOKEN_5: ${{ secrets.HF_TOKEN_5 }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python3 streaming_producer.py

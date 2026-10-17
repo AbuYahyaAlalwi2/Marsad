@@ -1,0 +1,40 @@
+{
+  "repo": "LLMQuant__quant-mind",
+  "commit": "10e9dbd0c7254edc5a091b852122ebe72e06092a",
+  "license": "MIT",
+  "shard": 0,
+  "num_shards": 1,
+  "auto_excluded": [],
+  "auto_installed": [
+    "respx"
+  ],
+  "baseline_ok": true,
+  "fix": {
+    "repo": "LLMQuant__quant-mind",
+    "commits_scanned": 203,
+    "candidates": 3,
+    "accepted_commits": 1,
+    "pairs": 1,
+    "rej": {
+      "fixed_fails": 1,
+      "parent_passes": 1,
+      "timeout": 0,
+      "no_func_change": 0
+    }
+  },
+  "sites_total": 2175,
+  "sites_assigned": 1500,
+  "noname_samples": [],
+  "counts": {
+    "killed": 591,
+    "survived": 187,
+    "timeout": 2,
+    "no_function": 98,
+    "equivalent": 0,
+    "broken": 0,
+    "unprocessed": 622
+  },
+  "tried": 780,
+  "kill_rate": 0.758,
+  "wall_minutes": 85.0
+}

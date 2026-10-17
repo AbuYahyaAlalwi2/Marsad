@@ -1,0 +1,10 @@
+{
+ "mined": 8,
+ "rejected": 12,
+ "retry": 0,
+ "failed": 0,
+ "pairs": 2379,
+ "queue_left": 94,
+ "done_total": 226,
+ "anomaly": []
+}

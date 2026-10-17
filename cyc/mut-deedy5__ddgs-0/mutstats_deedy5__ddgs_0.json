@@ -1,0 +1,43 @@
+{
+  "repo": "deedy5__ddgs",
+  "commit": "70a5635510fb8d5b15d5ba6ceced6a67e212149b",
+  "license": "MIT",
+  "shard": 0,
+  "num_shards": 1,
+  "auto_excluded": [
+    "tests/cli_test.py::test_books_command",
+    "tests/ddgs_test.py::test_videos_search",
+    "tests/ddgs_test.py::test_books_search",
+    "tests/cli_test.py::test_videos_command"
+  ],
+  "auto_installed": [],
+  "baseline_ok": true,
+  "fix": {
+    "repo": "deedy5__ddgs",
+    "commits_scanned": 862,
+    "candidates": 15,
+    "accepted_commits": 0,
+    "pairs": 0,
+    "rej": {
+      "fixed_fails": 15,
+      "parent_passes": 0,
+      "timeout": 0,
+      "no_func_change": 0
+    }
+  },
+  "sites_total": 657,
+  "sites_assigned": 657,
+  "noname_samples": [],
+  "counts": {
+    "killed": 39,
+    "survived": 119,
+    "timeout": 0,
+    "no_function": 13,
+    "equivalent": 0,
+    "broken": 0,
+    "unprocessed": 486
+  },
+  "tried": 158,
+  "kill_rate": 0.247,
+  "wall_minutes": 85.1
+}

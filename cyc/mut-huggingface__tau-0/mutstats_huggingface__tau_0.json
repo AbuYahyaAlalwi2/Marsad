@@ -1,0 +1,40 @@
+{
+  "repo": "huggingface__tau",
+  "commit": "3bd42c04dffa4b6c47f65ee9cd4766470faa3fdd",
+  "license": "MIT",
+  "shard": 0,
+  "num_shards": 1,
+  "auto_excluded": [
+    "tests/test_package_metadata.py::test_wheel_includes_release_notes_package_data"
+  ],
+  "auto_installed": [],
+  "baseline_ok": true,
+  "fix": {
+    "repo": "huggingface__tau",
+    "commits_scanned": 681,
+    "candidates": 313,
+    "accepted_commits": 0,
+    "pairs": 0,
+    "rej": {
+      "fixed_fails": 291,
+      "parent_passes": 22,
+      "timeout": 0,
+      "no_func_change": 0
+    }
+  },
+  "sites_total": 11991,
+  "sites_assigned": 1500,
+  "noname_samples": [],
+  "counts": {
+    "killed": 40,
+    "survived": 22,
+    "timeout": 0,
+    "no_function": 3,
+    "equivalent": 0,
+    "broken": 0,
+    "unprocessed": 1435
+  },
+  "tried": 62,
+  "kill_rate": 0.645,
+  "wall_minutes": 87.0
+}

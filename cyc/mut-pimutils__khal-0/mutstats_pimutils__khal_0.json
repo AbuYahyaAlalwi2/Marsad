@@ -1,0 +1,40 @@
+{
+  "repo": "pimutils__khal",
+  "commit": "7fcd09973923cc69363916deeee2f44cacfd3083",
+  "license": "MIT",
+  "shard": 0,
+  "num_shards": 1,
+  "auto_excluded": [
+    "tests/ui/test_editor.py::test_convert_to_date"
+  ],
+  "auto_installed": [],
+  "baseline_ok": true,
+  "fix": {
+    "repo": "pimutils__khal",
+    "commits_scanned": 1000,
+    "candidates": 113,
+    "accepted_commits": 3,
+    "pairs": 6,
+    "rej": {
+      "fixed_fails": 109,
+      "parent_passes": 1,
+      "timeout": 0,
+      "no_func_change": 0
+    }
+  },
+  "sites_total": 3782,
+  "sites_assigned": 1500,
+  "noname_samples": [],
+  "counts": {
+    "killed": 458,
+    "survived": 474,
+    "timeout": 1,
+    "no_function": 16,
+    "equivalent": 0,
+    "broken": 0,
+    "unprocessed": 551
+  },
+  "tried": 933,
+  "kill_rate": 0.491,
+  "wall_minutes": 85.1
+}

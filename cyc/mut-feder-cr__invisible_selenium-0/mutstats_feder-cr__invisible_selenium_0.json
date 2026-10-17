@@ -1,0 +1,43 @@
+{
+  "repo": "feder-cr__invisible_selenium",
+  "commit": "ce0c88b5ce42c728de34e85c41d47cacfc332769",
+  "license": "MIT",
+  "shard": 0,
+  "num_shards": 1,
+  "auto_excluded": [],
+  "auto_installed": [],
+  "baseline_ok": true,
+  "fix": {
+    "repo": "feder-cr__invisible_selenium",
+    "commits_scanned": 53,
+    "candidates": 7,
+    "accepted_commits": 6,
+    "pairs": 16,
+    "rej": {
+      "fixed_fails": 0,
+      "parent_passes": 1,
+      "timeout": 0,
+      "no_func_change": 0
+    }
+  },
+  "sites_total": 1258,
+  "sites_assigned": 1258,
+  "noname_samples": [
+    "n v else None)\n    def test_a_cookie_geckodriver_refuses(cookie, message):\n>       with pytest.raises(exc.InvalidArgumentException) as caught:\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       Failed: DID NOT RAISE InvalidArgumentException\n\ntests/test_geckodriver_words.py:51: Failed\n=========================== short test summary info ============================\nFAILED tests/test_geckodriver_words.py::test_a_cookie_geckodriver_refuses[cookie0-invalid type: integer `1`, expected a string at line 1 column 21] - Failed: DID NOT RAISE InvalidArgumentException\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 36 passed, 75 skipped in 2.90s\n\n",
+    "ers with 8 elements at line 1 column 28\n\ntests/test_geckodriver_words.py:53: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_geckodriver_words.py::test_a_cookie_geckodriver_refuses[cookie0-invalid type: integer `1`, expected a string at line 1 column 21] - AssertionError: assert 'invalid leng...e 1 column 28' == 'invalid type...e 1 column 21'\n  \n  - invalid type: integer `1`, expected a string at line 1 column 21\n  + invalid length 2, expected struct AddCookieParameters with 8 elements at line 1 column 28\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 36 passed, 75 skipped in 2.88s\n\n",
+    "                ^^^ ^^^^^^^\n\ntests/test_geckodriver_words.py:53: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_geckodriver_words.py::test_a_cookie_geckodriver_refuses[cookie4-invalid type: sequence, expected a string at line 1 column 20] - assert 'invalid type...e 1 column 20' == 'invalid type...e 1 column 20'\n  \n  - invalid type: sequence, expected a string at line 1 column 20\n  ?                ^^^^ ^^\n  + invalid type: string [\"a\"], expected a string at line 1 column 20\n  ?                ^^^ ^^^^^^^\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 40 passed, 75 skipped in 2.90s\n\n"
+  ],
+  "counts": {
+    "killed": 50,
+    "survived": 557,
+    "timeout": 0,
+    "no_function": 16,
+    "equivalent": 0,
+    "broken": 0,
+    "unprocessed": 613,
+    "broken_noname": 22
+  },
+  "tried": 607,
+  "kill_rate": 0.082,
+  "wall_minutes": 85.0
+}

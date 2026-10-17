@@ -1,0 +1,38 @@
+{
+  "repo": "tomerfiliba__plumbum",
+  "commit": "3315d73b3515b8745ed534413fada70281942436",
+  "license": "MIT",
+  "shard": 0,
+  "num_shards": 1,
+  "auto_excluded": [],
+  "auto_installed": [],
+  "baseline_ok": true,
+  "fix": {
+    "repo": "tomerfiliba__plumbum",
+    "commits_scanned": 1000,
+    "candidates": 144,
+    "accepted_commits": 14,
+    "pairs": 37,
+    "rej": {
+      "fixed_fails": 118,
+      "parent_passes": 9,
+      "timeout": 0,
+      "no_func_change": 3
+    }
+  },
+  "sites_total": 3479,
+  "sites_assigned": 1500,
+  "noname_samples": [],
+  "counts": {
+    "killed": 518,
+    "survived": 75,
+    "timeout": 0,
+    "no_function": 28,
+    "equivalent": 0,
+    "broken": 0,
+    "unprocessed": 879
+  },
+  "tried": 593,
+  "kill_rate": 0.874,
+  "wall_minutes": 85.1
+}

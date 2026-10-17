@@ -1,0 +1,47 @@
+{
+  "read": 2456,
+  "real_low_excluded": 2,
+  "dropped_by_cap": 0,
+  "real_fix_pairs": 75,
+  "files_read": 8,
+  "train": 2454,
+  "eval": 0,
+  "repos": 8,
+  "per_repo_before_cap": {
+    "LLMQuant__quant-mind": 592,
+    "deedy5__ddgs": 39,
+    "feder-cr__invisible_selenium": 66,
+    "huggingface__tau": 40,
+    "kevin1024__vcrpy": 502,
+    "pimutils__khal": 464,
+    "pmorissette__bt": 196,
+    "tomerfiliba__plumbum": 555
+  },
+  "per_repo_after_cap": {
+    "LLMQuant__quant-mind": 592,
+    "deedy5__ddgs": 39,
+    "feder-cr__invisible_selenium": 66,
+    "huggingface__tau": 40,
+    "kevin1024__vcrpy": 502,
+    "pimutils__khal": 464,
+    "pmorissette__bt": 196,
+    "tomerfiliba__plumbum": 555
+  },
+  "by_mutation_type": {
+    "real_fix": 75,
+    "return_none": 526,
+    "cmp": 523,
+    "if_negate": 664,
+    "int_const": 258,
+    "binop": 134,
+    "boolop": 158,
+    "bool_flip": 116
+  },
+  "eval_repos": [],
+  "cap_per_repo": 800,
+  "real_by_confidence": {
+    "high": 9,
+    "medium": 66
+  },
+  "cap_real_per_repo": 300
+}
