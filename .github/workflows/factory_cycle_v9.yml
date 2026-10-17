@@ -1,4 +1,4 @@
-name: marsad-factory-cycle-v6
+name: marsad-factory-cycle-v9
 # دورة المصنع المستقل: اكتشاف -> طابور -> تعدين معزول -> تحديث الحالة -> حزمة -> نشر (بلا تدخل)
 # مفتاح التشغيل/الإيقاف: متغير المستودع FACTORY_ENABLED (true/false) للتشغيل المجدول فقط.
 on:
@@ -8,11 +8,11 @@ on:
       max_sites: {description: "سقف مواقع الطفرات لكل مشروع", default: "1500"}
       publish: {description: "انشر إلى HF بعد الدورة؟", default: "false"}
   schedule:
-    - cron: "17 */6 * * *"
+    - cron: "7 * * * *"
 permissions:
   contents: read
 concurrency:
-  group: marsad-factory-v6
+  group: marsad-factory-v9
   cancel-in-progress: false
 jobs:
   plan:
@@ -26,7 +26,7 @@ jobs:
       - id: p
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 marsad_factory_state_v3.py plan --batch "${{ inputs.batch || '20' }}"
+        run: python3 marsad_factory_state_v4.py plan --batch "${{ inputs.batch || '20' }}"
       - uses: actions/upload-artifact@v4
         with:
           name: cycle
@@ -58,7 +58,7 @@ jobs:
       - name: تعدين معزول (بلا أسرار)
         run: |
           MS="${{ inputs.max_sites || '1500' }}"; [ "$MS" = "0" ] && MS=100000
-          python marsad_mut_mine_v10.py --spec cycle/cycle_spec.json --name "${{ matrix.name }}" --pins cycle/pins.json --shard 0 --num-shards 1 --max-sites "$MS" --budget-min 85 --fix-commits 1000 --fix-budget-min 45
+          python marsad_mut_mine_v11.py --spec cycle/cycle_spec.json --name "${{ matrix.name }}" --pins cycle/pins.json --shard 0 --num-shards 1 --max-sites "$MS" --budget-min 85 --fix-commits 1000 --fix-budget-min 45
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: "mut-${{ matrix.name }}-0", path: out/, retention-days: 7}
@@ -84,9 +84,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p state res && cp cycle/state/factory_state.json state/factory_state.json
-          python3 marsad_factory_state_v3.py update
+          python3 marsad_factory_state_v4.py update
           echo "pairs=$(python3 -c "import json;print(json.load(open('cycle_report.json'))['pairs'])")" >> "$GITHUB_OUTPUT"
-          python3 build_mut_bundle_v3.py --in-dir res --out-dir bundle --cap-per-repo 800 --specs cycle/cycle_spec.json || true
+          python3 build_mut_bundle_v7.py --in-dir res --out-dir bundle --cap-per-repo 800 --specs cycle/cycle_spec.json || true
           python3 - <<'PY'
           import json, subprocess
           r = json.load(open("cycle_report.json"))
@@ -118,4 +118,34 @@ jobs:
           api.upload_folder(folder_path="out/bundle", path_in_repo="mutations_stream/${{ github.run_id }}",
                             repo_id="AbuYahya2/Marsad", repo_type="dataset", commit_message="factory cycle ${{ github.run_id }}")
           print("uploaded cycle", "${{ github.run_id }}")
+          PY
+  release:
+    # تجميع الإصدار الموحّد تلقائياً بعد كل نشر ناجح، مع حارس يمنع استبدال إصدار جيد بإصدار هزيل
+    needs: publish
+    if: ${{ needs.publish.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -q huggingface_hub
+      - name: دمج + حارس + رفع release_latest
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 consolidate_release_v3.py --out release --hf-repo AbuYahya2/Marsad
+          python3 - <<'PY'
+          import json, os, sys
+          from huggingface_hub import HfApi
+          s = json.load(open("release/stats.json"))
+          n = s["train"] + s["eval"]
+          print({k: s.get(k) for k in ("read", "train", "eval", "repos")})
+          if n < 29000 or s["eval"] == 0:
+              sys.exit(f"guard: release too small ({n}) or eval empty; not uploading")
+          HfApi(token=os.environ["HF_TOKEN"]).upload_folder(folder_path="release", path_in_repo="release_latest",
+              repo_id="AbuYahya2/Marsad", repo_type="dataset", delete_patterns="*", commit_message="release ${{ github.run_id }}")
+          print("release_latest uploaded")
           PY
