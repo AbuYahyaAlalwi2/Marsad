@@ -1,0 +1,29 @@
+name: marsad-consolidate-v2
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: "ارفع الإصدار الموحّد إلى Hugging Face (release_latest)؟"
+        default: "false"
+permissions:
+  contents: read
+jobs:
+  consolidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -q huggingface_hub
+      - name: دمج الدفعات في إصدار واحد
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          UP=""; [ "${{ inputs.upload }}" = "true" ] && UP="--upload release_latest"
+          python3 consolidate_release_v2.py --out release --hf-repo AbuYahya2/Marsad $UP
+          python3 -c "import json;print(json.dumps({k:v for k,v in json.load(open('release/stats.json')).items() if k in ('read','duplicate','train','eval','repos','real_by_confidence','by_mutation_type')},ensure_ascii=False,indent=1))"
+      - uses: actions/upload-artifact@v4
+        with: {name: release, path: release/, retention-days: 14}

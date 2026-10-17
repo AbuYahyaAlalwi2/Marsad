@@ -1,0 +1,42 @@
+name: marsad-harvest-v1
+on:
+  workflow_dispatch:
+    inputs:
+      run_ids:
+        description: "أرقام تشغيلات الدورات المراد حصادها (مفصولة بمسافة)"
+        required: true
+permissions:
+  actions: read
+  contents: read
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -q huggingface_hub
+      - name: رفع حزم الدورات القديمة قبل انتهاء صلاحية الأرتيفاكت
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+          RUN_IDS: ${{ inputs.run_ids }}
+        run: |
+          python3 - <<'PY'
+          import os, re, shutil, subprocess
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          have = {p.split("/")[1] for p in api.list_repo_files("AbuYahya2/Marsad", repo_type="dataset") if p.startswith("mutations_stream/") and p.count("/") >= 2}
+          for rid in os.environ["RUN_IDS"].split():
+              if not re.fullmatch(r"\d{6,14}", rid):
+                  print("skip bad id", rid); continue
+              if rid in have:
+                  print(rid, "already on HF"); continue
+              d = f"dl/{rid}"; shutil.rmtree(d, ignore_errors=True)
+              r = subprocess.run(["gh", "run", "download", rid, "-n", "cycle-bundle", "-D", d, "--repo", os.environ["GH_REPO"]], capture_output=True, text=True)
+              if r.returncode or not os.path.isdir(d + "/bundle"):
+                  print(rid, "no bundle:", (r.stderr or "")[-200:]); continue
+              api.upload_folder(folder_path=d + "/bundle", path_in_repo=f"mutations_stream/{rid}", repo_id="AbuYahya2/Marsad", repo_type="dataset", commit_message=f"harvest cycle {rid}")
+              print(rid, "uploaded")
+          PY
