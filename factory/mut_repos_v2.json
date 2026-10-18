@@ -1,0 +1,7 @@
+[
+ {"name":"cachetools","url":"https://github.com/tkem/cachetools","pkg":"src/cachetools","tests":"tests","extras":[]},
+ {"name":"humanize","url":"https://github.com/python-humanize/humanize","pkg":"src/humanize","tests":"tests","extras":["freezegun","pytest-benchmark"]},
+ {"name":"python-slugify","url":"https://github.com/un33k/python-slugify","pkg":"slugify","tests":".","extras":[]},
+ {"name":"sortedcontainers","url":"https://github.com/grantjenks/python-sortedcontainers","pkg":"src/sortedcontainers","tests":"tests","extras":[]},
+ {"name":"parse","url":"https://github.com/r1chardj0n3s/parse","pkg":"src/parse","tests":".","extras":[]}
+]

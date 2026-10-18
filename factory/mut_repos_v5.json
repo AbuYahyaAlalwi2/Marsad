@@ -1,0 +1,195 @@
+[
+ {
+  "name": "packaging",
+  "url": "https://github.com/pypa/packaging",
+  "pkg": "src/packaging",
+  "tests": "tests",
+  "extras": [
+   "pretend",
+   "tomli-w"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "pyparsing",
+  "url": "https://github.com/pyparsing/pyparsing",
+  "pkg": "pyparsing",
+  "tests": "tests",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "attrs",
+  "url": "https://github.com/python-attrs/attrs",
+  "pkg": "src/attr",
+  "tests": "tests",
+  "extras": [
+   "hypothesis",
+   "zope.interface"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "jsonschema",
+  "url": "https://github.com/python-jsonschema/jsonschema",
+  "pkg": "jsonschema",
+  "tests": "jsonschema/tests",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "marshmallow",
+  "url": "https://github.com/marshmallow-code/marshmallow",
+  "pkg": "src/marshmallow",
+  "tests": "tests",
+  "extras": [
+   "simplejson",
+   "pytz"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "click",
+  "url": "https://github.com/pallets/click",
+  "pkg": "src/click",
+  "tests": "tests",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "rich",
+  "url": "https://github.com/Textualize/rich",
+  "pkg": "rich",
+  "tests": "tests",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "poetry-core",
+  "url": "https://github.com/python-poetry/poetry-core",
+  "pkg": "src/poetry/core",
+  "tests": "tests",
+  "extras": [
+   "pytest-mock",
+   "virtualenv"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "isort",
+  "url": "https://github.com/PyCQA/isort",
+  "pkg": "isort",
+  "tests": "tests/unit",
+  "extras": [
+   "hypothesis",
+   "pytest-mock"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "pycodestyle",
+  "url": "https://github.com/PyCQA/pycodestyle",
+  "pkg": "pycodestyle.py",
+  "tests": "testing",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "pyflakes",
+  "url": "https://github.com/PyCQA/pyflakes",
+  "pkg": "pyflakes",
+  "tests": "pyflakes/test",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "arrow",
+  "url": "https://github.com/arrow-py/arrow",
+  "pkg": "arrow",
+  "tests": "tests",
+  "extras": [
+   "pytest-mock",
+   "time-machine",
+   "pytz",
+   "simplejson",
+   "python-dateutil"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "freezegun",
+  "url": "https://github.com/spulec/freezegun",
+  "pkg": "freezegun",
+  "tests": "tests",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "croniter",
+  "url": "https://github.com/pallets-eco/croniter",
+  "pkg": "src/croniter",
+  "tests": "src/croniter/tests",
+  "extras": [
+   "python-dateutil",
+   "pytz"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "isodate",
+  "url": "https://github.com/gweis/isodate",
+  "pkg": "src/isodate",
+  "tests": "tests",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "rfc3986",
+  "url": "https://github.com/python-hyper/rfc3986",
+  "pkg": "src/rfc3986",
+  "tests": "tests",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "cattrs",
+  "url": "https://github.com/python-attrs/cattrs",
+  "pkg": "src/cattrs",
+  "tests": "tests",
+  "extras": [
+   "hypothesis",
+   "immutables",
+   "pytest-benchmark"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "validators",
+  "url": "https://github.com/python-validators/validators",
+  "pkg": "src/validators",
+  "tests": "tests",
+  "extras": [],
+  "shards": 1
+ },
+ {
+  "name": "dateutil",
+  "url": "https://github.com/dateutil/dateutil",
+  "pkg": "src/dateutil",
+  "tests": "tests",
+  "extras": [
+   "freezegun",
+   "hypothesis"
+  ],
+  "shards": 1
+ },
+ {
+  "name": "responses",
+  "url": "https://github.com/getsentry/responses",
+  "pkg": "responses",
+  "tests": "responses/tests",
+  "extras": [
+   "requests"
+  ],
+  "shards": 1
+ }
+]

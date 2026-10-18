@@ -1,0 +1,12 @@
+[
+ {"name":"more-itertools","url":"https://github.com/more-itertools/more-itertools","pkg":"more_itertools","tests":"tests","extras":[]},
+ {"name":"toolz","url":"https://github.com/pytoolz/toolz","pkg":"toolz","tests":"toolz/tests","extras":[]},
+ {"name":"sortedcontainers","url":"https://github.com/grantjenks/python-sortedcontainers","pkg":"sortedcontainers","tests":"tests","extras":[]},
+ {"name":"tabulate","url":"https://github.com/astanin/python-tabulate","pkg":"tabulate","tests":"test","extras":[]},
+ {"name":"humanize","url":"https://github.com/python-humanize/humanize","pkg":"src/humanize","tests":"tests","extras":["freezegun"]},
+ {"name":"python-slugify","url":"https://github.com/un33k/python-slugify","pkg":"slugify","tests":"test.py","extras":[]},
+ {"name":"cachetools","url":"https://github.com/tkem/cachetools","pkg":"src/cachetools","tests":"tests","extras":[]},
+ {"name":"boltons","url":"https://github.com/mahmoud/boltons","pkg":"boltons","tests":"tests","extras":[]},
+ {"name":"sqlparse","url":"https://github.com/andialbrecht/sqlparse","pkg":"sqlparse","tests":"tests","extras":[]},
+ {"name":"parse","url":"https://github.com/r1chardj0n3s/parse","pkg":"parse.py","tests":"test_parse.py","extras":[]}
+]
