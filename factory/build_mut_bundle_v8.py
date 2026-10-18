@@ -147,7 +147,7 @@ pretty_name: Marsad verified mutation bug-fix pairs (Python)
 
 Each record: a function from a real open-source Python project (`fixed_code`), a deterministic AST mutation of it
 (`buggy_code`), and the upstream test that **passes before and fails after** the mutation (`failing_test`).
-Accepted only if the project's original test suite passed first. No LLM involved.
+Accepted only if the project's original test suite passed first. `origin = llm_injected`: an LLM proposed the bug, but acceptance is decided only by the original tests (never by the model).
 `origin = procedural`: synthetic AST mutation. `origin = real_commit`: a human bug-fix from the project's git history
 (`buggy_code` = parent commit, `fixed_code` = fix commit, `failing_test` fails on the parent with the fix's tests and passes on the fix);
 these carry `bug_confidence` (high / medium; low is excluded) and `commit_message`.
