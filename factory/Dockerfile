@@ -12,4 +12,4 @@ WORKDIR /app
 COPY --chown=marsad . /app
 USER marsad
 ENV WORK_DIR=/work PORT=8080
-CMD ["python", "marsad_factory_daemon_v4.py"]
+CMD ["python", "marsad_factory_daemon_v5.py"]
