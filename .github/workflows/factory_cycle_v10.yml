@@ -1,4 +1,4 @@
-name: marsad-factory-cycle-v9
+name: marsad-factory-cycle-v10
 # دورة المصنع المستقل: اكتشاف -> طابور -> تعدين معزول -> تحديث الحالة -> حزمة -> نشر (بلا تدخل)
 # مفتاح التشغيل/الإيقاف: متغير المستودع FACTORY_ENABLED (true/false) للتشغيل المجدول فقط.
 on:
@@ -8,11 +8,11 @@ on:
       max_sites: {description: "سقف مواقع الطفرات لكل مشروع", default: "1500"}
       publish: {description: "انشر إلى HF بعد الدورة؟", default: "false"}
   schedule:
-    - cron: "7 * * * *"
+    - cron: "17 2,14 * * *"   # دورتان يومياً (05:17 و17:17 الرياض): مسار دفعات Actions المحدود
 permissions:
   contents: read
 concurrency:
-  group: marsad-factory-v9
+  group: marsad-factory-v10
   cancel-in-progress: false
 jobs:
   plan:
@@ -26,7 +26,7 @@ jobs:
       - id: p
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 marsad_factory_state_v4.py plan --batch "${{ inputs.batch || '20' }}"
+        run: python3 marsad_factory_state_v5.py plan --batch "${{ inputs.batch || '20' }}" --shard 0/2
       - uses: actions/upload-artifact@v4
         with:
           name: cycle
@@ -84,7 +84,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p state res && cp cycle/state/factory_state.json state/factory_state.json
-          python3 marsad_factory_state_v4.py update
+          python3 marsad_factory_state_v5.py update
           echo "pairs=$(python3 -c "import json;print(json.load(open('cycle_report.json'))['pairs'])")" >> "$GITHUB_OUTPUT"
           python3 build_mut_bundle_v7.py --in-dir res --out-dir bundle --cap-per-repo 800 --specs cycle/cycle_spec.json || true
           python3 - <<'PY'
