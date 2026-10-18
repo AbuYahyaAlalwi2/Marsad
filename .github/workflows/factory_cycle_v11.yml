@@ -1,4 +1,4 @@
-name: marsad-factory-cycle-v10
+name: marsad-factory-cycle-v11
 # دورة المصنع المستقل: اكتشاف -> طابور -> تعدين معزول -> تحديث الحالة -> حزمة -> نشر (بلا تدخل)
 # مفتاح التشغيل/الإيقاف: متغير المستودع FACTORY_ENABLED (true/false) للتشغيل المجدول فقط.
 on:
@@ -12,7 +12,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: marsad-factory-v10
+  group: marsad-factory-v11
   cancel-in-progress: false
 jobs:
   plan:
@@ -26,7 +26,7 @@ jobs:
       - id: p
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 marsad_factory_state_v5.py plan --batch "${{ inputs.batch || '20' }}" --shard 0/2
+        run: python3 marsad_factory_state_v6.py plan --batch "${{ inputs.batch || '20' }}" --shard 0/2
       - uses: actions/upload-artifact@v4
         with:
           name: cycle
@@ -84,9 +84,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p state res && cp cycle/state/factory_state.json state/factory_state.json
-          python3 marsad_factory_state_v5.py update
+          python3 marsad_factory_state_v6.py update
           echo "pairs=$(python3 -c "import json;print(json.load(open('cycle_report.json'))['pairs'])")" >> "$GITHUB_OUTPUT"
-          python3 build_mut_bundle_v7.py --in-dir res --out-dir bundle --cap-per-repo 800 --specs cycle/cycle_spec.json || true
+          python3 build_mut_bundle_v8.py --in-dir res --out-dir bundle --cap-per-repo 800 --specs cycle/cycle_spec.json || true
           python3 - <<'PY'
           import json, subprocess
           r = json.load(open("cycle_report.json"))
@@ -136,7 +136,7 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          python3 consolidate_release_v3.py --out release --hf-repo AbuYahya2/Marsad
+          python3 consolidate_release_v4.py --out release --hf-repo AbuYahya2/Marsad
           python3 - <<'PY'
           import json, os, sys
           from huggingface_hub import HfApi
