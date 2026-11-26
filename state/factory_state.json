@@ -1,9 +1,9 @@
 {
  "cursor": {
   "combo": 16,
-  "page": 2
+  "page": 3
  },
- "cycles": 85,
+ "cycles": 86,
  "done": {
   "05bit__peewee-async": {
    "error": "baseline_failed",
@@ -281,6 +281,11 @@
    "status": "mined",
    "ts": 1792445075
   },
+  "AgentTankOS__tankwork": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690616
+  },
   "Agentfy-io__Agentfy": {
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
@@ -478,6 +483,12 @@
    "status": "mined",
    "ts": 1793617496
   },
+  "AndreiDrang__python-rucaptcha": {
+   "error": "baseline_failed",
+   "sha": "513167e61f20e5e8f1eec450573d17ffe99b95bb",
+   "status": "rejected",
+   "ts": 1795697589
+  },
   "Anil-matcha__AI-Youtube-Shorts-Generator": {
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
@@ -626,6 +637,11 @@
    "status": "rejected",
    "ts": 1793698536
   },
+  "Aynamuk__MapleStoryAutoLevelUp-CN": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690618
+  },
   "Azzedde__paper_to_podcast": {
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
@@ -657,6 +673,12 @@
    "sha": "fd2430bd6e6c03d72ccd7ba270426b2796b4ed6b",
    "status": "mined",
    "ts": 1793704956
+  },
+  "BaiJiang-Void__ReVox": {
+   "error": "heavy_deps_rejected",
+   "sha": "85fb2791bbfffe70ba02562505e923633f2d2a70",
+   "status": "rejected",
+   "ts": 1795697589
   },
   "BeanieODM__beanie": {
    "error": "baseline_failed",
@@ -939,6 +961,11 @@
    "status": "rejected",
    "ts": 1794526943
   },
+  "ColCarroll__strava_calendar": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690614
+  },
   "CommonstackAI__UncommonRoute": {
    "error": "heavy_deps_rejected",
    "sha": "fdf7304834b5230f9073966e6219c469578736be",
@@ -1073,6 +1100,11 @@
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
    "ts": 1794343854
+  },
+  "DadaNanjesha__AI-content-detector-Humanizer": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690616
   },
   "DakeQQ__F5-TTS-ONNX": {
    "error": "prefilter_no_pkg_or_tests",
@@ -3816,6 +3848,11 @@
    "status": "rejected",
    "ts": 1793051182
   },
+  "Phylliida__OpenClio": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690610
+  },
   "Physical-Intelligence__openpi": {
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
@@ -4432,6 +4469,11 @@
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
    "ts": 1792103370
+  },
+  "SanDiegoDude__ComfyUI-HiDream-Sampler": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690630
   },
   "SatSale__SatSale": {
    "error": "prefilter_no_pkg_or_tests",
@@ -5456,10 +5498,22 @@
    "status": "rejected",
    "ts": 1794343845
   },
+  "Yelp__beans": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690629
+  },
   "YeonwooSung__llm-architecture-from-scratch": {
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
    "ts": 1793129230
+  },
+  "YetAnotherNerd__whatlastgenre": {
+   "kill_rate": 0.986,
+   "killed": 640,
+   "sha": "8af22282f925442945acd83de52760de9c78f3c7",
+   "status": "mined",
+   "ts": 1795697589
   },
   "Yggdroot__LeaderF": {
    "error": "prefilter_no_pkg_or_tests",
@@ -5577,6 +5631,11 @@
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
    "ts": 1793216182
+  },
+  "ZhouZijie77__LCPR": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690613
   },
   "ZhuLinsen__FastDatasets": {
    "error": "heavy_deps_rejected",
@@ -6518,6 +6577,11 @@
    "status": "rejected",
    "ts": 1794083574
   },
+  "arkohut__gradio-tunneling": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690609
+  },
   "arlanrakh__talk-to-girlfriend-ai": {
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
@@ -6529,6 +6593,11 @@
    "sha": "742b20d685b0aeb3216b36ddfc44bc5e05ace82c",
    "status": "mined",
    "ts": 1793667395
+  },
+  "armpro24-blip__cad-cae-copilot": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690615
   },
   "arpanghosh8453__fitbit-web-ui-app": {
    "error": "prefilter_no_pkg_or_tests",
@@ -6573,6 +6642,13 @@
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
    "ts": 1794477148
+  },
+  "asimons81__hermes-dreaming": {
+   "kill_rate": 0.444,
+   "killed": 646,
+   "sha": "154ce63e8fd52f645467dc06cc1278ebf4a7d264",
+   "status": "mined",
+   "ts": 1795697589
   },
   "asimons81__hermes-vault": {
    "kill_rate": 0.621,
@@ -7065,6 +7141,11 @@
    "status": "mined",
    "ts": 1793444325
   },
+  "bigattichouse__llama-optimize": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690620
+  },
   "bilibili__Index-Translate": {
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
@@ -7539,6 +7620,11 @@
    "status": "rejected",
    "ts": 1792786487
   },
+  "cathiele__homeassistant-goecharger": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690613
+  },
   "cattrs": {
    "status": "manual",
    "ts": 1792037000
@@ -7713,6 +7799,13 @@
    "sha": "bd6f5bc68d69ae1661f680de90efac3a21c3da7d",
    "status": "mined",
    "ts": 1793704956
+  },
+  "chenyongssss__revagent": {
+   "kill_rate": 0.508,
+   "killed": 132,
+   "sha": "9b8204f927956f2843b9bb38f1fabe2b963fb851",
+   "status": "mined",
+   "ts": 1795697589
   },
   "cherrypy__cheroot": {
    "error": "prefilter_no_pkg_or_tests",
@@ -8371,6 +8464,11 @@
    "status": "rejected",
    "ts": 1794389308
   },
+  "dantetemplar__pdf-extraction-agenda": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690617
+  },
   "daobataotie__CAD-MCP": {
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
@@ -8995,6 +9093,12 @@
    "status": "mined",
    "ts": 1793394043
   },
+  "docusign__docusign-esign-python-client": {
+   "error": "baseline_failed",
+   "sha": "d73f444502b049ab0ab6bf7e20de65f9b58d1bb1",
+   "status": "rejected",
+   "ts": 1795697589
+  },
   "dolezsa__thermal_comfort": {
    "error": "install_failed",
    "sha": "d9294e070d591e78f7f647b024658bda882dfb6d",
@@ -9544,6 +9648,11 @@
    "status": "rejected",
    "ts": 1792654644
   },
+  "expoli__rime-wanxiang-update-tools": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690603
+  },
   "eyeblech__cinecli": {
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
@@ -9907,6 +10016,12 @@
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
    "ts": 1795380250
+  },
+  "firstof9__openevse": {
+   "error": "baseline_failed",
+   "sha": "c079566007417364fd19c386008df35ac0c42e30",
+   "status": "rejected",
+   "ts": 1795697589
   },
   "fishaudio__fish-audio-python": {
    "kill_rate": 0.506,
@@ -10875,6 +10990,13 @@
    "status": "rejected",
    "ts": 1793912814
   },
+  "hamidi-dev__opentab": {
+   "kill_rate": 0.759,
+   "killed": 60,
+   "sha": "07111215fda2acde0db9ee7aeeb2b5ec3f2c2bc7",
+   "status": "mined",
+   "ts": 1795697589
+  },
   "handsomeZR-netizen__mathmodel-skill": {
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
@@ -11406,6 +11528,12 @@
    "status": "rejected",
    "ts": 1792281012
   },
+  "im-anishraj__arnio": {
+   "error": "install_failed",
+   "sha": "d966fd742057d422dae3ac037de3af5515410bee",
+   "status": "rejected",
+   "ts": 1795697589
+  },
   "imbue-ai__sculptor": {
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
@@ -11422,6 +11550,11 @@
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
    "ts": 1794343849
+  },
+  "inclusionAI__Ring-V2": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690614
   },
   "indigo-dc__udocker": {
    "kill_rate": 0.502,
@@ -11658,6 +11791,13 @@
    "sha": "58b72cf58134b9b888a9518932465d7187448e92",
    "status": "rejected",
    "ts": 1792350012
+  },
+  "jacksalici__notion-cli-list-manager": {
+   "kill_rate": 0.922,
+   "killed": 107,
+   "sha": "52b9d124aaa71073a921d18d2222f087d0d2904b",
+   "status": "mined",
+   "ts": 1795697589
   },
   "jackwuwei__gptspeaker": {
    "error": "prefilter_no_pkg_or_tests",
@@ -12733,6 +12873,11 @@
    "status": "rejected",
    "ts": 1792826357
   },
+  "kxz18__UniMoMo": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690617
+  },
   "kyclark__biofx_python": {
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
@@ -13267,6 +13412,11 @@
    "status": "rejected",
    "ts": 1795211391
   },
+  "luccachiang__robots-pretrain-robots": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690626
+  },
   "lucidrains__MEGABYTE-pytorch": {
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
@@ -13327,6 +13477,11 @@
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
    "ts": 1794266847
+  },
+  "lupoglaz__OpenFold2": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690626
   },
   "lxml__lxml": {
    "error": "prefilter_no_pkg_or_tests",
@@ -13809,6 +13964,11 @@
    "status": "mined",
    "ts": 1792615079
   },
+  "michelle-avery__custom-conversation": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690614
+  },
   "microsoft-foundry__discussions": {
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
@@ -14010,6 +14170,13 @@
    "sha": "88daffb20281e0f0a4bb5c5049005c078f63cad6",
    "status": "rejected",
    "ts": 1792703141
+  },
+  "mir-ashiq__metaai-api": {
+   "kill_rate": 0.014,
+   "killed": 14,
+   "sha": "bc72dc08324b05a256b5a129badfd378688d8e2d",
+   "status": "mined",
+   "ts": 1795697589
   },
   "mir-group__nequip": {
    "error": "heavy_deps_rejected",
@@ -15569,6 +15736,11 @@
    "status": "mined",
    "ts": 1793444325
   },
+  "parallel-web__parallel-agent-skills": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690626
+  },
   "parcadei__Continuous-Claude-v3": {
    "error": "install_failed",
    "sha": "d07ff4b06b62f43771bc0c927d0211b734d6149e",
@@ -15639,6 +15811,12 @@
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
    "ts": 1795340933
+  },
+  "pemtajo__badge-readme": {
+   "error": "no_package_found",
+   "sha": "408f366310edcfa066ef03ffd99b9324a10988fa",
+   "status": "rejected",
+   "ts": 1795697589
   },
   "pengxingang__PocketXMol": {
    "error": "prefilter_no_pkg_or_tests",
@@ -16048,6 +16226,11 @@
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
    "ts": 1793262701
+  },
+  "pstirparo__machofile": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690612
   },
   "ptmcg__logmerger": {
    "kill_rate": 0.148,
@@ -16677,6 +16860,11 @@
    "status": "mined",
    "ts": 1792703141
   },
+  "rayliuca__T-Ragx": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690603
+  },
   "rcortx__kiwiq": {
    "error": "install_failed",
    "sha": "e1dc6486cbf8425ca146970d515415e29e569679",
@@ -16721,6 +16909,13 @@
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
    "ts": 1794163829
+  },
+  "rebase-energy__energydatamodel": {
+   "kill_rate": 0.676,
+   "killed": 234,
+   "sha": "d1892668e9090d6f54cb8602f71a5e44d282f1a9",
+   "status": "mined",
+   "ts": 1795697589
   },
   "redis__mcp-redis": {
    "kill_rate": 0.74,
@@ -16845,6 +17040,11 @@
    "sha": "1ce3e02eeed988d1cc28c3536740e6463cea6fcf",
    "status": "rejected",
    "ts": 1793308600
+  },
+  "rnamoy__chrome_installer": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690629
   },
   "rndinfosecguy__Scavenger": {
    "error": "prefilter_no_pkg_or_tests",
@@ -17112,6 +17312,12 @@
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
    "ts": 1792103375
+  },
+  "sanders41__meilisearch-python-sdk": {
+   "error": "baseline_failed",
+   "sha": "784a4b4afd714956259ddfb2f2ea10f877b62f24",
+   "status": "rejected",
+   "ts": 1795697589
   },
   "sandflow__ttconv": {
    "error": "prefilter_no_pkg_or_tests",
@@ -17724,6 +17930,11 @@
    "status": "rejected",
    "ts": 1793129218
   },
+  "sjbsjb233__ZJ_Quant_03": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690603
+  },
   "sjtu-sai-agents__EvoMaster": {
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
@@ -17803,6 +18014,11 @@
    "sha": "d65f5d16155f6653569f8319b458484ff27be297",
    "status": "mined",
    "ts": 1792660593
+  },
+  "slyfox1186__pihole-regex": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690617
   },
   "smartHomeHub__SmartIR": {
    "error": "prefilter_no_pkg_or_tests",
@@ -18153,6 +18369,13 @@
    "status": "rejected",
    "ts": 1793877356
   },
+  "sterrasec__apkutil": {
+   "kill_rate": 0.332,
+   "killed": 120,
+   "sha": "9200f9e20d926b72d62d5a73d62b10f7a4ecaf18",
+   "status": "mined",
+   "ts": 1795697589
+  },
   "stevereiner__flexible-graphrag": {
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
@@ -18382,6 +18605,11 @@
    "sha": "80e05cba3d0d7aae50072e5e1301da64e36715a1",
    "status": "mined",
    "ts": 1795439112
+  },
+  "tdh8316__triangler": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690609
   },
   "tea-lang-org__tea-lang": {
    "kill_rate": 0.517,
@@ -18663,6 +18891,13 @@
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
    "ts": 1794518958
+  },
+  "thumbor__remotecv": {
+   "kill_rate": 0.45,
+   "killed": 118,
+   "sha": "ca735118b617933c387b86384d2f01dfceb3acda",
+   "status": "mined",
+   "ts": 1795697589
   },
   "thuml__AutoTimes": {
    "error": "prefilter_no_pkg_or_tests",
@@ -19189,6 +19424,13 @@
    "status": "rejected",
    "ts": 1792950023
   },
+  "uriyyo__fastapi-filters": {
+   "kill_rate": 0.743,
+   "killed": 228,
+   "sha": "ae800592290d90371ab7c3d0177e29d189c28230",
+   "status": "mined",
+   "ts": 1795697589
+  },
   "uriyyo__fastapi-pagination": {
    "error": "baseline_failed",
    "sha": "9a9c75f2447630f2fa48acda2611d0bcb9043071",
@@ -19292,6 +19534,12 @@
    "sha": "a6726843c59b586362e352cb4f1066fc018782b8",
    "status": "mined",
    "ts": 1795388475
+  },
+  "vixhal-baraiya__qwenFS": {
+   "error": "heavy_deps_rejected",
+   "sha": "b12435435232a09fb447089b5fa0fff2f5c69506",
+   "status": "rejected",
+   "ts": 1795697589
   },
   "vladkens__twscrape": {
    "kill_rate": 0.476,
@@ -19762,6 +20010,12 @@
    "status": "rejected",
    "ts": 1792694060
   },
+  "xdit-project__DistVAE": {
+   "error": "heavy_deps_rejected",
+   "sha": "dce484185dc11d7406076117771e36acd796aa6a",
+   "status": "rejected",
+   "ts": 1795697589
+  },
   "xdit-project__xDiT": {
    "error": "heavy_deps_rejected",
    "sha": "0ba84a7d7f14f3dac79116f3091c7cfafe069544",
@@ -20071,6 +20325,17 @@
    "error": "prefilter_no_pkg_or_tests",
    "status": "rejected",
    "ts": 1793559442
+  },
+  "yuhanbo758__yuhanbolh": {
+   "error": "install_failed",
+   "sha": "15d5a2201725a83bef1ae4b96df14eae404f5570",
+   "status": "rejected",
+   "ts": 1795697589
+  },
+  "yukara-ikemiya__floss-torch": {
+   "error": "prefilter_no_pkg_or_tests",
+   "status": "rejected",
+   "ts": 1795690627
   },
   "yukinarit__pyserde": {
    "error": "baseline_failed",
@@ -20464,241 +20729,6 @@
  "inflight": {},
  "queue": [
   {
-   "name": "rayliuca__T-Ragx",
-   "stars": 99,
-   "url": "https://github.com/rayliuca/T-Ragx"
-  },
-  {
-   "name": "expoli__rime-wanxiang-update-tools",
-   "stars": 99,
-   "url": "https://github.com/expoli/rime-wanxiang-update-tools"
-  },
-  {
-   "name": "sjbsjb233__ZJ_Quant_03",
-   "stars": 99,
-   "url": "https://github.com/sjbsjb233/ZJ_Quant_03"
-  },
-  {
-   "name": "asimons81__hermes-dreaming",
-   "stars": 99,
-   "url": "https://github.com/asimons81/hermes-dreaming"
-  },
-  {
-   "name": "chenyongssss__revagent",
-   "stars": 99,
-   "url": "https://github.com/chenyongssss/revagent"
-  },
-  {
-   "name": "uriyyo__fastapi-filters",
-   "stars": 99,
-   "url": "https://github.com/uriyyo/fastapi-filters"
-  },
-  {
-   "name": "xdit-project__DistVAE",
-   "stars": 99,
-   "url": "https://github.com/xdit-project/DistVAE"
-  },
-  {
-   "name": "im-anishraj__arnio",
-   "stars": 99,
-   "url": "https://github.com/im-anishraj/arnio"
-  },
-  {
-   "name": "arkohut__gradio-tunneling",
-   "stars": 99,
-   "url": "https://github.com/arkohut/gradio-tunneling"
-  },
-  {
-   "name": "tdh8316__triangler",
-   "stars": 99,
-   "url": "https://github.com/tdh8316/triangler"
-  },
-  {
-   "name": "AndreiDrang__python-rucaptcha",
-   "stars": 99,
-   "url": "https://github.com/AndreiDrang/python-rucaptcha"
-  },
-  {
-   "name": "Phylliida__OpenClio",
-   "stars": 99,
-   "url": "https://github.com/Phylliida/OpenClio"
-  },
-  {
-   "name": "jacksalici__notion-cli-list-manager",
-   "stars": 99,
-   "url": "https://github.com/jacksalici/notion-cli-list-manager"
-  },
-  {
-   "name": "pstirparo__machofile",
-   "stars": 99,
-   "url": "https://github.com/pstirparo/machofile"
-  },
-  {
-   "name": "mir-ashiq__metaai-api",
-   "stars": 99,
-   "url": "https://github.com/mir-ashiq/metaai-api"
-  },
-  {
-   "name": "cathiele__homeassistant-goecharger",
-   "stars": 99,
-   "url": "https://github.com/cathiele/homeassistant-goecharger"
-  },
-  {
-   "name": "ZhouZijie77__LCPR",
-   "stars": 99,
-   "url": "https://github.com/ZhouZijie77/LCPR"
-  },
-  {
-   "name": "michelle-avery__custom-conversation",
-   "stars": 99,
-   "url": "https://github.com/michelle-avery/custom-conversation"
-  },
-  {
-   "name": "ColCarroll__strava_calendar",
-   "stars": 99,
-   "url": "https://github.com/ColCarroll/strava_calendar"
-  },
-  {
-   "name": "inclusionAI__Ring-V2",
-   "stars": 99,
-   "url": "https://github.com/inclusionAI/Ring-V2"
-  },
-  {
-   "name": "armpro24-blip__cad-cae-copilot",
-   "stars": 99,
-   "url": "https://github.com/armpro24-blip/cad-cae-copilot"
-  },
-  {
-   "name": "rebase-energy__energydatamodel",
-   "stars": 99,
-   "url": "https://github.com/rebase-energy/energydatamodel"
-  },
-  {
-   "name": "DadaNanjesha__AI-content-detector-Humanizer",
-   "stars": 99,
-   "url": "https://github.com/DadaNanjesha/AI-content-detector-Humanizer"
-  },
-  {
-   "name": "AgentTankOS__tankwork",
-   "stars": 99,
-   "url": "https://github.com/AgentTankOS/tankwork"
-  },
-  {
-   "name": "slyfox1186__pihole-regex",
-   "stars": 99,
-   "url": "https://github.com/slyfox1186/pihole-regex"
-  },
-  {
-   "name": "dantetemplar__pdf-extraction-agenda",
-   "stars": 99,
-   "url": "https://github.com/dantetemplar/pdf-extraction-agenda"
-  },
-  {
-   "name": "kxz18__UniMoMo",
-   "stars": 99,
-   "url": "https://github.com/kxz18/UniMoMo"
-  },
-  {
-   "name": "Aynamuk__MapleStoryAutoLevelUp-CN",
-   "stars": 99,
-   "url": "https://github.com/Aynamuk/MapleStoryAutoLevelUp-CN"
-  },
-  {
-   "name": "thumbor__remotecv",
-   "stars": 99,
-   "url": "https://github.com/thumbor/remotecv"
-  },
-  {
-   "name": "hamidi-dev__opentab",
-   "stars": 99,
-   "url": "https://github.com/hamidi-dev/opentab"
-  },
-  {
-   "name": "bigattichouse__llama-optimize",
-   "stars": 99,
-   "url": "https://github.com/bigattichouse/llama-optimize"
-  },
-  {
-   "name": "sterrasec__apkutil",
-   "stars": 99,
-   "url": "https://github.com/sterrasec/apkutil"
-  },
-  {
-   "name": "BaiJiang-Void__ReVox",
-   "stars": 99,
-   "url": "https://github.com/BaiJiang-Void/ReVox"
-  },
-  {
-   "name": "pemtajo__badge-readme",
-   "stars": 99,
-   "url": "https://github.com/pemtajo/badge-readme"
-  },
-  {
-   "name": "yuhanbo758__yuhanbolh",
-   "stars": 99,
-   "url": "https://github.com/yuhanbo758/yuhanbolh"
-  },
-  {
-   "name": "docusign__docusign-esign-python-client",
-   "stars": 99,
-   "url": "https://github.com/docusign/docusign-esign-python-client"
-  },
-  {
-   "name": "YetAnotherNerd__whatlastgenre",
-   "stars": 99,
-   "url": "https://github.com/YetAnotherNerd/whatlastgenre"
-  },
-  {
-   "name": "lupoglaz__OpenFold2",
-   "stars": 99,
-   "url": "https://github.com/lupoglaz/OpenFold2"
-  },
-  {
-   "name": "parallel-web__parallel-agent-skills",
-   "stars": 99,
-   "url": "https://github.com/parallel-web/parallel-agent-skills"
-  },
-  {
-   "name": "luccachiang__robots-pretrain-robots",
-   "stars": 99,
-   "url": "https://github.com/luccachiang/robots-pretrain-robots"
-  },
-  {
-   "name": "yukara-ikemiya__floss-torch",
-   "stars": 98,
-   "url": "https://github.com/yukara-ikemiya/floss-torch"
-  },
-  {
-   "name": "firstof9__openevse",
-   "stars": 98,
-   "url": "https://github.com/firstof9/openevse"
-  },
-  {
-   "name": "sanders41__meilisearch-python-sdk",
-   "stars": 98,
-   "url": "https://github.com/sanders41/meilisearch-python-sdk"
-  },
-  {
-   "name": "rnamoy__chrome_installer",
-   "stars": 98,
-   "url": "https://github.com/rnamoy/chrome_installer"
-  },
-  {
-   "name": "Yelp__beans",
-   "stars": 98,
-   "url": "https://github.com/Yelp/beans"
-  },
-  {
-   "name": "SanDiegoDude__ComfyUI-HiDream-Sampler",
-   "stars": 98,
-   "url": "https://github.com/SanDiegoDude/ComfyUI-HiDream-Sampler"
-  },
-  {
-   "name": "vixhal-baraiya__qwenFS",
-   "stars": 98,
-   "url": "https://github.com/vixhal-baraiya/qwenFS"
-  },
-  {
    "name": "catern__rsyscall",
    "stars": 98,
    "url": "https://github.com/catern/rsyscall"
@@ -20722,6 +20752,211 @@
    "name": "KoljaB__RealtimeVAD",
    "stars": 98,
    "url": "https://github.com/KoljaB/RealtimeVAD"
+  },
+  {
+   "name": "IRNova__Nova-Wizard",
+   "stars": 98,
+   "url": "https://github.com/IRNova/Nova-Wizard"
+  },
+  {
+   "name": "quzhiii__thesis-skills",
+   "stars": 98,
+   "url": "https://github.com/quzhiii/thesis-skills"
+  },
+  {
+   "name": "bzsasson__screaming-frog-mcp",
+   "stars": 98,
+   "url": "https://github.com/bzsasson/screaming-frog-mcp"
+  },
+  {
+   "name": "niccolo-sabato__claude-usage-widget",
+   "stars": 98,
+   "url": "https://github.com/niccolo-sabato/claude-usage-widget"
+  },
+  {
+   "name": "yifan-hou__cr-dagger",
+   "stars": 98,
+   "url": "https://github.com/yifan-hou/cr-dagger"
+  },
+  {
+   "name": "markrussinovich__agent-session-insights",
+   "stars": 98,
+   "url": "https://github.com/markrussinovich/agent-session-insights"
+  },
+  {
+   "name": "gpauloski__kfac-pytorch",
+   "stars": 98,
+   "url": "https://github.com/gpauloski/kfac-pytorch"
+  },
+  {
+   "name": "IMBALDY__RecursiveGameCreator",
+   "stars": 98,
+   "url": "https://github.com/IMBALDY/RecursiveGameCreator"
+  },
+  {
+   "name": "CZD-MO__PyGeoCN",
+   "stars": 98,
+   "url": "https://github.com/CZD-MO/PyGeoCN"
+  },
+  {
+   "name": "6tail__tyme4py",
+   "stars": 98,
+   "url": "https://github.com/6tail/tyme4py"
+  },
+  {
+   "name": "real-stanford__dice-rl",
+   "stars": 98,
+   "url": "https://github.com/real-stanford/dice-rl"
+  },
+  {
+   "name": "TryMightyAI__mighty-security",
+   "stars": 98,
+   "url": "https://github.com/TryMightyAI/mighty-security"
+  },
+  {
+   "name": "gnipbao__knowledge-cat-ppt-skill",
+   "stars": 98,
+   "url": "https://github.com/gnipbao/knowledge-cat-ppt-skill"
+  },
+  {
+   "name": "ArtemKirsanov__BlenderBrain",
+   "stars": 98,
+   "url": "https://github.com/ArtemKirsanov/BlenderBrain"
+  },
+  {
+   "name": "splunk__vscode-extension-splunk",
+   "stars": 98,
+   "url": "https://github.com/splunk/vscode-extension-splunk"
+  },
+  {
+   "name": "ZHE-SAPI__CostFilter-AD",
+   "stars": 98,
+   "url": "https://github.com/ZHE-SAPI/CostFilter-AD"
+  },
+  {
+   "name": "ZhangRui111__RayCloudSim",
+   "stars": 98,
+   "url": "https://github.com/ZhangRui111/RayCloudSim"
+  },
+  {
+   "name": "yzddmr6__xiaomipad-6pro-mainline",
+   "stars": 98,
+   "url": "https://github.com/yzddmr6/xiaomipad-6pro-mainline"
+  },
+  {
+   "name": "RuolinZheng08__renpy-chess",
+   "stars": 98,
+   "url": "https://github.com/RuolinZheng08/renpy-chess"
+  },
+  {
+   "name": "gstoica27__KnOTS",
+   "stars": 98,
+   "url": "https://github.com/gstoica27/KnOTS"
+  },
+  {
+   "name": "samuelint__langchain-openai-api-bridge",
+   "stars": 98,
+   "url": "https://github.com/samuelint/langchain-openai-api-bridge"
+  },
+  {
+   "name": "spheenik__vfio-isolate",
+   "stars": 98,
+   "url": "https://github.com/spheenik/vfio-isolate"
+  },
+  {
+   "name": "zer0quant__zer0factor",
+   "stars": 98,
+   "url": "https://github.com/zer0quant/zer0factor"
+  },
+  {
+   "name": "Liuzedooong__SparseReading",
+   "stars": 98,
+   "url": "https://github.com/Liuzedooong/SparseReading"
+  },
+  {
+   "name": "prasanjit101__whishpy",
+   "stars": 98,
+   "url": "https://github.com/prasanjit101/whishpy"
+  },
+  {
+   "name": "astrogilda__tsbootstrap",
+   "stars": 98,
+   "url": "https://github.com/astrogilda/tsbootstrap"
+  },
+  {
+   "name": "123Cx330Yrx__riftcoach-agent",
+   "stars": 98,
+   "url": "https://github.com/123Cx330Yrx/riftcoach-agent"
+  },
+  {
+   "name": "diglet48__restim",
+   "stars": 98,
+   "url": "https://github.com/diglet48/restim"
+  },
+  {
+   "name": "chase-manning__ai-hedge-fund",
+   "stars": 98,
+   "url": "https://github.com/chase-manning/ai-hedge-fund"
+  },
+  {
+   "name": "iltlo__feetech_arm_control",
+   "stars": 98,
+   "url": "https://github.com/iltlo/feetech_arm_control"
+  },
+  {
+   "name": "Simon-AI-coding__GPT-VoiceCoding",
+   "stars": 97,
+   "url": "https://github.com/Simon-AI-coding/GPT-VoiceCoding"
+  },
+  {
+   "name": "OCHA-DAP__hdx-python-api",
+   "stars": 97,
+   "url": "https://github.com/OCHA-DAP/hdx-python-api"
+  },
+  {
+   "name": "Summer142857__LLMCoSolver",
+   "stars": 97,
+   "url": "https://github.com/Summer142857/LLMCoSolver"
+  },
+  {
+   "name": "JLSteenwyk__ClipKIT",
+   "stars": 97,
+   "url": "https://github.com/JLSteenwyk/ClipKIT"
+  },
+  {
+   "name": "educlopez__design-bites",
+   "stars": 97,
+   "url": "https://github.com/educlopez/design-bites"
+  },
+  {
+   "name": "MarcoGos__kleenex_pollenradar",
+   "stars": 97,
+   "url": "https://github.com/MarcoGos/kleenex_pollenradar"
+  },
+  {
+   "name": "jondkinney__omapop",
+   "stars": 97,
+   "url": "https://github.com/jondkinney/omapop"
+  },
+  {
+   "name": "securekomodo__citrixInspector",
+   "stars": 97,
+   "url": "https://github.com/securekomodo/citrixInspector"
+  },
+  {
+   "name": "SII-fkchen__SOTER",
+   "stars": 97,
+   "url": "https://github.com/SII-fkchen/SOTER"
+  },
+  {
+   "name": "qinyan-ai__qinyan-academic-skills",
+   "stars": 97,
+   "url": "https://github.com/qinyan-ai/qinyan-academic-skills"
+  },
+  {
+   "name": "PacktPublishing__Cloud-Native-Python",
+   "stars": 97,
+   "url": "https://github.com/PacktPublishing/Cloud-Native-Python"
   }
  ]
 }
